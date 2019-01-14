@@ -1,0 +1,2 @@
+#!/bin/sh
+docker run --read-only -ti --rm -e SOLC_VERSION="$SOLC_VERSION" --mount type=bind,source="$(pwd)",target=/workdir trailofbits/solc-select:latest $@
