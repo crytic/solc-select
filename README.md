@@ -32,6 +32,15 @@ solc, the solidity compiler commandline interface
 Version: 0.4.24+commit.e67f0147.Linux.g++
 ```
 
+## Upgrading
+
+If everything is working properly, the [DockerHub image for `solc-select`](https://hub.docker.com/r/trailofbits/solc-select) will automatically update every time Solidity is updated.
+Therefore, simply run
+```
+docker pull trailofbits/solc-select
+```
+to ensure that you have the latest version.
+
 ## Installation from Source
 
 ```
