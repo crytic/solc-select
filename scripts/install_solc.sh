@@ -2,13 +2,15 @@
 
 function install_solc {
     solc="/usr/bin/solc-${1}"
-    curl -L "https://github.com/ethereum/solidity/releases/download/${1}/solc-static-linux" > "$solc"
-    chmod +x "$solc"
+    curl -s -f -L "https://github.com/ethereum/solidity/releases/download/${1}/solc-static-linux" -o "$solc" && chmod +x "$solc" && echo "Installed solc-${1}"
 }
 
-for ((i=11;i<=25;i++)); do
-    install_solc v0.4."$i"
-done
-for ((i=0;i<=5;i++)); do
-    install_solc v0.5."$i"
+function solc_releases {
+  curl --silent "https://api.github.com/repos/ethereum/solidity/releases" |
+    grep '"tag_name":' |
+    sed -E 's/.*"([^"]+)".*/\1/'
+}
+
+for tag in $(solc_releases); do
+    install_solc "$tag" || true
 done
