@@ -9,6 +9,6 @@ function install_solc {
 for ((i=11;i<=25;i++)); do
     install_solc v0.4."$i"
 done
-for ((i=0;i<=4;i++)); do
+for ((i=0;i<=5;i++)); do
     install_solc v0.5."$i"
 done
