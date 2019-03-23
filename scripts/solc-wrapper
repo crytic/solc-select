@@ -5,4 +5,4 @@ mount --bind /bin /workdir/bin
 mount --bind /dev /workdir/proc
 mount --bind /proc /workdir/dev
 mount --bind /sys /workdir/sys
-chroot /workdir sh -c "cd $HOST_PWD && /usr/bin/solc $@"
+chroot /workdir chroot.sh $@

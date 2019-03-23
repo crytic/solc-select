@@ -34,6 +34,7 @@ RUN solc-select --list | grep -v nightly | tail -n1 | xargs solc-select
 
 COPY scripts/solc /usr/bin/
 COPY scripts/solc-wrapper /usr/bin/
+COPY scripts/chroot.sh /usr/bin/
 
 COPY scripts/install.sh /usr/bin/
 COPY bin/solc /etc/solc_template
