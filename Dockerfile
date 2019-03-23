@@ -33,9 +33,10 @@ RUN apk -U add findutils
 RUN solc-select --list | grep -v nightly | tail -n1 | xargs solc-select
 
 COPY scripts/solc /usr/bin/
+COPY scripts/solc-wrapper /usr/bin/
 
 RUN mkdir -p /workdir
 
 WORKDIR /workdir
 
-ENTRYPOINT ["/usr/bin/solc"]
+ENTRYPOINT ["/usr/bin/solc-wrapper"]
