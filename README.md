@@ -13,11 +13,17 @@ by setting an environment variable.
 
 ```
 docker pull trailofbits/solc-select
+docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash
 ```
 
-Ensure that `solc` is _not_ installed on your host system. Instead, copy [this special solc script](bin/solc) to anywhere in your PATH.
+This will install `solc` globally. If `solc` is already installed, you
+will be prompted to overwrite it.
 
-If you do not wish to replace your local copy of `solc`, name [the special solc script](bin/solc) `solc-select` instead.
+To install `solc` to a different directory, run the `docker` command
+with the environment variable `PREFIX` set; `solc` will be installed
+to `${PREFIX}/bin/solc`.
+
+Alternatively, manually copy [the special solc script](bin/solc) to your desired location.
 
 ## Usage
 
@@ -61,12 +67,11 @@ nightly
 
 ## Upgrading
 
-If everything is working properly, the [DockerHub image for `solc-select`](https://hub.docker.com/r/trailofbits/solc-select) will automatically update every time Solidity is updated.
-Therefore, simply run
+Once installed, simply run
 ```
-docker pull trailofbits/solc-select
+solc --upgrade
 ```
-to ensure that you have the latest version.
+to automatically upgrade `solc-select`. This will automatically pull the latest Docker image and upgrade the local `solc` script, if necessary. The [DockerHub image for `solc-select`](https://hub.docker.com/r/trailofbits/solc-select) will automatically update every time Solidity is updated, which will typically be nightly.
 
 ## Installation from Source
 
@@ -74,10 +79,8 @@ to ensure that you have the latest version.
 $ git clone https://github.com/trailofbits/solc-select.git
 $ cd solc-select
 $ docker build -t trailofbits/solc-select:latest .
-$ export PATH=$PWD/bin:$PATH
+$ bin/solc --install
 ```
-
-or copy `bin/solc` into a directory within your `PATH`.
 
 ## Getting Help
 
