@@ -1,7 +1,12 @@
 #!/bin/bash
 
 if [ $1 = "--upgrade" ] || [ $1 = "--install" ]; then
-    echo "Upgrading solc-select..."
+    if [ $1 = "--upgrade" ]; then
+        echo "Upgrading solc-select..."
+        docker pull trailofbits/solc-select:latest
+    else
+        echo "Installing solc-select..."
+    fi
     if [ ! -z "$2" ]; then
         mkdir -p $2/bin
     fi
