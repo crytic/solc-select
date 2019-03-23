@@ -1,2 +1,12 @@
-#!/bin/sh
-docker run --read-only -i --rm --cap-add=SYS_ADMIN -e SOLC_VERSION="$SOLC_VERSION" -e HOST_PWD="$PWD" --mount type=bind,source=/,target=/workdir trailofbits/solc-select:latest $@
+#!/bin/bash
+
+if [ $1 = "--upgrade" ] || [ $1 = "--install" ]; then
+    echo "Upgrading solc-select..."
+    if [ ! -z "$2" ]; then
+        mkdir -p $2/bin
+    fi
+    export PREFIX="$2"
+    docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash
+else
+    docker run --read-only -i --rm --cap-add=SYS_ADMIN -e SOLC_VERSION="" -e HOST_PWD="$PWD" --mount type=bind,source=/,target=/workdir trailofbits/solc-select:latest $@
+fi

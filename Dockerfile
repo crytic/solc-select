@@ -35,6 +35,13 @@ RUN solc-select --list | grep -v nightly | tail -n1 | xargs solc-select
 COPY scripts/solc /usr/bin/
 COPY scripts/solc-wrapper /usr/bin/
 
+COPY scripts/install.sh /usr/bin/
+COPY bin/solc /etc/solc_template
+RUN cat /etc/solc_template >> /usr/bin/install.sh
+RUN echo EOF >> /usr/bin/install.sh
+RUN echo finalize >> /usr/bin/install.sh
+RUN rm /etc/solc_template
+
 RUN mkdir -p /workdir
 
 WORKDIR /workdir
