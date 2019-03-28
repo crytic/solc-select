@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $1 = "--versions" ]; then
+if [[ "$1" == "--versions" ]]; then
     solc-select --list
 elif [ -z "$SOLC_VERSION" ]; then
     solc-default $@
