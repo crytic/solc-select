@@ -13,7 +13,7 @@ by setting an environment variable.
 
 ```
 docker pull trailofbits/solc-select
-docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash
+docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash -e
 ```
 
 This will install `solc` globally. If `solc` is already installed, you
