@@ -1,17 +1,54 @@
 #!/bin/bash
 
-if [[ "$1" == "--upgrade" ]] || [[ "$1" == "--install" ]]; then
-    if [[ "$1" == "--upgrade" ]]; then
-        echo "Upgrading solc-select..."
-        docker pull trailofbits/solc-select:latest
+function run_linux {
+    export SSELECT_INSTALL_DIR="$HOME/.solc-select"
+
+    if [ ! -e "$SSELECT_INSTALL_DIR" ]; then
+        echo 'It appears you do not have solc-select installed, run `solc --install` to install it.'
+        exit 1
+    fi
+
+    if [[ "$1" == "--upgrade" ]] || [[ "$1" == "--install" ]]; then
+        if [[ "$1" == "--upgrade" ]]; then
+            echo "Upgrading solc-select..."
+        else
+            echo "Installing solc-select..."
+        fi
+
+        TMP_CLONE_DIR=/tmp/solc-select
+        rm -rf $TMP_CLONE_DIR
+        git clone "https://github.com/crytic/solc-select.git" $TMP_CLONE_DIR
+
+        $TMP_CLONE_DIR/scripts/install.sh
+
+        rm -rf $TMP_CLONE_DIR
     else
-        echo "Installing solc-select..."
+        $SSELECT_INSTALL_DIR/usr/bin/solc-runner $@
     fi
-    if [[ ! -z "$2" ]]; then
-        mkdir -p $2/bin
+}
+
+function run_docker {
+    if [[ "$1" == "--upgrade" ]] || [[ "$1" == "--install" ]]; then
+        if [[ "$1" == "--upgrade" ]]; then
+            echo "Upgrading solc-select..."
+            docker pull trailofbits/solc-select:latest
+        else
+            echo "Installing solc-select..."
+        fi
+        if [[ ! -z "$2" ]]; then
+            mkdir -p $2/bin
+        fi
+        export PREFIX="$2"
+        docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash
+    else
+        docker run --read-only -i --rm --cap-add=SYS_ADMIN -e SOLC_VERSION="$SOLC_VERSION" -e HOST_PWD="$PWD" --mount type=bind,source=/,target=/workdir trailofbits/solc-select:latest $@
     fi
-    export PREFIX="$2"
-    docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash
+}
+
+OS=$(uname)
+
+if [ $OS = "Linux" ]; then
+  run_linux $@
 else
-    docker run --read-only -i --rm --cap-add=SYS_ADMIN -e SOLC_VERSION="$SOLC_VERSION" -e HOST_PWD="$PWD" --mount type=bind,source=/,target=/workdir trailofbits/solc-select:latest $@
+  run_docker $@
 fi

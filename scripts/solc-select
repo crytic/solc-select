@@ -10,15 +10,15 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-SOLC_INSTALL_DIR=/usr/bin
+INSTALL_DIR="$SSELECT_INSTALL_DIR/usr/bin"
 VERSION=$1
 
 if [ "$VERSION" = "--list" ] || [ "$VERSION" = "-l" ]; then
-    find $SOLC_INSTALL_DIR -name 'solc-v*' -printf "%f\n" | awk -F'v' '{print $2}' | sort
+    find "$INSTALL_DIR" -name 'solc-v*' -printf "%f\n" | awk -F'v' '{print $2}' | sort
     exit 0
 fi
 
-SOLC_PATH=$SOLC_INSTALL_DIR/solc-v$VERSION
+SOLC_PATH=$INSTALL_DIR/solc-v$VERSION
 
 if [ ! -f $SOLC_PATH ]; then
     echo "Error: ${SOLC_PATH} does not exist!"
@@ -29,4 +29,4 @@ if [ ! -f $SOLC_PATH ]; then
     exit 1
 fi
 
-ln -fs $SOLC_PATH $SOLC_INSTALL_DIR/solc-default
+ln -fs $SOLC_PATH $INSTALL_DIR/solc-default
