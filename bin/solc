@@ -12,6 +12,21 @@ if [[ "$1" == "--upgrade" ]] || [[ "$1" == "--install" ]]; then
     fi
     export PREFIX="$2"
     docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash
+
+# use command
+elif [ "$1" == "use" ]; then
+    if [[ -z "$2" ]]; then
+            echo "Need to provide a version to use. To list all available versions use 'solc --versions'"
+    # The next line will check that the provided version exists in the list of available versions
+    elif  printf '%s\n' $(solc --versions) | grep -q -P "^$2";then
+        echo "export SOLC_VERSION=$2" > $HOME/.solcv
+    else
+        echo "Version $2 not supported. List all available versions with 'solc --versions'"
+    fi
 else
+    # Check that a solcv file exists in the home directory, and that the Version was not manually set by a user
+    if [ -f $HOME/.solcv ] && [[ -z $SOLC_VERSION ]]; then
+      source $HOME/.solcv
+    fi
     docker run --read-only -i --rm --cap-add=SYS_ADMIN -e SOLC_VERSION="$SOLC_VERSION" -e HOST_PWD="$PWD" --mount type=bind,source=/,target=/workdir trailofbits/solc-select:latest $@
 fi
