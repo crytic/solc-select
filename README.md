@@ -27,7 +27,7 @@ Alternatively, manually copy [the special solc script](bin/solc) to your desired
 
 ## Usage
 
-The desired version of `solc` can be specified using the `use command`. By default, the latest version is used.
+The desired version of `solc` can be set with the `use` command. By default, the latest version is used.
 
 ```
 $ solc --version
