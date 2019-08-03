@@ -18,7 +18,7 @@ elif [ "$1" == "use" ]; then
     if [[ -z "$2" ]]; then
             echo "Need to provide a version to use. To list all available versions use 'solc --versions'"
     # The next line will check that the provided version exists in the list of available versions
-    elif  printf '%s\n' $(solc --versions) | grep -q -P "^$2";then
+    elif  printf '%s\n' $(solc --versions) | grep -q -E "^$2";then
         echo "export SOLC_VERSION=$2" > $HOME/.solcv
     else
         echo "Version $2 not supported. List all available versions with 'solc --versions'"
