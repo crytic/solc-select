@@ -27,16 +27,29 @@ Alternatively, manually copy [the special solc script](bin/solc) to your desired
 
 ## Usage
 
-The desired version of `solc` can be specified using the `SOLC_VERSION` environment variable. By default, the latest version is used.
+The desired version of `solc` can be specified using the `use command`. By default, the latest version is used.
 
 ```
 $ solc --version
 solc, the solidity compiler commandline interface
 Version: 0.5.2+commit.1df8f40c.Linux.g++
-$ SOLC_VERSION=0.4.24 solc --version
+$ solc use 0.4.24
 solc, the solidity compiler commandline interface
 Version: 0.4.24+commit.e67f0147.Linux.g++
 ```
+
+
+In special scenarios the current version can also be overwritten with the `SOLC_VERSION` environment variable.
+
+```
+$ solc --version
+solc, the solidity compiler commandline interface
+Version: 0.4.24+commit.e67f0147.Linux.g++
+$ SOLC_VERSION=0.5.2 solc --version
+solc, the solidity compiler commandline interface
+Version: 0.5.2+commit.1df8f40c.Linux.g++
+```
+
 
 You can list all available versions with the special `--versions` argument:
 ```
