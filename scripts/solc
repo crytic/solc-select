@@ -1,9 +1,11 @@
 #!/bin/bash
 
+BIN_DIR=$SSELECT_INSTALL_DIR/usr/bin
+
 if [[ "$1" == "--versions" ]]; then
-    solc-select --list
+    $BIN_DIR/solc-select --list
 elif [ -z "$SOLC_VERSION" ]; then
-    solc-default $@
+    $BIN_DIR/solc-default $@
 else
-    solc-v$SOLC_VERSION $@
+    $BIN_DIR/solc-v$SOLC_VERSION $@
 fi
