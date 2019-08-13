@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function run_linux {
+function run_linux() {
     export SSELECT_INSTALL_DIR="$HOME/.solc-select"
 
     if [ ! -e "$SSELECT_INSTALL_DIR" ]; then
@@ -27,7 +27,7 @@ function run_linux {
     fi
 }
 
-function run_docker {
+function run_docker() {
     if [[ "$1" == "--upgrade" ]] || [[ "$1" == "--install" ]]; then
         if [[ "$1" == "--upgrade" ]]; then
             echo "Upgrading solc-select..."
@@ -47,8 +47,26 @@ function run_docker {
 
 OS=$(uname)
 
-if [ $OS = "Linux" ]; then
-  run_linux $@
+# use command
+if [ "$1" == "use" ]; then
+    if [[ -z "$2" ]]; then
+        echo "Need to provide a version to use. To list all available versions use 'solc --versions'"
+    # The next line will check that the provided version exists in the list of available versions
+    elif printf '%s\n' $(solc --versions) | grep -q -E "^$2$"; then
+        echo "export SOLC_VERSION=$2" >$HOME/.solcv
+        echo "Now using version $2"
+    else
+        echo "Version $2 not supported. List all available versions with 'solc --versions'"
+    fi
 else
-  run_docker $@
+    # Check that a solcv file exists in the home directory, and that the Version was not manually set by a user
+    if [ -f $HOME/.solcv ] && [[ -z $SOLC_VERSION ]]; then
+        source $HOME/.solcv
+    fi
+
+    if [ $OS = "Linux" ]; then
+        run_linux $@
+    else
+        run_docker $@
+    fi
 fi
