@@ -98,7 +98,7 @@ function solc_releases {
         page=$((page+1))
     done
 
-    result=$(echo "$result" | sort -rV)
+    result=$(echo "$result" | sort -t. -k 1,1nr -k 2,2nr -k 3,3nr)
     echo "$result"
 }
 
