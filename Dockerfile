@@ -21,8 +21,9 @@ RUN apk add bash curl
 
 # Install all versions of solc
 COPY scripts/install_solc.sh /
+COPY scripts/semver.sh /
 RUN bash /install_solc.sh
-RUN rm /install_solc.sh
+RUN rm /install_solc.sh /semver.sh
 # Install the solc-selection script:
 COPY scripts/solc-select /usr/bin/
 

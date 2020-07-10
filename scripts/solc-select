@@ -14,7 +14,7 @@ INSTALL_DIR="$SSELECT_INSTALL_DIR/usr/bin"
 VERSION=$1
 
 if [ "$VERSION" = "--list" ] || [ "$VERSION" = "-l" ]; then
-    find "$INSTALL_DIR" -name 'solc-v*' -printf "%f\n" | awk -F'v' '{print $2}' | sort
+    find "$INSTALL_DIR" -name 'solc-v*' -printf "%f\n" | awk -F'v' '{print $2}' | sort -t. -k 1,1nr -k 2,2nr -k 3,3nr
     exit 0
 fi
 
