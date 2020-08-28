@@ -16,6 +16,7 @@ fi
 
 bash ./install_solc.sh
 
+
 SOLC_SELECT_SCRIPT="$BIN_DIR/solc-select"
 cp ./solc-select $SOLC_SELECT_SCRIPT
 chmod +x $SOLC_SELECT_SCRIPT
@@ -29,7 +30,10 @@ chmod +x $SOLC_RUNNER_SCRIPT
 SOLC_SCRIPT="$SSELECT_INSTALL_DIR/solc"
 cp ../bin/solc $SOLC_SCRIPT
 
+cp completion.sh $SSELECT_INSTALL_DIR
+
 echo "Installed solc into $SOLC_SCRIPT."
 echo ""
-echo "Add the following line to your .bashrc file:"
+echo "Add the following lines to your .bashrc file:"
 echo "  export PATH=$SSELECT_INSTALL_DIR:\$PATH"
+echo "  source $SELECT_INSTALL_DIR\\completion.sh"
