@@ -67,10 +67,10 @@ if [ -z "$PREFIX" ]; then
     EXISTING_SOLC_PATH=`which solc`
     if [ $? -ne 0 ]; then
         # solc isn't yet installed
-        EXISTING_SOLC_PATH='/usr/bin/solc'
+        EXISTING_SOLC_PATH='/usr/local/bin/solc'
     fi
 else
-    EXISTING_SOLC_PATH="$PREFIX/bin/solc"
+    EXISTING_SOLC_PATH="$PREFIX/local/bin/solc"
 fi
 
 if [ -f $EXISTING_SOLC_PATH ]; then
@@ -81,6 +81,7 @@ if [ -f $EXISTING_SOLC_PATH ]; then
 fi
 
 finalize () {
+    chmod u+x $EXISTING_SOLC_PATH
     echo "Installed solc to ${EXISTING_SOLC_PATH}"
 }
 
