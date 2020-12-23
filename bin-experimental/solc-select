@@ -4,7 +4,7 @@ import json
 import os
 import argparse
 
-solc_select_dir = "/Users/artur/.solc-select"
+solc_select_dir = "/Users/nataliechin/.solc-select"
 artifacts_dir = f"{solc_select_dir}/artifacts"
 
 # all versions take 1.5G
@@ -22,7 +22,7 @@ def download_all(versions):
                 continue
 
         url = f"https://binaries.soliditylang.org/macosx-amd64/{artifact}"
-        print(url)
+        print("Installed", version)
         artifact_file = f"{artifacts_dir}/solc-{version}"
         urllib.request.urlretrieve(url, artifact_file)
         os.chmod(artifact_file, 0o775) # TODO rethink permissions
@@ -33,20 +33,22 @@ def switch_global_version(version):
     else:
         print("unknown version") # TODO work on message
 
+INSTALL_VERSIONS = "INSTALL_VERSIONS"
+USE_VERSION = "USE_VERSION"
+
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(help='TODO')
 parser_install = subparsers.add_parser('install', help='a help')
-parser_install.add_argument('INSTALL_VERSIONS', help='TODO', nargs="*", default=list())
+parser_install.add_argument(INSTALL_VERSIONS, help='TODO', nargs="*", default=list())
 parser_use = subparsers.add_parser('use', help='TODO')
-parser_use.add_argument('USE_VERSION', help='TODO')
+parser_use.add_argument(USE_VERSION, help='TODO')
 parser.parse_args()
 
 args = vars(parser.parse_args())
 print(args)
 
-if args.get('INSTALL_VERSIONS') is not None:
-    print(args.get('install_versions'))
-    download_all(args.get('install_versions'))
+if args.get(INSTALL_VERSIONS) is not None:
+    download_all(args.get(INSTALL_VERSIONS))
 
-if args.get('USE_VERSION') is not None:
-    switch_global_version(args.get('USE_VERSION'))
+if args.get(USE_VERSION) is not None:
+    switch_global_version(args.get(USE_VERSION))
