@@ -4,8 +4,10 @@ import json
 import os
 import argparse
 import re
+from pathlib import Path
 
-solc_select_dir = "/Users/CHANGETHIS/.solc-select"
+home = str(Path.home())
+solc_select_dir = f"{home}/.solc-select"
 artifacts_dir = f"{solc_select_dir}/artifacts"
 
 # all versions take 1.5G
