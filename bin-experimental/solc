@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+solc_select_dir="$HOME/.solc-select"
+artifacts_dir="$solc_select_dir/artifacts"
+
+if [ -f "$solc_select_dir/global-version" ]; then
+  version=$(cat "$solc_select_dir/global-version")
+fi
+
+if ! [ -z ${SOLC_VERSION+x} ]; then
+  version=$SOLC_VERSION
+fi
+
+if [ -z ${version+x} ]; then
+  echo "no version"
+  exit 1
+fi
+
+echo "Version: $version"
+
+"$artifacts_dir/solc-$version" "$@"

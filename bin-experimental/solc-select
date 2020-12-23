@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+import urllib.request
+import json
+import os
+import argparse
+
+solc_select_dir = "/Users/artur/.solc-select"
+artifacts_dir = f"{solc_select_dir}/artifacts"
+
+# all versions take 1.5G
+# $ du -sh ~/.solc-select/artifacts/
+# 1.5G    /Users/artur/.solc-select/artifacts/
+# versions can be empty - install all versions
+def download_all(versions):
+    list_json = urllib.request.urlopen('https://binaries.soliditylang.org/macosx-amd64/list.json').read()
+    releases = json.loads(list_json)["releases"]
+
+    for version, artifact in releases.items():
+        # TODO error on non-existent requested versions
+        if versions:
+            if version not in versions:
+                continue
+
+        url = f"https://binaries.soliditylang.org/macosx-amd64/{artifact}"
+        print(url)
+        artifact_file = f"{artifacts_dir}/solc-{version}"
+        urllib.request.urlretrieve(url, artifact_file)
+        os.chmod(artifact_file, 0o775) # TODO rethink permissions
+
+def switch_global_version(version):
+    if os.path.isfile(f"{artifacts_dir}/solc-{version}"):
+        with open(f"{solc_select_dir}/global-version", "w") as f: f.write(version)
+    else:
+        print("unknown version") # TODO work on message
+
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(help='TODO')
+parser_install = subparsers.add_parser('install', help='a help')
+parser_install.add_argument('INSTALL_VERSIONS', help='TODO', nargs="*", default=list())
+parser_use = subparsers.add_parser('use', help='TODO')
+parser_use.add_argument('USE_VERSION', help='TODO')
+parser.parse_args()
+
+args = vars(parser.parse_args())
+print(args)
+
+if args.get('INSTALL_VERSIONS') is not None:
+    print(args.get('install_versions'))
+    download_all(args.get('install_versions'))
+
+if args.get('USE_VERSION') is not None:
+    switch_global_version(args.get('USE_VERSION'))
