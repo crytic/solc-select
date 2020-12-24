@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-import urllib.request
+import argparse
 import json
 import os
-import argparse
 import re
+import urllib.request
 
 home_dir = os.path.expanduser('~')
 solc_select_dir = f"{home_dir}/.solc-select"
 artifacts_dir = f"{solc_select_dir}/artifacts"
+
 
 # all versions take 1.5G
 # $ du -sh ~/.solc-select/artifacts/
@@ -16,7 +17,7 @@ artifacts_dir = f"{solc_select_dir}/artifacts"
 def download_all(versions):
     releases = get_available_versions()
 
-    [print("Invalid version format"+version) for version in versions if not valid_version(version)]
+    [print("Invalid version format" + version) for version in versions if not valid_version(version)]
 
     for version, artifact in releases.items():
         if versions and version not in versions:
@@ -26,25 +27,28 @@ def download_all(versions):
         print("Installed", version)
         artifact_file = f"{artifacts_dir}/solc-{version}"
         urllib.request.urlretrieve(url, artifact_file)
-        os.chmod(artifact_file, 0o775) # TODO rethink permissions
+        os.chmod(artifact_file, 0o775)  # TODO rethink permissions
+
 
 def switch_global_version(version):
     if os.path.isfile(f"{artifacts_dir}/solc-{version}"):
         with open(f"{solc_select_dir}/global-version", "w") as f: f.write(version)
-        print("Switched global version to",version)
+        print("Switched global version to", version)
     currently_available_versions = get_available_versions()
     if version in currently_available_versions:
         raise argparse.ArgumentTypeError("You need to install " + version + "prior to using it. Use `solc-select "
                                                                             "install " + version + "`")
     else:
-        print("unknown version") # TODO can add version too low/too high here
-    
-def valid_version(version): 
+        print("unknown version")  # TODO can add version too low/too high here
+
+
+def valid_version(version):
     # check that it matches <digit>.<digit>.<digit>
-    match = re.search("^(\d+).(\d+).(\d+)$",version)
+    match = re.search("^(\d+).(\d+).(\d+)$", version)
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid Solidity version{version}.")
     return version
+
 
 # TODO: figure out how whether these can be optimized
 def installed_versions():
@@ -52,20 +56,24 @@ def installed_versions():
     print("Installed versions: ")
     [print(version) for version in sorted(releases.keys())]
 
+
 def get_installed_versions():
     all_installed_versions = os.listdir(artifacts_dir)
     all_installed_versions.sort()
-    return [f.replace('solc-','') for f in all_installed_versions]
+    return [f.replace('solc-', '') for f in all_installed_versions]
+
 
 def get_available_versions():
     list_json = urllib.request.urlopen('https://binaries.soliditylang.org/macosx-amd64/list.json').read()
     releases = json.loads(list_json)["releases"]
     return releases
 
+
 def available_versions():
     all_installed_versions = get_available_versions()
     print("Available versions: ")
     [print(version) for version in all_installed_versions]
+
 
 INSTALL_VERSIONS = "INSTALL_VERSIONS"
 USE_VERSION = "USE_VERSION"
@@ -74,7 +82,8 @@ AVAILABLE_VERSIONS = "AVAILABLE_VERSIONS"
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(help='Allows users to quickly switch between Solidity compiler versions')
-parser_install = subparsers.add_parser('install', help='install specific version or install all available solc versions')
+parser_install = subparsers.add_parser('install',
+                                       help='install specific version or install all available solc versions')
 parser_install.add_argument(INSTALL_VERSIONS, help='specific version you want to install (0.4.25) or empty (specify '
                                                    'nothing)', nargs="*", default=list(), type=valid_version)
 parser_use = subparsers.add_parser('use', help='change the version of global solc compiler')
@@ -82,7 +91,7 @@ parser_use.add_argument(USE_VERSION, help='solc version you want to use (eg: 0.4
 parser_use = subparsers.add_parser('installed-versions', help='prints out all locally available solc versions')
 parser_use.add_argument(INSTALLED_VERSIONS, help='', nargs="*", default=list())
 parser_use = subparsers.add_parser('available-versions', help='prints out all solc versions available for download')
-parser_use.add_argument(AVAILABLE_VERSIONS, help='', nargs="*",default=list())
+parser_use.add_argument(AVAILABLE_VERSIONS, help='', nargs="*", default=list())
 parser.parse_args()
 
 args = vars(parser.parse_args())
