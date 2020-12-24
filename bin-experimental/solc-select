@@ -5,7 +5,7 @@ import os
 import argparse
 import re
 
-home_dir = os.path.expanduser('~') 
+home_dir = os.path.expanduser('~')
 solc_select_dir = f"{home_dir}/.solc-select"
 artifacts_dir = f"{solc_select_dir}/artifacts"
 
@@ -37,12 +37,22 @@ def switch_global_version(version):
 def valid_version(version): 
     # check that it matches <digit>.<digit>.<digit>
     match = re.search("^(\d+).(\d+).(\d+)$",version)
-    if match is None: 
-        raise argparse.ArgumentTypeError("Invalid Solidity version "+ version)
+    if match is None:
+        raise argparse.ArgumentTypeError("Invalid Solidity version " + version)
     return version
+
+def installed_versions():
+    all_installed_versions = os.listdir(artifacts_dir)
+    all_installed_versions.sort()
+
+    print("Available versions: ")
+    for version in all_installed_versions:
+        print(version)
+
 
 INSTALL_VERSIONS = "INSTALL_VERSIONS"
 USE_VERSION = "USE_VERSION"
+INSTALLED_VERSIONS = "INSTALLED_VERSIONS"
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(help='TODO')
@@ -51,6 +61,7 @@ parser_install.add_argument(INSTALL_VERSIONS, help='TODO', nargs="*", default=li
 parser_use = subparsers.add_parser('use', help='TODO')
 parser_use.add_argument(USE_VERSION, help='Expecting version similar to 0.4.25', type=valid_version)
 parser_use = subparsers.add_parser('installed-versions', help='TODO')
+parser_use.add_argument(INSTALLED_VERSIONS, help='TODO', nargs="*", default=list())
 parser.parse_args()
 
 args = vars(parser.parse_args())
@@ -61,3 +72,6 @@ if args.get(INSTALL_VERSIONS) is not None:
 
 if args.get(USE_VERSION) is not None:
     switch_global_version(args.get(USE_VERSION))
+
+if args.get(INSTALLED_VERSIONS) is not None:
+    installed_versions()
