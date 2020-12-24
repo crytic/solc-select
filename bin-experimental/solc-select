@@ -4,10 +4,9 @@ import json
 import os
 import argparse
 import re
-from pathlib import Path
 
-home = str(Path.home())
-solc_select_dir = f"{home}/.solc-select"
+home_dir = os.path.expanduser('~') 
+solc_select_dir = f"{home_dir}/.solc-select"
 artifacts_dir = f"{solc_select_dir}/artifacts"
 
 # all versions take 1.5G
