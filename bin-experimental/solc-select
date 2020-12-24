@@ -31,15 +31,15 @@ def download_all(versions):
 
 
 def switch_global_version(version):
-    if os.path.isfile(f"{artifacts_dir}/solc-{version}"):
-        with open(f"{solc_select_dir}/global-version", "w") as f: f.write(version)
+    if version in get_installed_versions():
+        with open(f"{solc_select_dir}/global-version", "w") as f:
+            f.write(version)
         print("Switched global version to", version)
-    currently_available_versions = get_available_versions()
-    if version in currently_available_versions:
-        raise argparse.ArgumentTypeError("You need to install " + version + "prior to using it. Use `solc-select "
+    elif version in get_available_versions():
+        raise argparse.ArgumentTypeError("You need to install " + version + " prior to using it. Use `solc-select "
                                                                             "install " + version + "`")
     else:
-        print("unknown version")  # TODO can add version too low/too high here
+        print("unknown version")
 
 
 def valid_version(version):
