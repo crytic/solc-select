@@ -3,108 +3,107 @@ import argparse
 import json
 import os
 import re
+import solc_select
+import sys
 import urllib.request
 
-home_dir = os.path.expanduser('~')
-solc_select_dir = f"{home_dir}/.solc-select"
-artifacts_dir = f"{solc_select_dir}/artifacts"
-
-
-# all versions take 1.5G
-# $ du -sh ~/.solc-select/artifacts/
-# 1.5G    /Users/artur/.solc-select/artifacts/
-# versions can be empty - install all versions
-def download_all(versions):
+def install_artifacts(versions):
     releases = get_available_versions()
 
-    [print("Invalid version format" + version) for version in versions if not valid_version(version)]
-
     for version, artifact in releases.items():
-        if versions and version not in versions:
-            continue
+        if 'all' not in versions:
+            if versions and version not in versions:
+                continue
 
-        url = f"https://binaries.soliditylang.org/macosx-amd64/{artifact}"
-        print("Installed", version)
-        artifact_file = f"{artifacts_dir}/solc-{version}"
+        url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
+        artifact_file = f"{solc_select.artifacts_dir}/solc-{version}"
+        print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file)
         os.chmod(artifact_file, 0o775)  # TODO rethink permissions
-
+        print(f"Version '{version}' installed.")
 
 def switch_global_version(version):
     if version in get_installed_versions():
-        with open(f"{solc_select_dir}/global-version", "w") as f:
+        with open(f"{solc_select.solc_select_dir}/global-version", "w") as f:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
-        raise argparse.ArgumentTypeError("You need to install " + version + " prior to using it. Use `solc-select "
-                                                                            "install " + version + "`")
+        print(f"You need to install '{version}' prior to using it. Use `solc-select install {version}`")
+        exit(1)
     else:
-        print("unknown version")
-
+        print(f"Unknown version '{version}'.")
+        exit(1)
 
 def valid_version(version):
     # check that it matches <digit>.<digit>.<digit>
     match = re.search("^(\d+).(\d+).(\d+)$", version)
     if match is None:
-        raise argparse.ArgumentTypeError(f"Invalid Solidity version{version}.")
+        raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
     return version
 
-
-# TODO: figure out how whether these can be optimized
-def installed_versions():
-    releases = get_installed_versions()
-    print("Installed versions: ")
-    [print(version) for version in sorted(releases.keys())]
-
+def valid_install_arg(arg):
+    if arg == 'all':
+        return arg
+    else:
+        return valid_version(arg)
 
 def get_installed_versions():
-    all_installed_versions = os.listdir(artifacts_dir)
-    all_installed_versions.sort()
-    return [f.replace('solc-', '') for f in all_installed_versions]
+    return [f.replace('solc-', '') for f in sorted(os.listdir(solc_select.artifacts_dir))]
 
+def get_installable_versions():
+    return set(get_available_versions()) - set(get_installed_versions())
 
 def get_available_versions():
-    list_json = urllib.request.urlopen('https://binaries.soliditylang.org/macosx-amd64/list.json').read()
-    releases = json.loads(list_json)["releases"]
-    return releases
+    list_json = urllib.request.urlopen(f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json").read()
+    return json.loads(list_json)["releases"]
 
-
-def available_versions():
-    all_installed_versions = get_available_versions()
-    print("Available versions: ")
-    [print(version) for version in all_installed_versions]
-
+def soliditylang_platform():
+    if sys.platform == 'linux':
+        platform = 'linux-amd64'
+    elif sys.platform == 'darwin':
+        platform = 'macosx-amd64'
+    else:
+        print("Unsupported platform.")
+        sys.exit(1)
+    return platform
 
 INSTALL_VERSIONS = "INSTALL_VERSIONS"
 USE_VERSION = "USE_VERSION"
-INSTALLED_VERSIONS = "INSTALLED_VERSIONS"
-AVAILABLE_VERSIONS = "AVAILABLE_VERSIONS"
+SHOW_VERSIONS = "SHOW_VERSIONS"
 
 parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(help='Allows users to quickly switch between Solidity compiler versions')
-parser_install = subparsers.add_parser('install',
-                                       help='install specific version or install all available solc versions')
-parser_install.add_argument(INSTALL_VERSIONS, help='specific version you want to install (0.4.25) or empty (specify '
-                                                   'nothing)', nargs="*", default=list(), type=valid_version)
+subparsers = parser.add_subparsers(help='Allows users to install and quickly switch between Solidity compiler versions')
+parser_install = subparsers.add_parser('install', help='list and install available solc versions')
+parser_install.add_argument(INSTALL_VERSIONS, help='specific versions you want to install "0.4.25" or "all"', nargs="*", default=list(), type=valid_install_arg)
 parser_use = subparsers.add_parser('use', help='change the version of global solc compiler')
 parser_use.add_argument(USE_VERSION, help='solc version you want to use (eg: 0.4.25)', type=valid_version)
-parser_use = subparsers.add_parser('installed-versions', help='prints out all locally available solc versions')
-parser_use.add_argument(INSTALLED_VERSIONS, help='', nargs="*", default=list())
-parser_use = subparsers.add_parser('available-versions', help='prints out all solc versions available for download')
-parser_use.add_argument(AVAILABLE_VERSIONS, help='', nargs="*", default=list())
-parser.parse_args()
+parser_use = subparsers.add_parser('versions', help='prints out all installed solc versions')
+parser_use.add_argument(SHOW_VERSIONS, nargs='*', help=argparse.SUPPRESS)
 
 args = vars(parser.parse_args())
-print(args)
 
 if args.get(INSTALL_VERSIONS) is not None:
-    download_all(args.get(INSTALL_VERSIONS))
+    versions = args.get(INSTALL_VERSIONS)
+    if versions == []:
+        print("Available versions to install:")
+        for version in reversed(sorted(get_installable_versions())):
+            print(version)
+    else:
+        install_artifacts(args.get(INSTALL_VERSIONS))
 
-if args.get(USE_VERSION) is not None:
+elif args.get(USE_VERSION) is not None:
     switch_global_version(args.get(USE_VERSION))
 
-if args.get(INSTALLED_VERSIONS) is not None:
-    installed_versions()
+elif args.get(SHOW_VERSIONS) is not None:
+    res = solc_select.current_version()
+    if not res:
+        print(f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`.")
+    for version in reversed(sorted(get_installed_versions())):
+        if res and version == current_version:
+            print(f"{version} (current, set by {source})")
+        else:
+            print(version)
 
-if args.get(AVAILABLE_VERSIONS) is not None:
-    available_versions()
+else:
+    parser.parse_args(["--help"])
+    sys.exit(0)

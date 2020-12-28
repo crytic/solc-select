@@ -1,23 +1,14 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
+import os
+import solc_select
+import sys
 
-set -euo pipefail
+res = solc_select.current_version()
+if res:
+    (version, source) = res
+else:
+    print(f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`.")
+    exit(1)
 
-solc_select_dir="$HOME/.solc-select"
-artifacts_dir="$solc_select_dir/artifacts"
-
-if [ -f "$solc_select_dir/global-version" ]; then
-  version=$(cat "$solc_select_dir/global-version")
-fi
-
-if ! [ -z ${SOLC_VERSION+x} ]; then
-  version=$SOLC_VERSION
-fi
-
-if [ -z ${version+x} ]; then
-  echo "no version"
-  exit 1
-fi
-
-echo "Version: $version"
-
-"$artifacts_dir/solc-$version" "$@"
+path = f"{solc_select.artifacts_dir}/solc-{version}"
+os.execv(path, [path] + sys.argv[1:])
