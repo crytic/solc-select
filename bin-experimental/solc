@@ -5,9 +5,8 @@ import sys
 
 res = solc_select.current_version()
 if res:
-    (version, source) = res
+    (version, _) = res
 else:
-    print(f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`.")
     exit(1)
 
 path = f"{solc_select.artifacts_dir}/solc-{version}"

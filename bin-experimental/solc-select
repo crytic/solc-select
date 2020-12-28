@@ -96,8 +96,8 @@ elif args.get(USE_VERSION) is not None:
 
 elif args.get(SHOW_VERSIONS) is not None:
     res = solc_select.current_version()
-    if not res:
-        print(f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`.")
+    if res:
+        (current_version, source) = res
     for version in reversed(sorted(get_installed_versions())):
         if res and version == current_version:
             print(f"{version} (current, set by {source})")
