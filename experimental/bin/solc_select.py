@@ -1,6 +1,5 @@
-import sys
 import os
-
+import sys
 
 home_dir = os.path.expanduser('~')
 solc_select_dir = f"{home_dir}/.solc-select"
@@ -19,6 +18,7 @@ def current_version():
         if os.path.isfile(source):
             with open(source) as f: version = f.read()
         else:
+            # TODO: figure out a better place for this message
             print('No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable.')
             return None
     return (version, source)

@@ -7,6 +7,7 @@ import solc_select
 import sys
 import urllib.request
 
+# TODO: accept versions in range
 def install_artifacts(versions):
     releases = get_available_versions()
 
@@ -19,6 +20,7 @@ def install_artifacts(versions):
         artifact_file = f"{solc_select.artifacts_dir}/solc-{version}"
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file)
+        # TODO verify checksum
         os.chmod(artifact_file, 0o775)  # TODO rethink permissions
         print(f"Version '{version}' installed.")
 
