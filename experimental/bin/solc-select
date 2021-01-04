@@ -20,8 +20,10 @@ def install_artifacts(versions):
         artifact_file = f"{solc_select.artifacts_dir}/solc-{version}"
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file)
-        # TODO verify checksum
-        os.chmod(artifact_file, 0o775)  # TODO rethink permissions
+        # NOTE: we could verify checksum here because the list.json file
+        # provides checksums for artifacts, however those are keccak256 hashes
+        # which are not possible to compute without additional dependencies
+        os.chmod(artifact_file, 0o775)
         print(f"Version '{version}' installed.")
 
 def switch_global_version(version):
@@ -31,10 +33,10 @@ def switch_global_version(version):
         print("Switched global version to", version)
     elif version in get_available_versions():
         print(f"You need to install '{version}' prior to using it. Use `solc-select install {version}`")
-        exit(1)
+        sys.exit(1)
     else:
         print(f"Unknown version '{version}'.")
-        exit(1)
+        sys.exit(1)
 
 def valid_version(version):
     # check that it matches <digit>.<digit>.<digit>
@@ -56,7 +58,8 @@ def get_installable_versions():
     return set(get_available_versions()) - set(get_installed_versions())
 
 def get_available_versions():
-    list_json = urllib.request.urlopen(f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json").read()
+    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
+    list_json = urllib.request.urlopen(url).read()
     return json.loads(list_json)["releases"]
 
 def soliditylang_platform():

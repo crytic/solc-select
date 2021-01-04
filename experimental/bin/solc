@@ -9,4 +9,4 @@ if res:
     path = f"{solc_select.artifacts_dir}/solc-{version}"
     os.execv(path, [path] + sys.argv[1:])
 else:
-    exit(1)
+    sys.exit(1)

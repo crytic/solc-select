@@ -12,7 +12,7 @@ def current_version():
     if version:
         if version not in get_installed_versions():
             print(f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`.")
-            exit(1)
+            sys.exit(1)
     else:
         source = f"{solc_select_dir}/global-version"
         if os.path.isfile(source):
