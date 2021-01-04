@@ -3,7 +3,7 @@ import argparse
 import json
 import os
 import re
-import solc_select
+from solc_select import *
 import sys
 import urllib.request
 
@@ -17,7 +17,7 @@ def install_artifacts(versions):
                 continue
 
         url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
-        artifact_file = f"{solc_select.artifacts_dir}/solc-{version}"
+        artifact_file = f"{artifacts_dir}/solc-{version}"
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file)
         # NOTE: we could verify checksum here because the list.json file
@@ -27,8 +27,8 @@ def install_artifacts(versions):
         print(f"Version '{version}' installed.")
 
 def switch_global_version(version):
-    if version in get_installed_versions():
-        with open(f"{solc_select.solc_select_dir}/global-version", "w") as f:
+    if version in installed_versions():
+        with open(f"{solc_select_dir}/global-version", "w") as f:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
@@ -51,11 +51,8 @@ def valid_install_arg(arg):
     else:
         return valid_version(arg)
 
-def get_installed_versions():
-    return [f.replace('solc-', '') for f in sorted(os.listdir(solc_select.artifacts_dir))]
-
 def get_installable_versions():
-    return set(get_available_versions()) - set(get_installed_versions())
+    return set(get_available_versions()) - set(installed_versions())
 
 def get_available_versions():
     url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
@@ -100,10 +97,10 @@ elif args.get(USE_VERSION) is not None:
     switch_global_version(args.get(USE_VERSION))
 
 elif args.get(SHOW_VERSIONS) is not None:
-    res = solc_select.current_version()
+    res = current_version()
     if res:
         (current_version, source) = res
-    for version in reversed(sorted(get_installed_versions())):
+    for version in reversed(sorted(installed_versions())):
         if res and version == current_version:
             print(f"{version} (current, set by {source})")
         else:

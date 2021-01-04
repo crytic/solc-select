@@ -10,7 +10,7 @@ def current_version():
     version = os.environ.get('SOLC_VERSION')
     source = 'SOLC_VERSION'
     if version:
-        if version not in get_installed_versions():
+        if version not in installed_versions():
             print(f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`.")
             sys.exit(1)
     else:
@@ -23,5 +23,5 @@ def current_version():
             return None
     return (version, source)
 
-def get_installed_versions():
+def installed_versions():
     return [f.replace('solc-', '') for f in sorted(os.listdir(artifacts_dir))]
