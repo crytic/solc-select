@@ -109,6 +109,20 @@ $ docker build -t trailofbits/solc-select:latest .
 $ bin/solc --install
 ```
 
+## Experimental solc-select
+
+The experimental version of `solc-select` is a Python-based script without any
+additional dependencies. Both macOS and Linux solc binaries are downloaded from
+https://binaries.soliditylang.org/ and macOS binaries run natively. Some
+features are still missing, like version range installation or nightly builds.
+
+Try it out:
+```
+git clone https://github.com/crytic/solc-select ~/.solc-select
+export PATH=~/.solc-select/experimental/bin:$PATH
+solc-select --help
+```
+
 ## Getting Help
 
 Feel free to stop by our [Slack channel](https://empirehacking.slack.com/) for help on using or extending `solc-select`.

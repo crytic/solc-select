@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+from solc_select import *
+import sys
+import urllib.request
+
+# TODO: accept versions in range
+def install_artifacts(versions):
+    releases = get_available_versions()
+
+    for version, artifact in releases.items():
+        if 'all' not in versions:
+            if versions and version not in versions:
+                continue
+
+        url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
+        artifact_file = f"{artifacts_dir}/solc-{version}"
+        print(f"Installing '{version}'...")
+        urllib.request.urlretrieve(url, artifact_file)
+        # NOTE: we could verify checksum here because the list.json file
+        # provides checksums for artifacts, however those are keccak256 hashes
+        # which are not possible to compute without additional dependencies
+        os.chmod(artifact_file, 0o775)
+        print(f"Version '{version}' installed.")
+
+def switch_global_version(version):
+    if version in installed_versions():
+        with open(f"{solc_select_dir}/global-version", "w") as f:
+            f.write(version)
+        print("Switched global version to", version)
+    elif version in get_available_versions():
+        print(f"You need to install '{version}' prior to using it. Use `solc-select install {version}`")
+        sys.exit(1)
+    else:
+        print(f"Unknown version '{version}'.")
+        sys.exit(1)
+
+def valid_version(version):
+    # check that it matches <digit>.<digit>.<digit>
+    match = re.search("^(\d+).(\d+).(\d+)$", version)
+    if match is None:
+        raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
+    return version
+
+def valid_install_arg(arg):
+    if arg == 'all':
+        return arg
+    else:
+        return valid_version(arg)
+
+def get_installable_versions():
+    return set(get_available_versions()) - set(installed_versions())
+
+def get_available_versions():
+    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
+    list_json = urllib.request.urlopen(url).read()
+    return json.loads(list_json)["releases"]
+
+def soliditylang_platform():
+    if sys.platform == 'linux':
+        platform = 'linux-amd64'
+    elif sys.platform == 'darwin':
+        platform = 'macosx-amd64'
+    else:
+        print("Unsupported platform.")
+        sys.exit(1)
+    return platform
+
+INSTALL_VERSIONS = "INSTALL_VERSIONS"
+USE_VERSION = "USE_VERSION"
+SHOW_VERSIONS = "SHOW_VERSIONS"
+
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(help='Allows users to install and quickly switch between Solidity compiler versions')
+parser_install = subparsers.add_parser('install', help='list and install available solc versions')
+parser_install.add_argument(INSTALL_VERSIONS, help='specific versions you want to install "0.4.25" or "all"', nargs="*", default=list(), type=valid_install_arg)
+parser_use = subparsers.add_parser('use', help='change the version of global solc compiler')
+parser_use.add_argument(USE_VERSION, help='solc version you want to use (eg: 0.4.25)', type=valid_version)
+parser_use = subparsers.add_parser('versions', help='prints out all installed solc versions')
+parser_use.add_argument(SHOW_VERSIONS, nargs='*', help=argparse.SUPPRESS)
+
+args = vars(parser.parse_args())
+
+if args.get(INSTALL_VERSIONS) is not None:
+    versions = args.get(INSTALL_VERSIONS)
+    if versions == []:
+        print("Available versions to install:")
+        for version in reversed(sorted(get_installable_versions())):
+            print(version)
+    else:
+        install_artifacts(args.get(INSTALL_VERSIONS))
+
+elif args.get(USE_VERSION) is not None:
+    switch_global_version(args.get(USE_VERSION))
+
+elif args.get(SHOW_VERSIONS) is not None:
+    res = current_version()
+    if res:
+        (current_version, source) = res
+    for version in reversed(sorted(installed_versions())):
+        if res and version == current_version:
+            print(f"{version} (current, set by {source})")
+        else:
+            print(version)
+
+else:
+    parser.parse_args(["--help"])
+    sys.exit(0)
