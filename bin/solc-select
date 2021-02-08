@@ -5,6 +5,6 @@ from pathlib import Path
 
 sys.path.append(str(Path(os.path.dirname(os.path.realpath(__file__))).parent))
 
-from solc_select.__main__ import solc
+from solc_select.__main__ import solc_select
 
-solc()
+solc_select()

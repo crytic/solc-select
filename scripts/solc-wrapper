@@ -1,8 +1,0 @@
-#!/bin/sh
-
-mount --bind /usr/bin /workdir/usr/bin
-mount --bind /bin /workdir/bin
-mount --bind /dev /workdir/dev
-mount --bind /proc /workdir/proc
-mount --bind /sys /workdir/sys
-chroot /workdir chroot.sh $@
