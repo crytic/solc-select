@@ -11,33 +11,7 @@ by setting an environment variable.
 
 ## Quickstart
 
-### OS X:
-```
-docker pull trailofbits/solc-select
-docker run --read-only -i --rm --entrypoint='/bin/sh' trailofbits/solc-select:latest -c 'cat /usr/bin/install.sh' | bash -e
-```
-
-This will install `solc` globally. If `solc` is already installed, you
-will be prompted to overwrite it.
-
-To install `solc` to a different directory, run the `docker` command or
-the install script, with the environment variable `PREFIX` set; `solc`
-will be installed to `${PREFIX}/bin/solc`.
-
-Alternatively, manually copy [the special solc script](bin/solc) to your desired location.
-
-### Linux
-```
-git clone https://github.com/crytic/solc-select.git
-./solc-select/scripts/install.sh
-```
-
-This will install `solc` into ~/.solc-select/, so you have to add it to the PATH variable. Add this line, replacing USERNAME with your username, to your `.bashrc` or equivalent:
-
-```
-export PATH=/home/USERNAME/.solc-select:$PATH
-```
-
+```pip3 install solc-select```
 
 ## Usage
 
