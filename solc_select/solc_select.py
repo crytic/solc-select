@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import urllib.request
+from distutils.version import StrictVersion
 
 home_dir = os.path.expanduser('~')
 solc_select_dir = f"{home_dir}/.solc-select"
@@ -39,7 +40,7 @@ def install_artifacts(versions):
             if versions and version not in versions:
                 continue
 
-        url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
+        url = get_url(version, artifact)
         artifact_file = f"{artifacts_dir}/solc-{version}"
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file)
@@ -48,6 +49,15 @@ def install_artifacts(versions):
         # which are not possible to compute without additional dependencies
         os.chmod(artifact_file, 0o775)
         print(f"Version '{version}' installed.")
+
+def is_older_linux(version):
+    return soliditylang_platform() == 'linux-amd64' and StrictVersion(version) < StrictVersion("0.4.9")
+
+def get_url(version,artifact):
+    if is_older_linux(version):
+        return f"https://github.com/crytic/solc/tree/master/linux/amd64/{artifact}"
+    else:
+        return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
 
 def switch_global_version(version):
     if version in installed_versions():
@@ -62,7 +72,6 @@ def switch_global_version(version):
         sys.exit(1)
 
 def valid_version(version):
-    # check that it matches <digit>.<digit>.<digit>
     match = re.search("^(\d+).(\d+).(\d+)$", version)
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
@@ -80,7 +89,15 @@ def get_installable_versions():
 def get_available_versions():
     url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
     list_json = urllib.request.urlopen(url).read()
-    return json.loads(list_json)["releases"]
+    available_releases = json.loads(list_json)["releases"]
+    if soliditylang_platform() == 'linux-amd64':
+        available_releases.update(get_additional_linux_versions())
+    return available_releases
+
+def get_additional_linux_versions():
+    if soliditylang_platform() == 'linux-amd64':
+        github_json = urllib.request.urlopen("https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json").read()
+        return json.loads(github_json)["releases"]
 
 def soliditylang_platform():
     if sys.platform == 'linux':
