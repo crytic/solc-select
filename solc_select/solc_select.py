@@ -51,7 +51,7 @@ def install_artifacts(versions):
         print(f"Version '{version}' installed.")
 
 def is_older_linux(version):
-    return soliditylang_platform() == 'linux-amd64' and StrictVersion(version) < StrictVersion("0.4.9")
+    return soliditylang_platform() == 'linux-amd64' and StrictVersion(version) < StrictVersion("0.4.10")
 
 def get_url(version,artifact):
     if is_older_linux(version):
@@ -96,6 +96,7 @@ def get_available_versions():
 
 def get_additional_linux_versions():
     if soliditylang_platform() == 'linux-amd64':
+        # This is just to be dynamic, but figure out a better way to do this.
         github_json = urllib.request.urlopen("https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json").read()
         return json.loads(github_json)["releases"]
 
