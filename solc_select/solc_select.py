@@ -84,7 +84,9 @@ def valid_install_arg(arg):
         return valid_version(arg)
 
 def get_installable_versions():
-    return set(get_available_versions()) - set(installed_versions())
+    installable = list(set(get_available_versions()) - set(installed_versions()))
+    installable.sort(key=StrictVersion)
+    return installable
 
 def get_available_versions():
     url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
@@ -97,7 +99,8 @@ def get_available_versions():
 def get_additional_linux_versions():
     if soliditylang_platform() == 'linux-amd64':
         # This is just to be dynamic, but figure out a better way to do this.
-        github_json = urllib.request.urlopen("https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json").read()
+        url = "https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json"
+        github_json = urllib.request.urlopen(url).read()
         return json.loads(github_json)["releases"]
 
 def soliditylang_platform():
