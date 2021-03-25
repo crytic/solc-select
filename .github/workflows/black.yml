@@ -1,4 +1,4 @@
-me: Lint Code Base
+name: Lint Code Base
 
 defaults:
   run:
