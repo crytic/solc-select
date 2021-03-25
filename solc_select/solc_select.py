@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import re
@@ -74,7 +75,7 @@ def switch_global_version(version):
 
 def valid_version(version):
     # check that it matches <digit>.<digit>.<digit>
-    match = re.search("^(\d+).(\d+).(\d+)$", version)
+    match = re.search(r"^(\d+).(\d+).(\d+)$", version)
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
     return version
@@ -83,8 +84,7 @@ def valid_version(version):
 def valid_install_arg(arg):
     if arg == "all":
         return arg
-    else:
-        return valid_version(arg)
+    return valid_version(arg)
 
 
 def get_installable_versions():
