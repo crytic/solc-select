@@ -1,6 +1,8 @@
 import argparse
-from .solc_select import *
-
+import os
+import sys
+from .solc_select import valid_install_arg, valid_version, get_installable_versions, install_artifacts, \
+    switch_global_version, current_version, installed_versions, artifacts_dir
 
 def solc_select():
     INSTALL_VERSIONS = "INSTALL_VERSIONS"
