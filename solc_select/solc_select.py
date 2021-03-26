@@ -28,7 +28,7 @@ def current_version():
     return (version, source)
 
 def installed_versions():
-    return [f.replace('solc-', '') for f in sorted(os.listdir(artifacts_dir))]
+    return [f.replace('solc-', '') for f in sorted(os.listdir(artifacts_dir)) if f.startswith('solc-')]
 
 
 # TODO: accept versions in range
