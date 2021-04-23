@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import re
@@ -51,11 +52,11 @@ def install_artifacts(versions):
         print(f"Version '{version}' installed.")
 
 def is_older_linux(version):
-    return soliditylang_platform() == 'linux-amd64' and StrictVersion(version) < StrictVersion("0.4.10")
+    return soliditylang_platform() == 'linux-amd64' and StrictVersion(version) <= StrictVersion("0.4.10")
 
 def get_url(version,artifact):
     if is_older_linux(version):
-        return f"https://github.com/crytic/solc/tree/master/linux/amd64/{artifact}"
+        return f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}"
     else:
         return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
 
