@@ -122,6 +122,7 @@ def get_additional_linux_versions():
         url = "https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json"
         github_json = urllib.request.urlopen(url).read()
         return json.loads(github_json)["releases"]
+    return []
 
 
 def soliditylang_platform():
