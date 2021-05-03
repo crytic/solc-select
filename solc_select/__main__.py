@@ -1,5 +1,17 @@
 import argparse
-from .solc_select import *
+import os
+import sys
+from .solc_select import (
+    valid_install_arg,
+    valid_version,
+    get_installable_versions,
+    install_artifacts,
+    switch_global_version,
+    current_version,
+    installed_versions,
+    artifacts_dir,
+)
+
 
 def solc_select():
     INSTALL_VERSIONS = "INSTALL_VERSIONS"
@@ -7,13 +19,25 @@ def solc_select():
     SHOW_VERSIONS = "SHOW_VERSIONS"
 
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(help='Allows users to install and quickly switch between Solidity compiler versions')
-    parser_install = subparsers.add_parser('install', help='list and install available solc versions')
-    parser_install.add_argument(INSTALL_VERSIONS, help='specific versions you want to install "0.4.25" or "all"', nargs="*", default=list(), type=valid_install_arg)
-    parser_use = subparsers.add_parser('use', help='change the version of global solc compiler')
-    parser_use.add_argument(USE_VERSION, help='solc version you want to use (eg: 0.4.25)', type=valid_version)
-    parser_use = subparsers.add_parser('versions', help='prints out all installed solc versions')
-    parser_use.add_argument(SHOW_VERSIONS, nargs='*', help=argparse.SUPPRESS)
+    subparsers = parser.add_subparsers(
+        help="Allows users to install and quickly switch between Solidity compiler versions"
+    )
+    parser_install = subparsers.add_parser(
+        "install", help="list and install available solc versions"
+    )
+    parser_install.add_argument(
+        INSTALL_VERSIONS,
+        help='specific versions you want to install "0.4.25" or "all"',
+        nargs="*",
+        default=list(),
+        type=valid_install_arg,
+    )
+    parser_use = subparsers.add_parser("use", help="change the version of global solc compiler")
+    parser_use.add_argument(
+        USE_VERSION, help="solc version you want to use (eg: 0.4.25)", type=valid_version
+    )
+    parser_use = subparsers.add_parser("versions", help="prints out all installed solc versions")
+    parser_use.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
 
     args = vars(parser.parse_args())
 
@@ -42,6 +66,7 @@ def solc_select():
     else:
         parser.parse_args(["--help"])
         sys.exit(0)
+
 
 def solc():
     res = current_version()

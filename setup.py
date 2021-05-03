@@ -10,7 +10,10 @@ setup(
     python_requires=">=3.6",
     license="AGPL-3.0",
     long_description=open("README.md", encoding="utf8").read(),
-    entry_points={"console_scripts":
-        ["solc-select = solc_select.__main__:solc_select", "solc = solc_select.__main__:solc"]
-    }
+    entry_points={
+        "console_scripts": [
+            "solc-select = solc_select.__main__:solc_select",
+            "solc = solc_select.__main__:solc",
+        ]
+    },
 )
