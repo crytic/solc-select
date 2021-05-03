@@ -36,7 +36,9 @@ def current_version():
 
 
 def installed_versions():
-    return [f.replace('solc-', '') for f in sorted(os.listdir(artifacts_dir)) if f.startswith('solc-')]
+    return [
+        f.replace("solc-", "") for f in sorted(os.listdir(artifacts_dir)) if f.startswith("solc-")
+    ]
 
 
 def install_artifacts(versions):
@@ -57,16 +59,18 @@ def install_artifacts(versions):
         os.chmod(artifact_file, 0o775)
         print(f"Version '{version}' installed.")
 
-        
-def is_older_linux(version):
-    return soliditylang_platform() == 'linux-amd64' and StrictVersion(version) <= StrictVersion("0.4.10")
 
-def get_url(version,artifact):
+def is_older_linux(version):
+    return soliditylang_platform() == "linux-amd64" and StrictVersion(version) <= StrictVersion(
+        "0.4.10"
+    )
+
+
+def get_url(version, artifact):
     if is_older_linux(version):
         return f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}"
-    else:
-        return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
-      
+    return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
+
 
 def switch_global_version(version):
     if version in installed_versions():
@@ -84,7 +88,7 @@ def switch_global_version(version):
 
 
 def valid_version(version):
-    match = re.search("^(\d+).(\d+).(\d+)$", version)
+    match = re.search(r"^(\d+).(\d+).(\d+)$", version)
 
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
@@ -107,12 +111,13 @@ def get_available_versions():
     url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
     list_json = urllib.request.urlopen(url).read()
     available_releases = json.loads(list_json)["releases"]
-    if soliditylang_platform() == 'linux-amd64':
+    if soliditylang_platform() == "linux-amd64":
         available_releases.update(get_additional_linux_versions())
     return available_releases
 
+
 def get_additional_linux_versions():
-    if soliditylang_platform() == 'linux-amd64':
+    if soliditylang_platform() == "linux-amd64":
         # This is just to be dynamic, but figure out a better way to do this.
         url = "https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json"
         github_json = urllib.request.urlopen(url).read()
