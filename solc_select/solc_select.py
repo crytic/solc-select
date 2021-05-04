@@ -126,7 +126,7 @@ def get_additional_linux_versions():
 
 
 def soliditylang_platform():
-    if sys.platform == "linux":
+    if sys.platform.startswith("linux"):
         platform = "linux-amd64"
     elif sys.platform == "darwin":
         platform = "macosx-amd64"
