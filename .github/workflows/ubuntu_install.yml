@@ -30,7 +30,8 @@ jobs:
 
       - name: Install all solc versions
         run: |
-          pip3 install solc-select
+          sudo python3 setup.py develop
+          solc-select install all
           solc-select install all
       - name: Test minimum release
         run: |
