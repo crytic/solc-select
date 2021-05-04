@@ -1,5 +1,5 @@
 ---
-name: Install solc-select
+name: Install Linux solc-select
 
 defaults:
   run:
@@ -38,27 +38,3 @@ jobs:
       - name: Test 0.8.0
         run: |
           solc-select use 0.8.0
-
-  build:
-    name: Install Mac OS test
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-
-      - name: Install all solc versions
-        run: |
-          pip3 install solc-select
-          solc-select install all
-      - name: Test minimum release
-        run: |
-          solc-select use 0.3.6
-      - name: Test 0.8.0
-        run: |
-          solc-select use 0.8.0          
