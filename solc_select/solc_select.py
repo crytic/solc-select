@@ -156,8 +156,8 @@ def soliditylang_platform():
         platform = "linux-amd64"
     elif sys.platform == "darwin":
         platform = "macosx-amd64"
-    elif sys.platform == 'win32':
-        platform = 'windows-amd64'        
+    elif sys.platform == "win32":
+        platform = "windows-amd64"
     else:
         print("Unsupported platform.")
         sys.exit(1)
