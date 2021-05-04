@@ -98,7 +98,6 @@ def get_available_versions():
 
 
 def soliditylang_platform():
-    print(sys.platform)
     if sys.platform == "linux":
         platform = "linux-amd64"
     elif sys.platform == "darwin":
