@@ -37,7 +37,7 @@ def upgrade_architecture():
         sys.exit(1)
 
 
-def current_version():
+def current_version() -> (str, str):
     version = os.environ.get("SOLC_VERSION")
     source = "SOLC_VERSION"
     if version:
@@ -59,13 +59,13 @@ def current_version():
     return (version, source)
 
 
-def installed_versions():
+def installed_versions() -> [str]:
     return [
         f.replace("solc-", "") for f in sorted(os.listdir(artifacts_dir)) if f.startswith("solc-")
     ]
 
 
-def install_artifacts(versions):
+def install_artifacts(versions: [str]) -> None:
     releases = get_available_versions()
 
     for version, artifact in releases.items():
@@ -94,7 +94,7 @@ def install_artifacts(versions):
         print(f"Version '{version}' installed.")
 
 
-def is_older_linux(version):
+def is_older_linux(version) -> bool:
     return soliditylang_platform() == "linux-amd64" and StrictVersion(version) <= StrictVersion(
         "0.4.10"
     )
@@ -106,13 +106,13 @@ def is_older_windows(version):
     )
 
 
-def get_url(version, artifact):
+def get_url(version: str, artifact: str) -> str:
     if is_older_linux(version):
         return f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}"
     return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
 
 
-def switch_global_version(version):
+def switch_global_version(version: str) -> None:
     if version in installed_versions():
         with open(f"{solc_select_dir}/global-version", "w") as f:
             f.write(version)
@@ -151,19 +151,19 @@ def valid_version(version):
     return version
 
 
-def valid_install_arg(arg):
+def valid_install_arg(arg: str) -> str:
     if arg == "all":
         return arg
     return valid_version(arg)
 
 
-def get_installable_versions():
+def get_installable_versions() -> [str]:
     installable = list(set(get_available_versions()) - set(installed_versions()))
     installable.sort(key=StrictVersion)
     return installable
 
 
-def get_available_versions():
+def get_available_versions() -> [str]:
     url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
     list_json = urllib.request.urlopen(url).read()
     available_releases = json.loads(list_json)["releases"]
@@ -172,7 +172,7 @@ def get_available_versions():
     return available_releases
 
 
-def get_additional_linux_versions():
+def get_additional_linux_versions() -> [str]:
     if soliditylang_platform() == "linux-amd64":
         # This is just to be dynamic, but figure out a better way to do this.
         url = "https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json"
@@ -181,7 +181,7 @@ def get_additional_linux_versions():
     return []
 
 
-def soliditylang_platform():
+def soliditylang_platform() -> str:
     if sys.platform.startswith("linux"):
         platform = "linux-amd64"
     elif sys.platform == "darwin":
