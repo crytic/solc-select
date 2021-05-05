@@ -90,8 +90,19 @@ def switch_global_version(version):
 def valid_version(version):
     match = re.search(r"^(\d+).(\d+).(\d+)$", version)
 
+    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
+    list_json = urllib.request.urlopen(url).read()
+    latest_release = json.loads(list_json)["latestRelease"]
+
+    earliest_release = {'macosx-amd64': '0.3.6', 'linux-amd64': '0.4.0'}
+
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
+    if StrictVersion(version) > StrictVersion(latest_release):
+        raise argparse.ArgumentTypeError(f"Invalid version '{latest_release}' is the latest available version")
+    if StrictVersion(version) < StrictVersion(earliest_release[soliditylang_platform()]):
+        raise argparse.ArgumentTypeError(f"Invalid version - only solc versions above '{earliest_release[soliditylang_platform()]}' are available")
+
     return version
 
 
