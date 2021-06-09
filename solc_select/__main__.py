@@ -72,7 +72,8 @@ def solc():
     res = current_version()
     if res:
         (version, _) = res
-        path = f"{artifacts_dir}/solc-{version}"
+        path = f"{artifacts_dir}/solc-{version}/solc-{version}"
+        print(path)
         os.execv(path, [path] + sys.argv[1:])
     else:
         sys.exit(1)

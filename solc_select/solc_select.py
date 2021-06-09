@@ -57,7 +57,7 @@ def install_artifacts(versions):
         # NOTE: we could verify checksum here because the list.json file
         # provides checksums for artifacts, however those are keccak256 hashes
         # which are not possible to compute without additional dependencies
-        os.chmod(artifact_file, 0o775)
+        os.chmod(f"{artifact_file}/solc-{version}", 0o775)
         print(f"Version '{version}' installed.")
 
 
