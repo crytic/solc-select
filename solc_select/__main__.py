@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-import shutil
 from .solc_select import (
     valid_install_arg,
     valid_version,
