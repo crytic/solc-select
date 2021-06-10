@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import shutil
 from .solc_select import (
     valid_install_arg,
     valid_version,
@@ -10,6 +11,8 @@ from .solc_select import (
     current_version,
     installed_versions,
     artifacts_dir,
+    halt_old_architecture,
+    upgrade_architecture,
 )
 
 
@@ -17,6 +20,7 @@ def solc_select():
     INSTALL_VERSIONS = "INSTALL_VERSIONS"
     USE_VERSION = "USE_VERSION"
     SHOW_VERSIONS = "SHOW_VERSIONS"
+    UPDATE = "UPDATE"
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
@@ -38,6 +42,8 @@ def solc_select():
     )
     parser_use = subparsers.add_parser("versions", help="prints out all installed solc versions")
     parser_use.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
+    parser_use = subparsers.add_parser("update", help="upgrades solc-select")
+    parser_use.add_argument(UPDATE, nargs="*", help=argparse.SUPPRESS)
 
     args = vars(parser.parse_args())
 
@@ -62,7 +68,8 @@ def solc_select():
                 print(f"{version} (current, set by {source})")
             else:
                 print(version)
-
+    elif args.get(UPDATE) is not None:
+        upgrade_architecture()
     else:
         parser.parse_args(["--help"])
         sys.exit(0)
@@ -72,8 +79,8 @@ def solc():
     res = current_version()
     if res:
         (version, _) = res
+        halt_old_architecture(version)
         path = f"{artifacts_dir}/solc-{version}/solc-{version}"
-        print(path)
         os.execv(path, [path] + sys.argv[1:])
     else:
         sys.exit(1)

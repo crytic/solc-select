@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 import re
 import sys
 import urllib.request
@@ -10,6 +11,30 @@ home_dir = os.path.expanduser("~")
 solc_select_dir = f"{home_dir}/.solc-select"
 artifacts_dir = f"{solc_select_dir}/artifacts"
 os.makedirs(artifacts_dir, exist_ok=True)
+
+
+def halt_old_architecture(version: str):
+    if os.path.isfile(f"{artifacts_dir}/solc-{version}") or not os.path.isdir(
+        f"{artifacts_dir}/solc-{version}/solc-{version}"
+    ):
+        print("solc-select is out of date. Please run `solc-select update`")
+        sys.exit(1)
+
+
+def upgrade_architecture():
+    currently_installed = installed_versions()
+    if len(currently_installed) > 0:
+        if os.path.isfile(f"{artifacts_dir}/solc-{currently_installed[0]}"):
+            shutil.rmtree(artifacts_dir)
+            os.makedirs(artifacts_dir, exist_ok=True)
+            install_artifacts(currently_installed)
+            print("solc-select is now up to date! 🎉")
+        else:
+            print("solc-select is already up to date")
+            sys.exit(1)
+    else:
+        print("Run `solc-select install --help` for more information")
+        sys.exit(1)
 
 
 def current_version():
