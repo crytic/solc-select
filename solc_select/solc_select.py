@@ -78,11 +78,11 @@ def install_artifacts(versions):
         artifact_file = f"{artifacts_dir}/solc-{version}/"
         os.makedirs(artifact_file, exist_ok=True)
         print(f"Installing '{version}'...")
-        urllib.request.urlretrieve(url, f"{artifact_file}/solc-{version}")
+        urllib.request.urlretrieve(url, f"{artifact_file}/solc")
         # NOTE: we could verify checksum here because the list.json file
         # provides checksums for artifacts, however those are keccak256 hashes
         # which are not possible to compute without additional dependencies
-        os.chmod(f"{artifact_file}/solc-{version}", 0o775)
+        os.chmod(f"{artifact_file}/solc", 0o775)
         print(f"Version '{version}' installed.")
 
 
