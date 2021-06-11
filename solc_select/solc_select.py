@@ -15,7 +15,7 @@ os.makedirs(artifacts_dir, exist_ok=True)
 
 def halt_old_architecture(version: str):
     if os.path.isfile(f"{artifacts_dir}/solc-{version}") or not os.path.isdir(
-        f"{artifacts_dir}/solc-{version}/solc-{version}"
+        f"{artifacts_dir}/solc-{version}/"
     ):
         print("solc-select is out of date. Please run `solc-select update`")
         sys.exit(1)
