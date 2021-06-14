@@ -11,7 +11,7 @@ from distutils.version import StrictVersion
 home_dir = Path.home()
 solc_select_dir = home_dir.joinpath(".solc-select")
 artifacts_dir = solc_select_dir.joinpath("artifacts")
-Path.mkdir(artifacts_dir, exist_ok=True)
+Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
 
 
 def halt_old_architecture(version: str):
@@ -106,10 +106,8 @@ def get_url(version, artifact):
 
 def get_artifact(version, artifact_file_dir):
     if is_older_windows(version):
-        # return f"{artifact_file_dir}solc-{version}.zip"
         return artifact_file_dir.joinpath(f"solc-{version}.zip")
-    else:
-        return artifact_file_dir.joinpath(f"/solc-{version}")
+    return artifact_file_dir.joinpath(f"/solc-{version}")
 
 
 def switch_global_version(version):
