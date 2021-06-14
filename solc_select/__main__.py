@@ -79,7 +79,7 @@ def solc():
     if res:
         (version, _) = res
         halt_old_architecture(version)
-        path = f"{artifacts_dir}/solc-{version}/solc-{version}"
+        path = artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}")
         os.execv(path, [path] + sys.argv[1:])
     else:
         sys.exit(1)

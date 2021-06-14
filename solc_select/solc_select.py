@@ -1,5 +1,6 @@
 import argparse
 import json
+from pathlib import Path
 import os
 import shutil
 import re
@@ -7,16 +8,14 @@ import sys
 import urllib.request
 from distutils.version import StrictVersion
 
-home_dir = os.path.expanduser("~")
-solc_select_dir = f"{home_dir}/.solc-select"
-artifacts_dir = f"{solc_select_dir}/artifacts"
-os.makedirs(artifacts_dir, exist_ok=True)
+home_dir = Path.home()
+solc_select_dir = home_dir.joinpath(".solc-select")
+artifacts_dir = solc_select_dir.joinpath("artifacts")
+Path.mkdir(artifacts_dir, exist_ok=True)
 
 
 def halt_old_architecture(version: str):
-    if os.path.isfile(f"{artifacts_dir}/solc-{version}") or not os.path.isdir(
-        f"{artifacts_dir}/solc-{version}/"
-    ):
+    if not Path.is_file(artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}")):
         print("solc-select is out of date. Please run `solc-select update`")
         sys.exit(1)
 
@@ -24,9 +23,9 @@ def halt_old_architecture(version: str):
 def upgrade_architecture():
     currently_installed = installed_versions()
     if len(currently_installed) > 0:
-        if os.path.isfile(f"{artifacts_dir}/solc-{currently_installed[0]}"):
+        if Path.is_file(artifacts_dir.joinpath(f"solc-{currently_installed[0]}")):
             shutil.rmtree(artifacts_dir)
-            os.makedirs(artifacts_dir, exist_ok=True)
+            Path.mkdir(artifacts_dir, exist_ok=True)
             install_artifacts(currently_installed)
             print("solc-select is now up to date! 🎉")
         else:
@@ -47,8 +46,8 @@ def current_version():
             )
             sys.exit(1)
     else:
-        source = f"{solc_select_dir}/global-version"
-        if os.path.isfile(source):
+        source = solc_select_dir.joinpath("global-version")
+        if Path.is_file(source):
             with open(source) as f:
                 version = f.read()
         else:
@@ -75,14 +74,15 @@ def install_artifacts(versions):
                 continue
 
         url = get_url(version, artifact)
-        artifact_file = f"{artifacts_dir}/solc-{version}/"
-        os.makedirs(artifact_file, exist_ok=True)
+        artifact_file_dir = artifacts_dir.joinpath(f"solc-{version}")
+        Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
+        artifact_file = artifact_file_dir
         print(f"Installing '{version}'...")
-        urllib.request.urlretrieve(url, f"{artifact_file}/solc-{version}")
+        urllib.request.urlretrieve(url, artifact_file.joinpath(f"solc-{version}"))
         # NOTE: we could verify checksum here because the list.json file
         # provides checksums for artifacts, however those are keccak256 hashes
         # which are not possible to compute without additional dependencies
-        os.chmod(f"{artifact_file}/solc-{version}", 0o775)
+        Path.chmod(artifact_file.joinpath(f"solc-{version}"), 0o775)
         print(f"Version '{version}' installed.")
 
 
@@ -92,10 +92,24 @@ def is_older_linux(version):
     )
 
 
+def is_older_windows(version):
+    return soliditylang_platform() == "windows-amd64" and StrictVersion(version) <= StrictVersion(
+        "0.7.1"
+    )
+
+
 def get_url(version, artifact):
     if is_older_linux(version):
         return f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}"
     return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
+
+
+def get_artifact(version, artifact_file_dir):
+    if is_older_windows(version):
+        # return f"{artifact_file_dir}solc-{version}.zip"
+        return artifact_file_dir.joinpath(f"solc-{version}.zip")
+    else:
+        return artifact_file_dir.joinpath(f"/solc-{version}")
 
 
 def switch_global_version(version):
