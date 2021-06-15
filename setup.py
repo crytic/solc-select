@@ -5,7 +5,7 @@ setup(
     description="Manage multiple Solidity compiler versions.",
     url="https://github.com/crytic/solc-select",
     author="Trail of Bits",
-    version="0.2.0",
+    version="0.2.1",
     packages=find_packages(),
     python_requires=">=3.6",
     license="AGPL-3.0",
