@@ -94,7 +94,7 @@ def valid_version(version):
     list_json = urllib.request.urlopen(url).read()
     latest_release = json.loads(list_json)["latestRelease"]
 
-    earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0"}
+    earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
 
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
