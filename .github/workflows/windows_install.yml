@@ -31,9 +31,9 @@ jobs:
         run: |
           python3 setup.py develop          
           solc-select install all
-      - name: Test minimum release
+      - name: Test minimum release (bounded by solc_select.py)
         run: |
-          solc-select use 0.4.1
+          solc-select use 0.4.5
       - name: Test 0.8.0
         run: |
           solc-select use 0.8.0
