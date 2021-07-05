@@ -1,6 +1,7 @@
 import argparse
 import json
 from pathlib import Path
+from zipfile import ZipFile
 import os
 import shutil
 import re
@@ -76,13 +77,21 @@ def install_artifacts(versions):
         url = get_url(version, artifact)
         artifact_file_dir = artifacts_dir.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
-        artifact_file = artifact_file_dir
         print(f"Installing '{version}'...")
-        urllib.request.urlretrieve(url, artifact_file.joinpath(f"solc-{version}"))
+        urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
         # NOTE: we could verify checksum here because the list.json file
         # provides checksums for artifacts, however those are keccak256 hashes
         # which are not possible to compute without additional dependencies
-        Path.chmod(artifact_file.joinpath(f"solc-{version}"), 0o775)
+        if is_older_windows(version):
+            with ZipFile(artifact_file_dir.joinpath(f"solc-{version}"), "r") as zip_ref:
+                zip_ref.extractall(path=artifact_file_dir)
+                zip_ref.close()
+            Path.unlink(artifact_file_dir.joinpath(f"solc-{version}"))
+            Path(artifact_file_dir.joinpath("solc.exe")).rename(
+                Path(artifact_file_dir.joinpath(f"solc-{version}")),
+            )
+        else:
+            Path.chmod(artifact_file_dir.joinpath(f"solc-{version}"), 0o775)
         print(f"Version '{version}' installed.")
 
 
