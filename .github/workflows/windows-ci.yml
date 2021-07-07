@@ -24,7 +24,7 @@ jobs:
         python-version: 3.6
     - name: Install solc-select
       run: |
-        sudo python3 setup.py install
+        python3 setup.py install
         solc-select install all
     - name: Run Tests
       env:
