@@ -31,3 +31,4 @@ jobs:
         TEST_TYPE: ${{ matrix.type }}
       run: |
         bash scripts/travis_test_${TEST_TYPE}.sh
+      shell: gitbash
