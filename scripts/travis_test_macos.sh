@@ -11,3 +11,5 @@ if [[ $use_version != "Switched global version to 0.8.6" ]]; then
   echo "Mac OS X maximum version failed"
   exit 255
 fi
+
+echo "Mac OS X min/max versions successful"

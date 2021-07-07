@@ -14,3 +14,5 @@ if [[ $use_version != *"Switched global version to 0.8.6"* ]]; then
   echo "Linux maximum version failed"
   exit 255
 fi
+
+echo "Linux min/max versions successful"
