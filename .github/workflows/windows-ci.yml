@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        type: ["windows"]
+        type: ["windows","solc"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
@@ -24,7 +24,7 @@ jobs:
         python-version: 3.6
     - name: Install solc-select
       run: |
-        python3 setup.py install
+        python3 setup.py install --user
         solc-select install all
     - name: Run Tests
       env:

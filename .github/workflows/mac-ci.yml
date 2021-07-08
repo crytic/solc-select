@@ -15,7 +15,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        type: ["solc_upgrade", "macos"]
+        type: ["solc_upgrade", "macos", "solc"]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.6
