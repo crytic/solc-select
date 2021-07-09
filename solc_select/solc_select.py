@@ -113,12 +113,6 @@ def get_url(version, artifact):
     return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
 
 
-def get_artifact(version, artifact_file_dir):
-    if is_older_windows(version):
-        return artifact_file_dir.joinpath(f"solc-{version}.zip")
-    return artifact_file_dir.joinpath(f"/solc-{version}")
-
-
 def switch_global_version(version):
     if version in installed_versions():
         with open(f"{solc_select_dir}/global-version", "w") as f:
@@ -137,21 +131,22 @@ def switch_global_version(version):
 def valid_version(version):
     match = re.search(r"^(\d+).(\d+).(\d+)$", version)
 
-    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
-    list_json = urllib.request.urlopen(url).read()
-    latest_release = json.loads(list_json)["latestRelease"]
+    if match is None:
+        raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
 
     earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
 
-    if match is None:
-        raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
-    if StrictVersion(version) > StrictVersion(latest_release):
-        raise argparse.ArgumentTypeError(
-            f"Invalid version '{latest_release}' is the latest available version"
-        )
     if StrictVersion(version) < StrictVersion(earliest_release[soliditylang_platform()]):
         raise argparse.ArgumentTypeError(
             f"Invalid version - only solc versions above '{earliest_release[soliditylang_platform()]}' are available"
+        )
+
+    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
+    list_json = urllib.request.urlopen(url).read()
+    latest_release = json.loads(list_json)["latestRelease"]
+    if StrictVersion(version) > StrictVersion(latest_release):
+        raise argparse.ArgumentTypeError(
+            f"Invalid version '{latest_release}' is the latest available version"
         )
 
     return version
