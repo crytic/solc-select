@@ -30,5 +30,5 @@ jobs:
       env:
         TEST_TYPE: ${{ matrix.type }}
       run: |
-        bash scripts/travis_test_${TEST_TYPE}.sh
+        bash scripts/test_${TEST_TYPE}.sh
       shell: bash
