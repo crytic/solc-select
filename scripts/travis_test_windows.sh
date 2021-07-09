@@ -10,7 +10,7 @@ echo "WINDOWS SUCCESS: minimum version"
 latest_release=$(curl https://binaries.soliditylang.org/windows-amd64/list.json |
   python3 -c "import sys,json; print(json.load(sys.stdin)['latestRelease'])")
 use_version=$(solc-select use "$latest_release")
-If [[ $use_version != "Switched global version to $latest_release" ]]; then
+if [[ $use_version != "Switched global version to $latest_release" ]]; then
   echo "WINDOWS FAILED: maximum version"
   exit 255
 fi
