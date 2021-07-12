@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from zipfile import ZipFile
@@ -76,6 +77,7 @@ def install_artifacts(versions: [str]) -> None:
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
+        verify_checksum(version)
         # NOTE: we could verify checksum here because the list.json file
         # provides checksums for artifacts, however those are keccak256 hashes
         # which are not possible to compute without additional dependencies
@@ -102,6 +104,24 @@ def is_older_windows(version: str) -> bool:
     return soliditylang_platform() == "windows-amd64" and StrictVersion(version) <= StrictVersion(
         "0.7.1"
     )
+
+
+def verify_checksum(version):
+    list_json = urllib.request.urlopen(f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json").read()
+    builds = json.loads(list_json)["builds"]
+    matches = list(filter(lambda b: b["version"] == version, builds))
+    if not matches or not matches[0]['sha256']:
+        raise argparse.ArgumentTypeError(f"Error: Unable to retrieve checksum for {soliditylang_platform()} - {version}" )
+
+    soliditylang_hash = matches[0]['sha256']
+
+    ## calculate sha256 of local file
+    with open(artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
+        file = f.read()  # read entire file as bytes
+        local_file_hash = f"0x{hashlib.sha256(file).hexdigest()}"
+
+    if soliditylang_hash != local_file_hash:
+        raise argparse.ArgumentTypeError(f"Error: Checksum mismatch {soliditylang_platform()} - {version}")
 
 
 def get_url(version: str, artifact: str) -> str:
