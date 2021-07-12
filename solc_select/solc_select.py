@@ -77,10 +77,8 @@ def install_artifacts(versions: [str]) -> None:
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
-        verify_checksum(version)
-        # NOTE: we could verify checksum here because the list.json file
-        # provides checksums for artifacts, however those are keccak256 hashes
-        # which are not possible to compute without additional dependencies
+        if not is_older_linux(version):  ## no checksum support for older linux yet
+            verify_checksum(version)
         if is_older_windows(version):
             with ZipFile(artifact_file_dir.joinpath(f"solc-{version}"), "r") as zip_ref:
                 zip_ref.extractall(path=artifact_file_dir)
