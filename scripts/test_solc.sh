@@ -55,7 +55,7 @@ echo "SUCCESS: solc060_success_receive"
 solc-select use 0.7.0  &> /dev/null
 
 execute=$(solc ./scripts/solidity_tests/solc070_fail_compile.sol 2>&1)
-if [[ "$execute" != *"has been deprecated."* ]]; then
+if [[ "$execute" != *"\"now\" has been deprecated."* ]]; then
   echo "FAILED: solc070_fail_compile" "$execute"
   exit 255
 fi
