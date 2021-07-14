@@ -80,7 +80,7 @@ def solc():
         (version, _) = res
         path = artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}")
         halt_old_architecture(path)
-        process = subprocess.run([str(path)]+sys.argv[1:], stdout=subprocess.PIPE, stdin=None)
+        process = subprocess.run([str(path)] + sys.argv[1:], stdout=subprocess.PIPE, stdin=None)
 
         print(str(process.stdout, "utf-8"))
     else:
