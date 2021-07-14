@@ -15,8 +15,8 @@ artifacts_dir = solc_select_dir.joinpath("artifacts")
 Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
 
 
-def halt_old_architecture(version: str):
-    if not Path.is_file(artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}")):
+def halt_old_architecture(path: Path):
+    if not Path.is_file(path):
         print("solc-select is out of date. Please run `solc-select update`")
         sys.exit(1)
 
@@ -52,7 +52,6 @@ def current_version():
             with open(source) as f:
                 version = f.read()
         else:
-            # TODO: figure out a better place for this message
             print(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )

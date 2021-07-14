@@ -1,5 +1,5 @@
 import argparse
-import os
+import subprocess
 import sys
 from .solc_select import (
     valid_install_arg,
@@ -78,8 +78,10 @@ def solc():
     res = current_version()
     if res:
         (version, _) = res
-        halt_old_architecture(version)
         path = artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}")
-        os.execv(path, [path] + sys.argv[1:])
+        halt_old_architecture(path)
+        process = subprocess.run([str(path)]+sys.argv[1:], stdout=subprocess.PIPE, stdin=None)
+
+        print(str(process.stdout, "utf-8"))
     else:
         sys.exit(1)
