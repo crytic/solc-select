@@ -88,7 +88,7 @@ def switch_global_version(version):
 
 
 def valid_version(version):
-    match = re.search(r"^(\d+).(\d+).(\d+)$", version)
+    match = re.search(r"^(\d+)\.(\d+)\.(\d+)$", version)
 
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
