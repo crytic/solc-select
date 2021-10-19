@@ -69,6 +69,37 @@ $ solc-select versions
 
 Feel free to stop by our [Slack channel](https://empirehacking.slack.com/) for help on using or extending `solc-select`.
 
+## FAQ
+
+### solc-version not changing after running `solc-select use [version]` or setting `SOLC_VERSION`
+
+Uninstall other installations of solc on your machine. `solc-select` re-installs solc binaries for your operating system and acts as a wrapper for solc. With duplicate solc installations, this may result in your `solc` version not being up to date.
+
+## Known Issues
+
+### `SSL: CERTIFICATE_VERIFY_FAILED` on running `solc-select` commands [investigation ongoing]
+
+**OS X**
+```bash
+pip3 install certifi
+/Applications/Python\ 3.8/Install\ Certificates.command
+```
+
+Python distributions on OS X has no certificates and cannot validate SSL connections, a breaking change introduced in Python 3.6. See [StackOverflow](https://stackoverflow.com/a/42334357) post for additional details.
+
+### `Connection refused` [investigation ongoing]
+
+```bash
+pip3 uninstall solc-select 
+pip3 install solc-select==0.2.0
+solc-select install 
+```
+
+Try downgrading to `solc-select version 0.2.0`. 
+
+Our `0.2.1` version of `solc-select` pulls older Linux binaries from [crytic/solc](https://github.com/crytic/solc) which seems to have introduced unexpected behavior in certain instances.
+
+
 ## License
 
 `solc-select` is licensed and distributed under the [AGPLv3](LICENSE) license. [Contact us](mailto:opensource@trailofbits.com) if you’re looking for an exception to the terms.
