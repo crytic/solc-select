@@ -51,7 +51,7 @@ Available versions to install:
 0.8.1
 ```
 
-And install the one you need with with `solc-select install <version>`:
+And install the one you need with `solc-select install <version>`:
 ```
 $ solc-select install 0.8.1
 Installing '0.8.1'...
@@ -98,7 +98,6 @@ solc-select install
 Try downgrading to `solc-select version 0.2.0`. 
 
 Our `0.2.1` version of `solc-select` pulls older Linux binaries from [crytic/solc](https://github.com/crytic/solc) which seems to have introduced unexpected behavior in certain instances.
-
 
 ## License
 
