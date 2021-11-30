@@ -15,13 +15,13 @@ artifacts_dir = solc_select_dir.joinpath("artifacts")
 Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
 
 
-def halt_old_architecture(path: Path):
+def halt_old_architecture(path: Path) -> None:
     if not Path.is_file(path):
         print("solc-select is out of date. Please run `solc-select update`")
         sys.exit(1)
 
 
-def upgrade_architecture():
+def upgrade_architecture() -> None:
     currently_installed = installed_versions()
     if len(currently_installed) > 0:
         if Path.is_file(artifacts_dir.joinpath(f"solc-{currently_installed[0]}")):
@@ -94,13 +94,13 @@ def install_artifacts(versions: [str]) -> None:
         print(f"Version '{version}' installed.")
 
 
-def is_older_linux(version) -> bool:
+def is_older_linux(version: str) -> bool:
     return soliditylang_platform() == "linux-amd64" and StrictVersion(version) <= StrictVersion(
         "0.4.10"
     )
 
 
-def is_older_windows(version):
+def is_older_windows(version: str) -> None:
     return soliditylang_platform() == "windows-amd64" and StrictVersion(version) <= StrictVersion(
         "0.7.1"
     )
@@ -127,7 +127,7 @@ def switch_global_version(version: str) -> None:
         sys.exit(1)
 
 
-def valid_version(version):
+def valid_version(version: str) -> None:
     match = re.search(r"^(\d+)\.(\d+)\.(\d+)$", version)
 
     if match is None:
