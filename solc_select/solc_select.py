@@ -109,18 +109,17 @@ def get_url(version: str, artifact: str) -> str:
     return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
 
 
-def switch_global_version(version: str) -> None:
+def switch_global_version(version: str, always_install: bool) -> None:
     if version in installed_versions():
         with open(f"{solc_select_dir}/global-version", "w") as f:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
-        want_to = input(
-            f"'{version}' must be installed prior to use. Would you like to install? [y/n] "
-        )
-        if want_to.lower() == "y":
+        if always_install:
             install_artifacts(version)
-            switch_global_version(version)
+            switch_global_version(version, always_install)
+        else:
+            raise argparse.ArgumentTypeError(f"'{version}' must be installed prior to use.")
     else:
         raise argparse.ArgumentTypeError(f"Unknown version '{version}'")
 
