@@ -17,8 +17,9 @@ Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
 
 def halt_old_architecture(path: Path):
     if not Path.is_file(path):
-        print("solc-select is out of date. Please run `solc-select update`")
-        sys.exit(1)
+        raise argparse.ArgumentTypeError(
+            "solc-select is out of date. Please run `solc-select update`"
+        )
 
 
 def upgrade_architecture():
@@ -30,11 +31,9 @@ def upgrade_architecture():
             install_artifacts(currently_installed)
             print("solc-select is now up to date! 🎉")
         else:
-            print("solc-select is already up to date")
-            sys.exit(1)
+            raise argparse.ArgumentTypeError("solc-select is already up to date")
     else:
-        print("Run `solc-select install --help` for more information")
-        sys.exit(1)
+        raise argparse.ArgumentTypeError("Run `solc-select install --help` for more information")
 
 
 def current_version():
@@ -42,17 +41,16 @@ def current_version():
     source = "SOLC_VERSION"
     if version:
         if version not in installed_versions():
-            print(
+            raise argparse.ArgumentTypeError(
                 f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`."
             )
-            sys.exit(1)
     else:
         source = solc_select_dir.joinpath("global-version")
         if Path.is_file(source):
             with open(source) as f:
                 version = f.read()
         else:
-            print(
+            raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )
             return None
@@ -118,13 +116,11 @@ def switch_global_version(version):
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
-        print(
+        raise argparse.ArgumentTypeError(
             f"You need to install '{version}' prior to using it. Use `solc-select install {version}`"
         )
-        sys.exit(1)
     else:
-        print(f"Unknown version '{version}'.")
-        sys.exit(1)
+        raise argparse.ArgumentTypeError(f"Unknown version '{version}'")
 
 
 def valid_version(version):
@@ -189,6 +185,5 @@ def soliditylang_platform():
     elif sys.platform == "win32" or sys.platform == "cygwin":
         platform = "windows-amd64"
     else:
-        print("Unsupported platform.")
-        sys.exit(1)
+        raise argparse.ArgumentTypeError("Unsupported platform")
     return platform
