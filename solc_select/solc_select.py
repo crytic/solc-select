@@ -1,15 +1,40 @@
 import argparse
 import json
+from pathlib import Path
+from zipfile import ZipFile
 import os
+import shutil
 import re
 import sys
 import urllib.request
 from distutils.version import StrictVersion
 
-home_dir = os.path.expanduser("~")
-solc_select_dir = f"{home_dir}/.solc-select"
-artifacts_dir = f"{solc_select_dir}/artifacts"
-os.makedirs(artifacts_dir, exist_ok=True)
+home_dir = Path.home()
+solc_select_dir = home_dir.joinpath(".solc-select")
+artifacts_dir = solc_select_dir.joinpath("artifacts")
+Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
+
+
+def halt_old_architecture(path: Path):
+    if not Path.is_file(path):
+        print("solc-select is out of date. Please run `solc-select update`")
+        sys.exit(1)
+
+
+def upgrade_architecture():
+    currently_installed = installed_versions()
+    if len(currently_installed) > 0:
+        if Path.is_file(artifacts_dir.joinpath(f"solc-{currently_installed[0]}")):
+            shutil.rmtree(artifacts_dir)
+            Path.mkdir(artifacts_dir, exist_ok=True)
+            install_artifacts(currently_installed)
+            print("solc-select is now up to date! 🎉")
+        else:
+            print("solc-select is already up to date")
+            sys.exit(1)
+    else:
+        print("Run `solc-select install --help` for more information")
+        sys.exit(1)
 
 
 def current_version():
@@ -22,12 +47,11 @@ def current_version():
             )
             sys.exit(1)
     else:
-        source = f"{solc_select_dir}/global-version"
-        if os.path.isfile(source):
+        source = solc_select_dir.joinpath("global-version")
+        if Path.is_file(source):
             with open(source) as f:
                 version = f.read()
         else:
-            # TODO: figure out a better place for this message
             print(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )
@@ -50,19 +74,35 @@ def install_artifacts(versions):
                 continue
 
         url = get_url(version, artifact)
-        artifact_file = f"{artifacts_dir}/solc-{version}"
+        artifact_file_dir = artifacts_dir.joinpath(f"solc-{version}")
+        Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
-        urllib.request.urlretrieve(url, artifact_file)
+        urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
         # NOTE: we could verify checksum here because the list.json file
         # provides checksums for artifacts, however those are keccak256 hashes
         # which are not possible to compute without additional dependencies
-        os.chmod(artifact_file, 0o775)
+        if is_older_windows(version):
+            with ZipFile(artifact_file_dir.joinpath(f"solc-{version}"), "r") as zip_ref:
+                zip_ref.extractall(path=artifact_file_dir)
+                zip_ref.close()
+            Path.unlink(artifact_file_dir.joinpath(f"solc-{version}"))
+            Path(artifact_file_dir.joinpath("solc.exe")).rename(
+                Path(artifact_file_dir.joinpath(f"solc-{version}")),
+            )
+        else:
+            Path.chmod(artifact_file_dir.joinpath(f"solc-{version}"), 0o775)
         print(f"Version '{version}' installed.")
 
 
 def is_older_linux(version):
     return soliditylang_platform() == "linux-amd64" and StrictVersion(version) <= StrictVersion(
         "0.4.10"
+    )
+
+
+def is_older_windows(version):
+    return soliditylang_platform() == "windows-amd64" and StrictVersion(version) <= StrictVersion(
+        "0.7.1"
     )
 
 
@@ -92,6 +132,22 @@ def valid_version(version):
 
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
+
+    earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
+
+    if StrictVersion(version) < StrictVersion(earliest_release[soliditylang_platform()]):
+        raise argparse.ArgumentTypeError(
+            f"Invalid version - only solc versions above '{earliest_release[soliditylang_platform()]}' are available"
+        )
+
+    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
+    list_json = urllib.request.urlopen(url).read()
+    latest_release = json.loads(list_json)["latestRelease"]
+    if StrictVersion(version) > StrictVersion(latest_release):
+        raise argparse.ArgumentTypeError(
+            f"Invalid version '{latest_release}' is the latest available version"
+        )
+
     return version
 
 
@@ -130,6 +186,8 @@ def soliditylang_platform():
         platform = "linux-amd64"
     elif sys.platform == "darwin":
         platform = "macosx-amd64"
+    elif sys.platform == "win32" or sys.platform == "cygwin":
+        platform = "windows-amd64"
     else:
         print("Unsupported platform.")
         sys.exit(1)
