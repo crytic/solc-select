@@ -92,3 +92,24 @@ if [[ "$execute" != *"Error: Explicit type conversion not allowed"* ]]; then
   exit 255
 fi
 echo "SUCCESS: solc080_fail_compile"
+
+UNINSTALL_PATH=$HOME/.solc-select/artifacts/solc-0.8.9
+rm -rf $UNINSTALL_PATH # uninstall solc 0.8.9
+execute=$(echo "y" | solc-select use 0.8.9)
+if [[ "$execute" != *"Switched global version to 0.8.9"* ]]; then
+  echo "FAILED: install yes install prompt"
+  exit 255
+fi
+echo "SUCCESS: install yes install prompt"
+
+UNINSTALL_PATH=$HOME/.solc-select/artifacts/solc-0.8.1
+rm -rf $UNINSTALL_PATH # uninstall solc 0.8.1
+execute=$(echo "n" | solc-select use 0.8.1)
+echo $execute
+if [[ $execute != *"Would you like to install?"* ]]; then
+  echo "FAILED: install no install prompt"
+  exit 255
+fi
+echo "SUCCESS: install no install prompt"
+
+solc-select install 0.8.1 &> /dev/null
