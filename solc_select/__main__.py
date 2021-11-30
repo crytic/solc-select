@@ -15,7 +15,7 @@ from .solc_select import (
 )
 
 
-def solc_select():
+def solc_select() -> None:
     INSTALL_VERSIONS = "INSTALL_VERSIONS"
     USE_VERSION = "USE_VERSION"
     SHOW_VERSIONS = "SHOW_VERSIONS"
@@ -74,7 +74,7 @@ def solc_select():
         sys.exit(0)
 
 
-def solc():
+def solc() -> None:
     res = current_version()
     if res:
         (version, _) = res
