@@ -100,7 +100,7 @@ def is_older_linux(version: str) -> bool:
     )
 
 
-def is_older_windows(version: str) -> None:
+def is_older_windows(version: str) -> bool:
     return soliditylang_platform() == "windows-amd64" and StrictVersion(version) <= StrictVersion(
         "0.7.1"
     )
@@ -127,7 +127,7 @@ def switch_global_version(version: str) -> None:
         sys.exit(1)
 
 
-def valid_version(version: str) -> None:
+def valid_version(version: str) -> str:
     match = re.search(r"^(\d+)\.(\d+)\.(\d+)$", version)
 
     if match is None:
