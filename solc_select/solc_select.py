@@ -53,7 +53,6 @@ def current_version() -> (str, str):
             raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )
-            return None
     return (version, source)
 
 
@@ -116,9 +115,12 @@ def switch_global_version(version: str) -> None:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
-        raise argparse.ArgumentTypeError(
-            f"You need to install '{version}' prior to using it. Use `solc-select install {version}`"
+        want_to = input(
+            f"'{version}' must be installed prior to use. Would you like to install? [y/n] "
         )
+        if want_to.lower() == "y":
+            install_artifacts(version)
+            switch_global_version(version)
     else:
         raise argparse.ArgumentTypeError(f"Unknown version '{version}'")
 
