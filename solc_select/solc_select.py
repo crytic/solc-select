@@ -113,7 +113,8 @@ def verify_checksum(version: str) -> None:
         sha256_factory = hashlib.sha256()
         keccak_factory = hashlib.sha3_256()
 
-        while chunk := f.read(1024000):  # ~1MB chunk
+        # 1024000(~1MB chunk)
+        for chunk in iter(lambda: f.read(1024000), b''):
             sha256_factory.update(chunk)
             keccak_factory.update(chunk)
 
