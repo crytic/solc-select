@@ -37,8 +37,9 @@ def solc_select() -> None:
     )
     parser_use = subparsers.add_parser("use", help="change the version of global solc compiler")
     parser_use.add_argument(
-        USE_VERSION, help="solc version you want to use (eg: 0.4.25)", type=valid_version
+        USE_VERSION, help="solc version you want to use (eg: 0.4.25)", type=valid_version, nargs="?"
     )
+    parser_use.add_argument("--always-install", action="store_true")
     parser_use = subparsers.add_parser("versions", help="prints out all installed solc versions")
     parser_use.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
     parser_use = subparsers.add_parser("update", help="upgrades solc-select")
@@ -56,7 +57,7 @@ def solc_select() -> None:
             install_artifacts(args.get(INSTALL_VERSIONS))
 
     elif args.get(USE_VERSION) is not None:
-        switch_global_version(args.get(USE_VERSION))
+        switch_global_version(args.get(USE_VERSION), args.get("always_install"))
 
     elif args.get(SHOW_VERSIONS) is not None:
         res = current_version()

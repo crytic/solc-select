@@ -54,7 +54,6 @@ def current_version() -> (str, str):
             raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )
-            return None
     return (version, source)
 
 
@@ -155,15 +154,17 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
     )
 
 
-def switch_global_version(version: str) -> None:
+def switch_global_version(version: str, always_install: bool) -> None:
     if version in installed_versions():
         with open(f"{solc_select_dir}/global-version", "w") as f:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
-        raise argparse.ArgumentTypeError(
-            f"You need to install '{version}' prior to using it. Use `solc-select install {version}`"
-        )
+        if always_install:
+            install_artifacts(version)
+            switch_global_version(version, always_install)
+        else:
+            raise argparse.ArgumentTypeError(f"'{version}' must be installed prior to use.")
     else:
         raise argparse.ArgumentTypeError(f"Unknown version '{version}'")
 
