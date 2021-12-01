@@ -72,13 +72,14 @@ def install_artifacts(versions: [str]) -> None:
             if versions and version not in versions:
                 continue
 
-        url = get_url(version, artifact)
+        (url, _) = get_url(version, artifact)
         artifact_file_dir = artifacts_dir.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
-        if not is_older_linux(version):  ## no checksum support for older linux yet
-            verify_checksum(version)
+
+        verify_checksum(version)
+
         if is_older_windows(version):
             with ZipFile(artifact_file_dir.joinpath(f"solc-{version}"), "r") as zip_ref:
                 zip_ref.extractall(path=artifact_file_dir)
@@ -104,34 +105,53 @@ def is_older_windows(version: str) -> bool:
     )
 
 
-def verify_checksum(version):
-    list_json = urllib.request.urlopen(
-        f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
-    ).read()
-    builds = json.loads(list_json)["builds"]
-    matches = list(filter(lambda b: b["version"] == version, builds))
-    if not matches or not matches[0]["sha256"]:
-        raise argparse.ArgumentTypeError(
-            f"Error: Unable to retrieve checksum for {soliditylang_platform()} - {version}"
-        )
+def verify_checksum(version: str) -> None:
+    (sha256_hash, keccak256_hash) = get_soliditylang_checksums(version)
 
-    soliditylang_hash = matches[0]["sha256"]
-
-    ## calculate sha256 of local file
+    # calculate sha256 and keccak256 checksum of the local file
     with open(artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
-        file = f.read()  # read entire file as bytes
-        local_file_hash = f"0x{hashlib.sha256(file).hexdigest()}"
+        sha256_factory = hashlib.sha256()
+        keccak_factory = hashlib.sha3_256()
 
-    if soliditylang_hash != local_file_hash:
+        while chunk := f.read(1024000):  # ~1MB chunk
+            sha256_factory.update(chunk)
+            keccak_factory.update(chunk)
+
+        local_sha256_file_hash = f"0x{sha256_factory.hexdigest()}"
+        local_keccak256_file_hash = f"0x{keccak_factory.hexdigest()}"
+
+    if sha256_hash != local_sha256_file_hash and \
+            keccak256_hash != local_keccak256_file_hash:
         raise argparse.ArgumentTypeError(
             f"Error: Checksum mismatch {soliditylang_platform()} - {version}"
         )
 
 
-def get_url(version: str, artifact: str) -> str:
-    if is_older_linux(version):
-        return f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}"
-    return f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}"
+def get_soliditylang_checksums(version: str):
+    (_, list_url) = get_url(version=version)
+    list_json = urllib.request.urlopen(list_url).read()
+    builds = json.loads(list_json)["builds"]
+    matches = list(filter(lambda b: b["version"] == version, builds))
+
+    if not matches or not matches[0]["sha256"]:
+        raise argparse.ArgumentTypeError(
+            f"Error: Unable to retrieve checksum for {soliditylang_platform()} - {version}"
+        )
+
+    return matches[0]["sha256"], matches[0]["keccak256"]
+
+
+def get_url(version: str = "", artifact: str = "") -> (str, str):
+    if soliditylang_platform() == "linux-amd64":
+        if version != "" and is_older_linux(version):
+            return (
+                f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}",
+                "https://raw.githubusercontent.com/crytic/solc/new-list-json/linux/amd64/list.json",
+            )
+    return (
+        f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}",
+        f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json",
+    )
 
 
 def switch_global_version(version: str) -> None:
@@ -160,8 +180,8 @@ def valid_version(version: str) -> str:
             f"Invalid version - only solc versions above '{earliest_release[soliditylang_platform()]}' are available"
         )
 
-    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
-    list_json = urllib.request.urlopen(url).read()
+    (_, list_url) = get_url()
+    list_json = urllib.request.urlopen(list_url).read()
     latest_release = json.loads(list_json)["latestRelease"]
     if StrictVersion(version) > StrictVersion(latest_release):
         raise argparse.ArgumentTypeError(
@@ -184,8 +204,8 @@ def get_installable_versions() -> [str]:
 
 
 def get_available_versions() -> [str]:
-    url = f"https://binaries.soliditylang.org/{soliditylang_platform()}/list.json"
-    list_json = urllib.request.urlopen(url).read()
+    (_, list_url) = get_url()
+    list_json = urllib.request.urlopen(list_url).read()
     available_releases = json.loads(list_json)["releases"]
     if soliditylang_platform() == "linux-amd64":
         available_releases.update(get_additional_linux_versions())
@@ -195,8 +215,8 @@ def get_available_versions() -> [str]:
 def get_additional_linux_versions() -> [str]:
     if soliditylang_platform() == "linux-amd64":
         # This is just to be dynamic, but figure out a better way to do this.
-        url = "https://raw.githubusercontent.com/crytic/solc/list-json/linux/amd64/list.json"
-        github_json = urllib.request.urlopen(url).read()
+        (_, list_url) = get_url(version="0.4.10")
+        github_json = urllib.request.urlopen(list_url).read()
         return json.loads(github_json)["releases"]
     return []
 

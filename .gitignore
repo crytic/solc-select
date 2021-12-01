@@ -3,3 +3,7 @@
 __pycache__
 artifacts/
 global-version
+
+.idea
+build/
+dist/
