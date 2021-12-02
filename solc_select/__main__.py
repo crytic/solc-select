@@ -6,7 +6,7 @@ from .constants import (
     INSTALL_VERSIONS,
     SHOW_VERSIONS,
     USE_VERSION,
-    UPDATE,
+    UPGRADE,
 )
 from .solc_select import (
     valid_install_arg,
@@ -43,8 +43,8 @@ def solc_select() -> None:
     parser_use.add_argument("--always-install", action="store_true")
     parser_use = subparsers.add_parser("versions", help="prints out all installed solc versions")
     parser_use.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
-    parser_use = subparsers.add_parser("update", help="upgrades solc-select")
-    parser_use.add_argument(UPDATE, nargs="*", help=argparse.SUPPRESS)
+    parser_use = subparsers.add_parser("upgrade", help="upgrades solc-select")
+    parser_use.add_argument(UPGRADE, nargs="*", help=argparse.SUPPRESS)
 
     args = vars(parser.parse_args())
 
@@ -69,7 +69,7 @@ def solc_select() -> None:
                 print(f"{version} (current, set by {source})")
             else:
                 print(version)
-    elif args.get(UPDATE) is not None:
+    elif args.get(UPGRADE) is not None:
         upgrade_architecture()
     else:
         parser.parse_args(["--help"])
