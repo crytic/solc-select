@@ -1,6 +1,13 @@
 import argparse
 import subprocess
 import sys
+from .constants import (
+    ARTIFACTS_DIR,
+    INSTALL_VERSIONS,
+    SHOW_VERSIONS,
+    USE_VERSION,
+    UPDATE,
+)
 from .solc_select import (
     valid_install_arg,
     valid_version,
@@ -9,18 +16,12 @@ from .solc_select import (
     switch_global_version,
     current_version,
     installed_versions,
-    artifacts_dir,
     halt_old_architecture,
     upgrade_architecture,
 )
 
 
 def solc_select() -> None:
-    INSTALL_VERSIONS = "INSTALL_VERSIONS"
-    USE_VERSION = "USE_VERSION"
-    SHOW_VERSIONS = "SHOW_VERSIONS"
-    UPDATE = "UPDATE"
-
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
         help="Allows users to install and quickly switch between Solidity compiler versions"
@@ -49,7 +50,7 @@ def solc_select() -> None:
 
     if args.get(INSTALL_VERSIONS) is not None:
         versions = args.get(INSTALL_VERSIONS)
-        if versions == []:
+        if not versions:
             print("Available versions to install:")
             for version in get_installable_versions():
                 print(version)
@@ -79,7 +80,7 @@ def solc() -> None:
     res = current_version()
     if res:
         (version, _) = res
-        path = artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}")
+        path = ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
         halt_old_architecture(path)
         try:
             process = subprocess.run(
