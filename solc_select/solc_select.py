@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from urllib.error import URLError
 from zipfile import ZipFile
 import os
 import shutil
@@ -14,6 +15,7 @@ home_dir = Path.home()
 solc_select_dir = home_dir.joinpath(".solc-select")
 artifacts_dir = solc_select_dir.joinpath("artifacts")
 Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
+earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
 
 
 def halt_old_architecture(path: Path) -> None:
@@ -113,15 +115,14 @@ def verify_checksum(version: str) -> None:
         keccak_factory = hashlib.sha3_256()
 
         # 1024000(~1MB chunk)
-        for chunk in iter(lambda: f.read(1024000), b''):
+        for chunk in iter(lambda: f.read(1024000), b""):
             sha256_factory.update(chunk)
             keccak_factory.update(chunk)
 
         local_sha256_file_hash = f"0x{sha256_factory.hexdigest()}"
         local_keccak256_file_hash = f"0x{keccak_factory.hexdigest()}"
 
-    if sha256_hash != local_sha256_file_hash and \
-            keccak256_hash != local_keccak256_file_hash:
+    if sha256_hash != local_sha256_file_hash and keccak256_hash != local_keccak256_file_hash:
         raise argparse.ArgumentTypeError(
             f"Error: Checksum mismatch {soliditylang_platform()} - {version}"
         )
@@ -129,7 +130,7 @@ def verify_checksum(version: str) -> None:
 
 def get_soliditylang_checksums(version: str):
     (_, list_url) = get_url(version=version)
-    list_json = urllib.request.urlopen(list_url).read()
+    list_json = request_and_error(list_url)
     builds = json.loads(list_json)["builds"]
     matches = list(filter(lambda b: b["version"] == version, builds))
 
@@ -175,15 +176,13 @@ def valid_version(version: str) -> str:
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
 
-    earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
-
     if StrictVersion(version) < StrictVersion(earliest_release[soliditylang_platform()]):
         raise argparse.ArgumentTypeError(
             f"Invalid version - only solc versions above '{earliest_release[soliditylang_platform()]}' are available"
         )
 
     (_, list_url) = get_url()
-    list_json = urllib.request.urlopen(list_url).read()
+    list_json = request_and_error(list_url)
     latest_release = json.loads(list_json)["latestRelease"]
     if StrictVersion(version) > StrictVersion(latest_release):
         raise argparse.ArgumentTypeError(
@@ -207,20 +206,31 @@ def get_installable_versions() -> [str]:
 
 def get_available_versions() -> [str]:
     (_, list_url) = get_url()
-    list_json = urllib.request.urlopen(list_url).read()
+    list_json = request_and_error(list_url)
     available_releases = json.loads(list_json)["releases"]
     if soliditylang_platform() == "linux-amd64":
-        available_releases.update(get_additional_linux_versions())
+        (_, list_url) = get_url(version="0.4.10")
+        earliest_release["linux-amd64"] = "0.4.10"
+        try:
+            github_json = request_and_error(list_url)
+            available_releases.update(json.loads(github_json)["releases"])
+        except (URLError, ConnectionResetError):
+            print("Unable to access GitHub – Solidity versions 0.4.0-0.4.9 are unavailable")
+            earliest_release["linux-amd64"] = "0.4.10"
     return available_releases
 
 
-def get_additional_linux_versions() -> [str]:
-    if soliditylang_platform() == "linux-amd64":
-        # This is just to be dynamic, but figure out a better way to do this.
-        (_, list_url) = get_url(version="0.4.10")
-        github_json = urllib.request.urlopen(list_url).read()
-        return json.loads(github_json)["releases"]
-    return []
+def request_and_error(url: str) -> [str]:
+    try:
+        github_json = urllib.request.urlopen(url).read()
+    except URLError as e:
+        print(f"Encountered URL error accessing {url}. \n {e}")
+        raise
+    except ConnectionResetError as e:
+        print(f"Encountered {e} accessing {url} due to server issues.")
+        raise
+    else:
+        return github_json
 
 
 def soliditylang_platform() -> str:
