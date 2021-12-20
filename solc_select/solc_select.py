@@ -1,7 +1,6 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 from zipfile import ZipFile
 import os
 import shutil
@@ -9,11 +8,9 @@ import re
 import sys
 import urllib.request
 from distutils.version import StrictVersion
+from .constants import *
 
-home_dir = Path.home()
-solc_select_dir = home_dir.joinpath(".solc-select")
-artifacts_dir = solc_select_dir.joinpath("artifacts")
-Path.mkdir(artifacts_dir, parents=True, exist_ok=True)
+Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
 
 
 def halt_old_architecture(path: Path) -> None:
@@ -26,9 +23,9 @@ def halt_old_architecture(path: Path) -> None:
 def upgrade_architecture() -> None:
     currently_installed = installed_versions()
     if len(currently_installed) > 0:
-        if Path.is_file(artifacts_dir.joinpath(f"solc-{currently_installed[0]}")):
-            shutil.rmtree(artifacts_dir)
-            Path.mkdir(artifacts_dir, exist_ok=True)
+        if Path.is_file(ARTIFACTS_DIR.joinpath(f"solc-{currently_installed[0]}")):
+            shutil.rmtree(ARTIFACTS_DIR)
+            Path.mkdir(ARTIFACTS_DIR, exist_ok=True)
             install_artifacts(currently_installed)
             print("solc-select is now up to date! 🎉")
         else:
@@ -46,7 +43,7 @@ def current_version() -> (str, str):
                 f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`."
             )
     else:
-        source = solc_select_dir.joinpath("global-version")
+        source = SOLC_SELECT_DIR.joinpath("global-version")
         if Path.is_file(source):
             with open(source) as f:
                 version = f.read()
@@ -54,12 +51,12 @@ def current_version() -> (str, str):
             raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )
-    return (version, source)
+    return version, source
 
 
 def installed_versions() -> [str]:
     return [
-        f.replace("solc-", "") for f in sorted(os.listdir(artifacts_dir)) if f.startswith("solc-")
+        f.replace("solc-", "") for f in sorted(os.listdir(ARTIFACTS_DIR)) if f.startswith("solc-")
     ]
 
 
@@ -72,7 +69,7 @@ def install_artifacts(versions: [str]) -> None:
                 continue
 
         (url, _) = get_url(version, artifact)
-        artifact_file_dir = artifacts_dir.joinpath(f"solc-{version}")
+        artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
@@ -93,13 +90,13 @@ def install_artifacts(versions: [str]) -> None:
 
 
 def is_older_linux(version: str) -> bool:
-    return soliditylang_platform() == "linux-amd64" and StrictVersion(version) <= StrictVersion(
+    return soliditylang_platform() == LINUX_AMD64 and StrictVersion(version) <= StrictVersion(
         "0.4.10"
     )
 
 
 def is_older_windows(version: str) -> bool:
-    return soliditylang_platform() == "windows-amd64" and StrictVersion(version) <= StrictVersion(
+    return soliditylang_platform() == WINDOWS_AMD64 and StrictVersion(version) <= StrictVersion(
         "0.7.1"
     )
 
@@ -108,20 +105,19 @@ def verify_checksum(version: str) -> None:
     (sha256_hash, keccak256_hash) = get_soliditylang_checksums(version)
 
     # calculate sha256 and keccak256 checksum of the local file
-    with open(artifacts_dir.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
+    with open(ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
         sha256_factory = hashlib.sha256()
         keccak_factory = hashlib.sha3_256()
 
         # 1024000(~1MB chunk)
-        for chunk in iter(lambda: f.read(1024000), b''):
+        for chunk in iter(lambda: f.read(1024000), b""):
             sha256_factory.update(chunk)
             keccak_factory.update(chunk)
 
         local_sha256_file_hash = f"0x{sha256_factory.hexdigest()}"
         local_keccak256_file_hash = f"0x{keccak_factory.hexdigest()}"
 
-    if sha256_hash != local_sha256_file_hash and \
-            keccak256_hash != local_keccak256_file_hash:
+    if sha256_hash != local_sha256_file_hash and keccak256_hash != local_keccak256_file_hash:
         raise argparse.ArgumentTypeError(
             f"Error: Checksum mismatch {soliditylang_platform()} - {version}"
         )
@@ -142,7 +138,7 @@ def get_soliditylang_checksums(version: str):
 
 
 def get_url(version: str = "", artifact: str = "") -> (str, str):
-    if soliditylang_platform() == "linux-amd64":
+    if soliditylang_platform() == LINUX_AMD64:
         if version != "" and is_older_linux(version):
             return (
                 f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}",
@@ -156,7 +152,7 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
 
 def switch_global_version(version: str, always_install: bool) -> None:
     if version in installed_versions():
-        with open(f"{solc_select_dir}/global-version", "w") as f:
+        with open(f"{SOLC_SELECT_DIR}/global-version", "w") as f:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
@@ -175,11 +171,9 @@ def valid_version(version: str) -> str:
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
 
-    earliest_release = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
-
-    if StrictVersion(version) < StrictVersion(earliest_release[soliditylang_platform()]):
+    if StrictVersion(version) < StrictVersion(EARLIEST_RELEASE[soliditylang_platform()]):
         raise argparse.ArgumentTypeError(
-            f"Invalid version - only solc versions above '{earliest_release[soliditylang_platform()]}' are available"
+            f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
         )
 
     (_, list_url) = get_url()
@@ -209,27 +203,22 @@ def get_available_versions() -> [str]:
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
     available_releases = json.loads(list_json)["releases"]
-    if soliditylang_platform() == "linux-amd64":
-        available_releases.update(get_additional_linux_versions())
-    return available_releases
-
-
-def get_additional_linux_versions() -> [str]:
-    if soliditylang_platform() == "linux-amd64":
-        # This is just to be dynamic, but figure out a better way to do this.
-        (_, list_url) = get_url(version="0.4.10")
+    if soliditylang_platform() == LINUX_AMD64:
+        (_, list_url) = get_url(version=EARLIEST_RELEASE[LINUX_AMD64])
         github_json = urllib.request.urlopen(list_url).read()
-        return json.loads(github_json)["releases"]
-    return []
+        additional_linux_versions = json.loads(github_json)["releases"]
+        available_releases.update(additional_linux_versions)
+
+    return available_releases
 
 
 def soliditylang_platform() -> str:
     if sys.platform.startswith("linux"):
-        platform = "linux-amd64"
+        platform = LINUX_AMD64
     elif sys.platform == "darwin":
-        platform = "macosx-amd64"
+        platform = MACOSX_AMD64
     elif sys.platform == "win32" or sys.platform == "cygwin":
-        platform = "windows-amd64"
+        platform = WINDOWS_AMD64
     else:
         raise argparse.ArgumentTypeError("Unsupported platform")
     return platform

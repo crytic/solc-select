@@ -7,3 +7,5 @@ global-version
 .idea
 build/
 dist/
+*.egg
+*.egg-info/
