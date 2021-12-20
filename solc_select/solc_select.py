@@ -245,8 +245,8 @@ def soliditylang_platform() -> str:
 
 def should_install_artifacts_range(versions: [str]) -> (bool, StrictVersion, StrictVersion):
     match: bool = False
-    version_from: StrictVersion
-    version_to: StrictVersion
+    version_from: StrictVersion = StrictVersion("")
+    version_to: StrictVersion = StrictVersion("")
 
     for version in versions:
         curr_match = re.search(SOLC_VERSION_RANGE_REGEX, version)
