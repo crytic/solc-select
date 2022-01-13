@@ -71,7 +71,7 @@ def install_artifacts(versions: [str]) -> None:
         (url, _) = get_url(version, artifact)
         artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
-        print(f"Installing '{version}'...")
+        print(f"Installing solc '{version}'...")
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
 
         verify_checksum(version)
