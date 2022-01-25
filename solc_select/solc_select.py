@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import sha3 
 import json
 from zipfile import ZipFile
 import os
@@ -107,7 +108,7 @@ def verify_checksum(version: str) -> None:
     # calculate sha256 and keccak256 checksum of the local file
     with open(ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
         sha256_factory = hashlib.sha256()
-        keccak_factory = hashlib.sha3_256()
+        keccak_factory = sha3.keccak_256()
 
         # 1024000(~1MB chunk)
         for chunk in iter(lambda: f.read(1024000), b""):
@@ -116,14 +117,14 @@ def verify_checksum(version: str) -> None:
 
         local_sha256_file_hash = f"0x{sha256_factory.hexdigest()}"
         local_keccak256_file_hash = f"0x{keccak_factory.hexdigest()}"
-
-    if sha256_hash != local_sha256_file_hash and keccak256_hash != local_keccak256_file_hash:
+    
+    if sha256_hash != local_sha256_file_hash or keccak256_hash != local_keccak256_file_hash:
         raise argparse.ArgumentTypeError(
             f"Error: Checksum mismatch {soliditylang_platform()} - {version}"
         )
 
 
-def get_soliditylang_checksums(version: str):
+def get_soliditylang_checksums(version: str) -> (str, str):
     (_, list_url) = get_url(version=version)
     list_json = urllib.request.urlopen(list_url).read()
     builds = json.loads(list_json)["builds"]
