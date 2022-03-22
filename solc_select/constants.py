@@ -1,7 +1,11 @@
+import os
 from pathlib import Path
 
 # DIRs path
-HOME_DIR = Path.home()
+if "VIRTUAL_ENV" in os.environ:
+    HOME_DIR = Path(os.environ["VIRTUAL_ENV"])
+else:
+    HOME_DIR = Path.home()
 SOLC_SELECT_DIR = HOME_DIR.joinpath(".solc-select")
 ARTIFACTS_DIR = SOLC_SELECT_DIR.joinpath("artifacts")
 
