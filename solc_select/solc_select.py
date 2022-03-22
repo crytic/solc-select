@@ -162,7 +162,7 @@ def switch_global_version(version: str, always_install: bool) -> None:
         print("Switched global version to", version)
     elif version in get_available_versions():
         if always_install:
-            install_artifacts(version)
+            install_artifacts([version])
             switch_global_version(version, always_install)
         else:
             raise argparse.ArgumentTypeError(f"'{version}' must be installed prior to use.")
