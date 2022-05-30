@@ -18,10 +18,10 @@ jobs:
         type: ["solc_upgrade", "macos", "solc"]
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7.12
+    - name: Set up Python 3.10.4
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7.12
+        python-version: 3.10.4
     - name: Install solc-select
       run: |
         sudo python3 setup.py install
