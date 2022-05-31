@@ -99,6 +99,21 @@ Try downgrading to `solc-select version 0.2.0`.
 
 Our `0.2.1` version of `solc-select` pulls older Linux binaries from [crytic/solc](https://github.com/crytic/solc) which seems to have introduced unexpected behavior in certain instances.
 
+### `solc-select` version changes, but `solc --version does not match`
+
+Users seem to be experiencing situations in which the following command is successful: 
+```
+solc-select use <version> 
+```
+However, when running the following command, it points to an older version of Solidity.
+```
+solc --version
+```
+
+`solc-select` is intended to work with custom binaries. This means that Solidity installed through other means (i.e: `brew install solidity` will _not_ work!). 
+
+Uninstall other versions Solidity from your computer.
+
 ## License
 
 `solc-select` is licensed and distributed under the [AGPLv3](LICENSE) license. [Contact us](mailto:opensource@trailofbits.com) if you’re looking for an exception to the terms.
