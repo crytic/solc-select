@@ -123,7 +123,7 @@ However, when running the following command, it points to an older version of So
 solc --version
 ```
 
-`solc-select` is intended to work with custom binaries. This means that Solidity installed through other means (i.e: `brew install solidity` will _not_ work!). 
+`solc-select` is intended to work with custom binaries. This means that Solidity installed through other means (i.e: `brew install solidity`) will _not_ work!. 
 
 Uninstall other versions Solidity from your computer.
 
