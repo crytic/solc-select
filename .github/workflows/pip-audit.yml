@@ -1,0 +1,37 @@
+name: Scan dependencies for vulnerabilities with pip-audit
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+  schedule:
+    - cron: "0 12 * * *"
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install project
+        run: |
+          python -m venv /tmp/pip-audit-env
+          source /tmp/pip-audit-env/bin/activate
+
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+
+      - name: Run pip-audit
+        uses: trailofbits/gh-action-pip-audit@v0.0.4
+        with:
+          virtual-environment: /tmp/pip-audit-env
+
