@@ -15,13 +15,17 @@ jobs:
     runs-on: windows-2022
     strategy:
       matrix:
+        python:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"                  
         type: ["windows","solc"]
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v1
+    steps:    
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python }}
     - name: Install solc-select
       run: |
         python3 setup.py install --user
