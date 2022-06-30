@@ -61,7 +61,7 @@ def installed_versions() -> [str]:
     ]
 
 
-def install_artifacts(versions: [str]) -> None:
+def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
 
     for version, artifact in releases.items():
@@ -88,6 +88,7 @@ def install_artifacts(versions: [str]) -> None:
         else:
             Path.chmod(artifact_file_dir.joinpath(f"solc-{version}"), 0o775)
         print(f"Version '{version}' installed.")
+    return True
 
 
 def is_older_linux(version: str) -> bool:
