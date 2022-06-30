@@ -85,7 +85,7 @@ pip install solc-select==1.0.0b1
 
 Alternatively, for the most up-to-date version, clone this repository and run 
 ```bash 
-python3 setup.py install 
+pip install . --user
 ```
 
 ## Known Issues

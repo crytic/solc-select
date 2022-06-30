@@ -15,16 +15,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        python:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"            
         type: ["solc_upgrade", "linux","solc"]
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v1
+    steps:    
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
-        python-version: 3.6
+        python-version: ${{ matrix.python }}
     - name: Install solc-select
       run: |
-        sudo python3 setup.py install
+        sudo pip install .
         solc-select install all
     - name: Run Tests
       env:
