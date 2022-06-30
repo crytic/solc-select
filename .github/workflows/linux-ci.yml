@@ -28,7 +28,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: Install solc-select
       run: |
-        sudo python3 setup.py install
+        sudo pip install .
         solc-select install all
     - name: Run Tests
       env:
