@@ -63,10 +63,14 @@ def installed_versions() -> [str]:
 
 def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
+    match, version_from, version_to = should_install_artifacts_range(versions)
 
     for version, artifact in releases.items():
         if "all" not in versions:
-            if versions and version not in versions:
+            if match:
+                if not version_from <= StrictVersion(version) <= version_to:
+                    continue
+            elif versions and version not in versions:
                 continue
 
         (url, _) = get_url(version, artifact)
@@ -167,32 +171,47 @@ def switch_global_version(version: str, always_install: bool) -> None:
         raise argparse.ArgumentTypeError(f"Unknown version '{version}'")
 
 
-def valid_version(version: str) -> str:
-    match = re.search(r"^(\d+)\.(\d+)\.(\d+)$", version)
+def valid_version(install_input: str, string_version: bool = True) -> str:
+    match = re.search(INSTALL_VERSIONS_INPUT_REGEX, install_input)
 
-    if match is None:
-        raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
-
-    if StrictVersion(version) < StrictVersion(EARLIEST_RELEASE[soliditylang_platform()]):
-        raise argparse.ArgumentTypeError(
-            f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
-        )
+    if match is None or (not match.group(4) and string_version):
+        raise argparse.ArgumentTypeError(f"Invalid version '{install_input}'.")
 
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
     latest_release = json.loads(list_json)["latestRelease"]
-    if StrictVersion(version) > StrictVersion(latest_release):
-        raise argparse.ArgumentTypeError(
-            f"Invalid version '{latest_release}' is the latest available version"
-        )
 
-    return version
+    def check_available_version(version: str):
+        if StrictVersion(version) < StrictVersion(EARLIEST_RELEASE[soliditylang_platform()]):
+            raise argparse.ArgumentTypeError(
+                f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
+            )
+
+        if StrictVersion(version) > StrictVersion(latest_release):
+            raise argparse.ArgumentTypeError(
+                f"Invalid version '{latest_release}' is the latest available version"
+            )
+
+    if match.group(4):
+        check_available_version(install_input)
+    else:
+        version_from = match.group(2)
+        version_to = match.group(3)
+        check_available_version(version_from)
+        check_available_version(version_to)
+
+        if StrictVersion(version_from) == StrictVersion(version_to):
+            return version_from
+        elif StrictVersion(version_from) > StrictVersion(version_to):
+            return f"{version_to}-{version_from}"
+
+    return install_input
 
 
 def valid_install_arg(arg: str) -> str:
     if arg == "all":
         return arg
-    return valid_version(arg)
+    return valid_version(arg, False)
 
 
 def get_installable_versions() -> [str]:
@@ -224,3 +243,28 @@ def soliditylang_platform() -> str:
     else:
         raise argparse.ArgumentTypeError("Unsupported platform")
     return platform
+
+
+def should_install_artifacts_range(versions: [str]) -> (bool, StrictVersion, StrictVersion):
+    match: bool = False
+    version_from: StrictVersion = StrictVersion("")
+    version_to: StrictVersion = StrictVersion("")
+
+    for version in versions:
+        curr_match = re.search(SOLC_VERSION_RANGE_REGEX, version)
+        if curr_match:
+            new_version_from = StrictVersion(curr_match.group(1))
+            new_version_to = StrictVersion(curr_match.group(2))
+
+            if match:
+                if new_version_from < version_from:
+                    version_from = new_version_from
+
+                if new_version_to > version_to:
+                    version_to = new_version_to
+            else:
+                version_from = new_version_from
+                version_to = new_version_to
+                match = True
+
+    return match, version_from, version_to

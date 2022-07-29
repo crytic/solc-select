@@ -20,3 +20,8 @@ MACOSX_AMD64 = "macosx-amd64"
 WINDOWS_AMD64 = "windows-amd64"
 
 EARLIEST_RELEASE = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
+
+# Regexes
+SOLC_VERSION_REGEX = r"[\d]+.[\d]+.[\d]+"
+SOLC_VERSION_RANGE_REGEX = f"({SOLC_VERSION_REGEX}){{1}}-({SOLC_VERSION_REGEX}){{1}}"
+INSTALL_VERSIONS_INPUT_REGEX = f"^({SOLC_VERSION_RANGE_REGEX})|({SOLC_VERSION_REGEX})$"

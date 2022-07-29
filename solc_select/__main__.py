@@ -31,7 +31,7 @@ def solc_select() -> None:
     )
     parser_install.add_argument(
         INSTALL_VERSIONS,
-        help='specific versions you want to install "0.4.25" or "all"',
+        help='specific versions you want to install "0.4.25" or "0.4.24-0.4.25" for multiple versions or "all"',
         nargs="*",
         default=list(),
         type=valid_install_arg,
