@@ -131,6 +131,7 @@ def verify_checksum(version: str) -> None:
 
 def get_soliditylang_checksums(version: str) -> (str, str):
     (_, list_url) = get_url(version=version)
+    # pylint: disable=consider-using-with
     list_json = urllib.request.urlopen(list_url).read()
     builds = json.loads(list_json)["builds"]
     matches = list(filter(lambda b: b["version"] == version, builds))
@@ -182,6 +183,7 @@ def valid_version(version: str) -> str:
             f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
         )
 
+    # pylint: disable=consider-using-with
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
     latest_release = json.loads(list_json)["latestRelease"]
@@ -206,6 +208,7 @@ def get_installable_versions() -> [str]:
     return installable
 
 
+# pylint: disable=consider-using-with
 def get_available_versions() -> [str]:
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
