@@ -9,6 +9,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.6",
     license="AGPL-3.0",
+    # pylint: disable=consider-using-with
     long_description=open("README.md", encoding="utf8").read(),
     entry_points={
         "console_scripts": [
