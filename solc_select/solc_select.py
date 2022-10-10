@@ -111,9 +111,7 @@ def verify_checksum(version: str) -> None:
     (sha256_hash, keccak256_hash) = get_soliditylang_checksums(version)
 
     # calculate sha256 and keccak256 checksum of the local file
-    with open(
-        ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}", encoding="utf-8"), "rb"
-    ) as f:
+    with open(ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
         sha256_factory = hashlib.sha256()
         keccak_factory = sha3.keccak_256()
 
