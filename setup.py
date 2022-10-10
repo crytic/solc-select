@@ -16,5 +16,5 @@ setup(
             "solc = solc_select.__main__:solc",
         ]
     },
-    install_requires=["pysha3"],
+    install_requires=["pysha3", "packaging"],
 )
