@@ -1,6 +1,6 @@
 import argparse
 import hashlib
-import sha3 
+import sha3
 import json
 from zipfile import ZipFile
 import os
@@ -118,7 +118,7 @@ def verify_checksum(version: str) -> None:
 
         local_sha256_file_hash = f"0x{sha256_factory.hexdigest()}"
         local_keccak256_file_hash = f"0x{keccak_factory.hexdigest()}"
-    
+
     if sha256_hash != local_sha256_file_hash or keccak256_hash != local_keccak256_file_hash:
         raise argparse.ArgumentTypeError(
             f"Error: Checksum mismatch {soliditylang_platform()} - {version}"
