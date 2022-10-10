@@ -7,8 +7,8 @@ import shutil
 import re
 import sys
 import urllib.request
-from distutils.version import StrictVersion
 from pathlib import Path
+from packaging.version import Version
 import sha3
 from .constants import (
     LINUX_AMD64,
@@ -54,7 +54,7 @@ def current_version() -> (str, str):
     else:
         source = SOLC_SELECT_DIR.joinpath("global-version")
         if Path.is_file(source):
-            with open(source) as f:
+            with open(source, encoding="utf-8") as f:
                 version = f.read()
         else:
             raise argparse.ArgumentTypeError(
@@ -100,22 +100,20 @@ def install_artifacts(versions: [str]) -> bool:
 
 
 def is_older_linux(version: str) -> bool:
-    return soliditylang_platform() == LINUX_AMD64 and StrictVersion(version) <= StrictVersion(
-        "0.4.10"
-    )
+    return soliditylang_platform() == LINUX_AMD64 and Version(version) <= Version("0.4.10")
 
 
 def is_older_windows(version: str) -> bool:
-    return soliditylang_platform() == WINDOWS_AMD64 and StrictVersion(version) <= StrictVersion(
-        "0.7.1"
-    )
+    return soliditylang_platform() == WINDOWS_AMD64 and Version(version) <= Version("0.7.1")
 
 
 def verify_checksum(version: str) -> None:
     (sha256_hash, keccak256_hash) = get_soliditylang_checksums(version)
 
     # calculate sha256 and keccak256 checksum of the local file
-    with open(ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
+    with open(
+        ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}", encoding="utf-8"), "rb"
+    ) as f:
         sha256_factory = hashlib.sha256()
         keccak_factory = sha3.keccak_256()
 
@@ -162,7 +160,7 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
 
 def switch_global_version(version: str, always_install: bool) -> None:
     if version in installed_versions():
-        with open(f"{SOLC_SELECT_DIR}/global-version", "w") as f:
+        with open(f"{SOLC_SELECT_DIR}/global-version", "w", encoding="utf-8") as f:
             f.write(version)
         print("Switched global version to", version)
     elif version in get_available_versions():
@@ -181,7 +179,7 @@ def valid_version(version: str) -> str:
     if match is None:
         raise argparse.ArgumentTypeError(f"Invalid version '{version}'.")
 
-    if StrictVersion(version) < StrictVersion(EARLIEST_RELEASE[soliditylang_platform()]):
+    if Version(version) < Version(EARLIEST_RELEASE[soliditylang_platform()]):
         raise argparse.ArgumentTypeError(
             f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
         )
@@ -189,7 +187,8 @@ def valid_version(version: str) -> str:
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
     latest_release = json.loads(list_json)["latestRelease"]
-    if StrictVersion(version) > StrictVersion(latest_release):
+    # pylint: disable=consider-using-with
+    if Version(version) > Version(latest_release):
         raise argparse.ArgumentTypeError(
             f"Invalid version '{latest_release}' is the latest available version"
         )
@@ -205,7 +204,7 @@ def valid_install_arg(arg: str) -> str:
 
 def get_installable_versions() -> [str]:
     installable = list(set(get_available_versions()) - set(installed_versions()))
-    installable.sort(key=StrictVersion)
+    installable.sort(key=Version)
     return installable
 
 
@@ -213,6 +212,7 @@ def get_available_versions() -> [str]:
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
     available_releases = json.loads(list_json)["releases"]
+    # pylint: disable=consider-using-with
     if soliditylang_platform() == LINUX_AMD64:
         (_, list_url) = get_url(version=EARLIEST_RELEASE[LINUX_AMD64])
         github_json = urllib.request.urlopen(list_url).read()
@@ -227,7 +227,7 @@ def soliditylang_platform() -> str:
         platform = LINUX_AMD64
     elif sys.platform == "darwin":
         platform = MACOSX_AMD64
-    elif sys.platform == "win32" or sys.platform == "cygwin":
+    elif sys.platform in ["win32", "cygwin"]:
         platform = WINDOWS_AMD64
     else:
         raise argparse.ArgumentTypeError("Unsupported platform")

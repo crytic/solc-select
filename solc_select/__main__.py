@@ -33,7 +33,7 @@ def solc_select() -> None:
         INSTALL_VERSIONS,
         help='specific versions you want to install "0.4.25" or "all"',
         nargs="*",
-        default=list(),
+        default=[],
         type=valid_install_arg,
     )
     parser_use = subparsers.add_parser("use", help="change the version of global solc compiler")
