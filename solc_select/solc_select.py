@@ -25,7 +25,7 @@ Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
 def halt_old_architecture(path: Path) -> None:
     if not Path.is_file(path):
         raise argparse.ArgumentTypeError(
-            "solc-select is out of date. Please run `solc-select update`"
+            "solc-select is out of date. Please run `solc-select upgrade`"
         )
 
 
