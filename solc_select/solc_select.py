@@ -10,7 +10,14 @@ import urllib.request
 from distutils.version import StrictVersion
 from pathlib import Path
 import sha3
-from .constants import LINUX_AMD64, MACOSX_AMD64, WINDOWS_AMD64, EARLIEST_RELEASE, SOLC_SELECT_DIR, ARTIFACTS_DIR
+from .constants import (
+    LINUX_AMD64,
+    MACOSX_AMD64,
+    WINDOWS_AMD64,
+    EARLIEST_RELEASE,
+    SOLC_SELECT_DIR,
+    ARTIFACTS_DIR,
+)
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
 

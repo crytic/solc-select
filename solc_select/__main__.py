@@ -20,7 +20,7 @@ from .solc_select import (
     upgrade_architecture,
 )
 
-#pylint: disable=too-many-branches
+# pylint: disable=too-many-branches
 def solc_select() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
