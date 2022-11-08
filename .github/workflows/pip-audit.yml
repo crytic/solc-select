@@ -31,7 +31,7 @@ jobs:
 
 
       - name: Run pip-audit
-        uses: pypa/gh-action-pip-audit@v1.0.0
+        uses: pypa/gh-action-pip-audit@v1.0.1
         with:
           virtual-environment: /tmp/pip-audit-env
 
