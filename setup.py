@@ -17,5 +17,5 @@ setup(
             "solc = solc_select.__main__:solc",
         ]
     },
-    install_requires=["pysha3", "packaging"],
+    install_requires=["pycryptodome>=3.4.6", "packaging"],
 )
