@@ -9,7 +9,7 @@ import sys
 import urllib.request
 from pathlib import Path
 from packaging.version import Version
-import sha3
+from Crypto.Hash import keccak
 from .constants import (
     LINUX_AMD64,
     MACOSX_AMD64,
@@ -113,7 +113,7 @@ def verify_checksum(version: str) -> None:
     # calculate sha256 and keccak256 checksum of the local file
     with open(ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
         sha256_factory = hashlib.sha256()
-        keccak_factory = sha3.keccak_256()
+        keccak_factory = keccak.new(digest_bits=256)
 
         # 1024000(~1MB chunk)
         for chunk in iter(lambda: f.read(1024000), b""):
