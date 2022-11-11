@@ -84,7 +84,7 @@ def solc() -> None:
         halt_old_architecture(path)
         try:
             # Display solc usage when invoked with help flag or without options
-            check_process =  sys.argv[1:] not in  ["--help", []]
+            check_process = sys.argv[1:] not in ["--help", []]
             process = subprocess.run(
                 [str(path)] + sys.argv[1:], stdout=subprocess.PIPE, stdin=None, check=check_process
             )
