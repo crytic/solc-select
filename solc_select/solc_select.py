@@ -38,7 +38,7 @@ def upgrade_architecture() -> None:
             install_artifacts(currently_installed)
             print("solc-select is now up to date! 🎉")
         else:
-            raise argparse.ArgumentTypeError("solc-select is already up to date")
+            print("solc-select is already up to date")
     else:
         raise argparse.ArgumentTypeError("Run `solc-select install --help` for more information")
 
