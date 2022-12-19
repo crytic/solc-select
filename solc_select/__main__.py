@@ -52,7 +52,9 @@ def solc_select() -> None:
         versions = args.get(INSTALL_VERSIONS)
         if not versions:
             print("Available versions to install:")
-            for version in sorted(get_installable_versions(), key=lambda v: [int(s) for s in v.split(".")]):
+            for version in sorted(
+                get_installable_versions(), key=lambda v: [int(s) for s in v.split(".")]
+            ):
                 print(version)
         else:
             install_artifacts(args.get(INSTALL_VERSIONS))
