@@ -44,22 +44,25 @@ def upgrade_architecture() -> None:
 
 
 def current_version() -> (str, str):
-    version = os.environ.get("SOLC_VERSION")
     source = "SOLC_VERSION"
-    if version:
-        if version not in installed_versions():
-            raise argparse.ArgumentTypeError(
-                f"Version '{version}' not installed (set by {source}). Run `solc-select install {version}`."
-            )
-    else:
-        source = SOLC_SELECT_DIR.joinpath("global-version")
-        if Path.is_file(source):
-            with open(source, encoding="utf-8") as f:
+    version = os.environ.get(source)
+    if not version:
+        source_path = SOLC_SELECT_DIR.joinpath("global-version")
+        source = source_path.as_posix()
+        if Path.is_file(source_path):
+            with open(source_path, encoding="utf-8") as f:
                 version = f.read()
         else:
             raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
             )
+    versions = installed_versions()
+    if version not in versions:
+        raise argparse.ArgumentTypeError(
+            f"\nVersion '{version}' not installed (set by {source})."
+            f"\nRun `solc-select install {version}`."
+            f"\nOr use one of the following versions: {versions}"
+        )
     return version, source
 
 
