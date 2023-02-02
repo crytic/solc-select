@@ -102,6 +102,9 @@ def install_artifacts(versions: [str]) -> bool:
 def is_older_linux(version: str) -> bool:
     return soliditylang_platform() == LINUX_AMD64 and Version(version) <= Version("0.4.10")
 
+def is_linux_0818(version: str) -> bool:
+    return soliditylang_platform() == LINUX_AMD64 and Version(version) == Version("0.8.18")    
+
 
 def is_older_windows(version: str) -> bool:
     return soliditylang_platform() == WINDOWS_AMD64 and Version(version) <= Version("0.7.1")
@@ -146,7 +149,7 @@ def get_soliditylang_checksums(version: str) -> (str, str):
 
 def get_url(version: str = "", artifact: str = "") -> (str, str):
     if soliditylang_platform() == LINUX_AMD64:
-        if version != "" and is_older_linux(version):
+        if version != "" and (is_older_linux(version) or is_linux_0818(version)):
             return (
                 f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}",
                 "https://raw.githubusercontent.com/crytic/solc/new-list-json/linux/amd64/list.json",
