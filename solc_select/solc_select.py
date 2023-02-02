@@ -174,6 +174,9 @@ def switch_global_version(version: str, always_install: bool) -> None:
 
 
 def valid_version(version: str) -> str:
+    latest_release = get_latest_release()
+    if version == "latest":
+        return latest_release
     match = re.search(r"^(\d+)\.(\d+)\.(\d+)$", version)
 
     if match is None:
@@ -185,8 +188,6 @@ def valid_version(version: str) -> str:
         )
 
     # pylint: disable=consider-using-with
-    latest_release = get_latest_release()
-    # pylint: disable=consider-using-with
     if Version(version) > Version(latest_release):
         raise argparse.ArgumentTypeError(
             f"Invalid version '{latest_release}' is the latest available version"
@@ -196,7 +197,7 @@ def valid_version(version: str) -> str:
 
 
 def valid_install_arg(arg: str) -> str:
-    if arg in ("all", "latest"):
+    if arg == "all":
         return arg
     return valid_version(arg)
 
