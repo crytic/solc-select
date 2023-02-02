@@ -58,6 +58,9 @@ Installing '0.8.1'...
 Version '0.8.1' installed.
 ```
 
+You can also install the latest version with `solc-select install latest`
+and use the latest version with `solc-select use latest`
+
 Display the currently installed versions:
 ```
 $ solc-select versions

@@ -71,6 +71,7 @@ def installed_versions() -> [str]:
 
 def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
+    versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
 
     for version, artifact in releases.items():
         if "all" not in versions:
@@ -184,9 +185,7 @@ def valid_version(version: str) -> str:
         )
 
     # pylint: disable=consider-using-with
-    (_, list_url) = get_url()
-    list_json = urllib.request.urlopen(list_url).read()
-    latest_release = json.loads(list_json)["latestRelease"]
+    latest_release = get_latest_release()
     # pylint: disable=consider-using-with
     if Version(version) > Version(latest_release):
         raise argparse.ArgumentTypeError(
@@ -197,7 +196,7 @@ def valid_version(version: str) -> str:
 
 
 def valid_install_arg(arg: str) -> str:
-    if arg == "all":
+    if arg in ("all", "latest"):
         return arg
     return valid_version(arg)
 
@@ -233,3 +232,10 @@ def soliditylang_platform() -> str:
     else:
         raise argparse.ArgumentTypeError("Unsupported platform")
     return platform
+
+
+def get_latest_release() -> str:
+    (_, list_url) = get_url()
+    list_json = urllib.request.urlopen(list_url).read()
+    latest_release = json.loads(list_json)["latestRelease"]
+    return latest_release
