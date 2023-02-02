@@ -71,7 +71,9 @@ def installed_versions() -> [str]:
 
 def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
-
+    for version in versions:
+        if version not in releases:
+            print(f"Unknown version '{version}'")
     for version, artifact in releases.items():
         if "all" not in versions:
             if versions and version not in versions:
