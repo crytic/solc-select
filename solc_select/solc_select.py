@@ -158,7 +158,7 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
     if soliditylang_platform() == LINUX_AMD64:
         if version != "" and is_older_linux(version):
             return (
-                f"CRYTIC_SOLC_ARTIFACTS{artifact}",
+                CRYTIC_SOLC_ARTIFACTS+artifact,
                 CRYTIC_SOLC_JSON,
             )
     return (
