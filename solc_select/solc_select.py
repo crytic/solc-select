@@ -17,6 +17,8 @@ from .constants import (
     EARLIEST_RELEASE,
     SOLC_SELECT_DIR,
     ARTIFACTS_DIR,
+    CRYTIC_SOLC_ARTIFACTS,
+    CRYTIC_SOLC_JSON,
 )
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
@@ -81,6 +83,11 @@ def install_artifacts(versions: [str]) -> bool:
                 continue
 
         (url, _) = get_url(version, artifact)
+
+        if is_linux_0818(version):
+            url = CRYTIC_SOLC_ARTIFACTS + artifact
+            print(url)
+
         artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
@@ -104,6 +111,10 @@ def install_artifacts(versions: [str]) -> bool:
 
 def is_older_linux(version: str) -> bool:
     return soliditylang_platform() == LINUX_AMD64 and Version(version) <= Version("0.4.10")
+
+
+def is_linux_0818(version: str) -> bool:
+    return soliditylang_platform() == LINUX_AMD64 and Version(version) == Version("0.8.18")
 
 
 def is_older_windows(version: str) -> bool:
@@ -151,8 +162,8 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
     if soliditylang_platform() == LINUX_AMD64:
         if version != "" and is_older_linux(version):
             return (
-                f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}",
-                "https://raw.githubusercontent.com/crytic/solc/new-list-json/linux/amd64/list.json",
+                CRYTIC_SOLC_ARTIFACTS + artifact,
+                CRYTIC_SOLC_JSON,
             )
     return (
         f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}",
