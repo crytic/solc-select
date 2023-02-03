@@ -17,6 +17,8 @@ from .constants import (
     EARLIEST_RELEASE,
     SOLC_SELECT_DIR,
     ARTIFACTS_DIR,
+    CRYTIC_SOLC_ARTIFACTS,
+    CRYTIC_SOLC_JSON
 )
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
@@ -76,8 +78,11 @@ def install_artifacts(versions: [str]) -> bool:
         if "all" not in versions:
             if versions and version not in versions:
                 continue
-
+        
         (url, _) = get_url(version, artifact)
+        if is_linux_0818(version):
+            url = f"CRYTIC_SOLC_ARTIFACTS{artifact}"
+
         artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         print(f"Installing '{version}'...")
@@ -103,7 +108,7 @@ def is_older_linux(version: str) -> bool:
     return soliditylang_platform() == LINUX_AMD64 and Version(version) <= Version("0.4.10")
 
 def is_linux_0818(version: str) -> bool:
-    return soliditylang_platform() == LINUX_AMD64 and Version(version) == Version("0.8.18")    
+    return soliditylang_platform() == LINUX_AMD64 and Version(version) == Version("0.")    
 
 
 def is_older_windows(version: str) -> bool:
@@ -151,8 +156,8 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
     if soliditylang_platform() == LINUX_AMD64:
         if version != "" and (is_older_linux(version) or is_linux_0818(version)):
             return (
-                f"https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/{artifact}",
-                "https://raw.githubusercontent.com/crytic/solc/new-list-json/linux/amd64/list.json",
+                f"CRYTIC_SOLC_ARTIFACTS{artifact}",
+                CRYTIC_SOLC_JSON,
             )
     return (
         f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}",
@@ -185,6 +190,8 @@ def valid_version(version: str) -> str:
         raise argparse.ArgumentTypeError(
             f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
         )
+    if is_linux_0818(version): 
+        return version
 
     # pylint: disable=consider-using-with
     (_, list_url) = get_url()
