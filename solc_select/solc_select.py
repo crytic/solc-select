@@ -18,7 +18,7 @@ from .constants import (
     SOLC_SELECT_DIR,
     ARTIFACTS_DIR,
     CRYTIC_SOLC_ARTIFACTS,
-    CRYTIC_SOLC_JSON
+    CRYTIC_SOLC_JSON,
 )
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
@@ -82,7 +82,7 @@ def install_artifacts(versions: [str]) -> bool:
         (url, _) = get_url(version, artifact)
 
         if is_linux_0818(version):
-            url = CRYTIC_SOLC_ARTIFACTS+artifact
+            url = CRYTIC_SOLC_ARTIFACTS + artifact
             print(url)
 
         artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
@@ -108,6 +108,7 @@ def install_artifacts(versions: [str]) -> bool:
 
 def is_older_linux(version: str) -> bool:
     return soliditylang_platform() == LINUX_AMD64 and Version(version) <= Version("0.4.10")
+
 
 def is_linux_0818(version: str) -> bool:
     return soliditylang_platform() == LINUX_AMD64 and Version(version) == Version("0.8.18")
@@ -158,7 +159,7 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
     if soliditylang_platform() == LINUX_AMD64:
         if version != "" and is_older_linux(version):
             return (
-                CRYTIC_SOLC_ARTIFACTS+artifact,
+                CRYTIC_SOLC_ARTIFACTS + artifact,
                 CRYTIC_SOLC_JSON,
             )
     return (
@@ -243,4 +244,3 @@ def soliditylang_platform() -> str:
     else:
         raise argparse.ArgumentTypeError("Unsupported platform")
     return platform
-
