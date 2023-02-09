@@ -76,6 +76,7 @@ def installed_versions() -> [str]:
 
 def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
+    versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
 
     for version, artifact in releases.items():
         if "all" not in versions:
@@ -187,6 +188,9 @@ def switch_global_version(version: str, always_install: bool) -> None:
 
 
 def valid_version(version: str) -> str:
+    latest_release = get_latest_release()
+    if version == "latest":
+        return latest_release
     match = re.search(r"^(\d+)\.(\d+)\.(\d+)$", version)
 
     if match is None:
@@ -197,10 +201,6 @@ def valid_version(version: str) -> str:
             f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
         )
 
-    # pylint: disable=consider-using-with
-    (_, list_url) = get_url()
-    list_json = urllib.request.urlopen(list_url).read()
-    latest_release = json.loads(list_json)["latestRelease"]
     # pylint: disable=consider-using-with
     if Version(version) > Version(latest_release):
         raise argparse.ArgumentTypeError(
@@ -247,3 +247,10 @@ def soliditylang_platform() -> str:
     else:
         raise argparse.ArgumentTypeError("Unsupported platform")
     return platform
+
+
+def get_latest_release() -> str:
+    (_, list_url) = get_url()
+    list_json = urllib.request.urlopen(list_url).read()
+    latest_release = json.loads(list_json)["latestRelease"]
+    return latest_release
