@@ -61,14 +61,20 @@ def solc_select() -> None:
         switch_global_version(args.get(USE_VERSION), args.get("always_install"))
 
     elif args.get(SHOW_VERSIONS) is not None:
-        res = current_version()
-        if res:
-            (current_ver, source) = res
-        for version in reversed(sorted(installed_versions())):
-            if res and version == current_ver:
-                print(f"{version} (current, set by {source})")
-            else:
-                print(version)
+        versions_installed = installed_versions()
+        if versions_installed:
+            res = current_version()
+            if res:
+                (current_ver, source) = res
+            for version in reversed(sorted(versions_installed)):
+                if res and version == current_ver:
+                    print(f"{version} (current, set by {source})")
+                else:
+                    print(version)
+        else:
+            print(
+                "No solc version installed. Run `solc-select install --help` for more information"
+            )
     elif args.get(UPGRADE) is not None:
         upgrade_architecture()
     else:
