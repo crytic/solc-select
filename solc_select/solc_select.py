@@ -188,6 +188,8 @@ def switch_global_version(version: str, always_install: bool) -> None:
 
 
 def valid_version(version: str) -> str:
+    if version in installed_versions():
+        return version
     latest_release = get_latest_release()
     if version == "latest":
         return latest_release
