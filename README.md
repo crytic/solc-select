@@ -16,6 +16,10 @@ The downloaded binaries are stored in `~/.solc-select/artifacts/`.
 pip3 install solc-select
 ```
 
+### Running on ARM (Mac M1/M2)
+
+`solc` requires Rosetta to be installed. See the FAQ on [how to install Rosetta](#oserror-errno-86-bad-cpu-type-in-executable).
+
 ## Usage
 
 The global version of `solc` can be set with the `solc-select use <version>` command:
@@ -73,6 +77,17 @@ $ solc-select versions
 Feel free to stop by our [Slack channel](https://empirehacking.slack.com/) for help on using or extending `solc-select`.
 
 ## FAQ
+
+### OSError: [Errno 86] Bad CPU type in executable
+`solc` requires Rosetta to be installed. To see whether you have Rosetta installed on your mac, run
+```
+pgrep -q oahd && echo Rosetta is installed || echo Rosetta is NOT installed
+```
+
+If it is not installed, it can be installed with the command
+```
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
 
 ### solc-version not changing after running `solc-select use [version]` or setting `SOLC_VERSION`
 
