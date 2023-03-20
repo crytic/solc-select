@@ -8,7 +8,7 @@ def mac_can_run_intel_binaries() -> bool:
     assert sys.platform == "darwin"
     if platform.machine() == "arm64":
         # M1/M2 Mac
-        result = subprocess.run(["/usr/bin/pgrep", "-q", "oahd"], capture_output=True)
+        result = subprocess.run(["/usr/bin/pgrep", "-q", "oahd"], capture_output=True, check=False)
         return result.returncode == 0
 
     # Intel Mac
