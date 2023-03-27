@@ -73,6 +73,8 @@ def installed_versions() -> [str]:
         f.replace("solc-", "") for f in sorted(os.listdir(ARTIFACTS_DIR)) if f.startswith("solc-")
     ]
 
+def artifact_path(version: str) -> Path:
+    return ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
 
 def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
