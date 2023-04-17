@@ -73,15 +73,12 @@ def installed_versions() -> [str]:
         f.replace("solc-", "") for f in sorted(os.listdir(ARTIFACTS_DIR)) if f.startswith("solc-")
     ]
 
+
 def artifact_path(version: str) -> Path:
     return ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
 
-def install_artifacts(versions: [str]) -> bool:
-    already_installed = installed_versions()
-    for version in versions:
-        if version in already_installed:
-            versions.remove(version)
 
+def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
     versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
 
@@ -152,7 +149,6 @@ def verify_checksum(version: str) -> None:
 
 
 def get_soliditylang_checksums(version: str) -> (str, str):
-    print(version)
     (_, list_url) = get_url(version=version)
     # pylint: disable=consider-using-with
     list_json = urllib.request.urlopen(list_url).read()
