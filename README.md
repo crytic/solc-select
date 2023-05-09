@@ -79,13 +79,20 @@ Feel free to stop by our [Slack channel](https://empirehacking.slack.com/) for h
 ## FAQ
 
 ### OSError: [Errno 86] Bad CPU type in executable
-`solc` requires Rosetta to be installed. To see whether you have Rosetta installed on your mac, run
-```
+
+On newer `solc-select` versions, this might show as `solc binaries for macOS are
+Intel-only. Please install Rosetta on your Mac to continue.`
+
+`solc` requires Rosetta to be installed. To see whether you have Rosetta
+installed on your Mac, run
+
+```bash
 pgrep -q oahd && echo Rosetta is installed || echo Rosetta is NOT installed
 ```
 
 If it is not installed, it can be installed with the command
-```
+
+```bash
 /usr/sbin/softwareupdate --install-rosetta --agree-to-license
 ```
 

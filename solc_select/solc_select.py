@@ -20,6 +20,7 @@ from .constants import (
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
 )
+from .utils import mac_can_run_intel_binaries
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
 
@@ -29,6 +30,14 @@ def halt_old_architecture(path: Path) -> None:
         raise argparse.ArgumentTypeError(
             "solc-select is out of date. Please run `solc-select upgrade`"
         )
+
+
+def halt_incompatible_system() -> None:
+    if soliditylang_platform() == MACOSX_AMD64 and not mac_can_run_intel_binaries():
+        raise argparse.ArgumentTypeError(
+            "solc binaries for macOS are Intel-only. Please install Rosetta on your Mac to continue. Refer to the solc-select README for instructions."
+        )
+    # TODO: check for Linux aarch64 (e.g. RPi), presence of QEMU+binfmt
 
 
 def upgrade_architecture() -> None:

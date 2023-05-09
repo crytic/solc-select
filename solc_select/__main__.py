@@ -16,6 +16,7 @@ from .solc_select import (
     switch_global_version,
     current_version,
     installed_versions,
+    halt_incompatible_system,
     halt_old_architecture,
     upgrade_architecture,
 )
@@ -88,6 +89,7 @@ def solc() -> None:
         (version, _) = res
         path = ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
         halt_old_architecture(path)
+        halt_incompatible_system()
         try:
             subprocess.run(
                 [str(path)] + sys.argv[1:],
