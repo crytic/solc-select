@@ -83,6 +83,10 @@ def installed_versions() -> [str]:
     ]
 
 
+def artifact_path(version: str) -> Path:
+    return ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
+
+
 def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
     versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
