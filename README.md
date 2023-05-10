@@ -8,13 +8,15 @@ The tool is split into two CLI utilities:
 The `solc` binaries are downloaded from https://binaries.soliditylang.org/ which contains
 official artifacts for many historial and modern `solc` versions for Linux and macOS.
 
-The downloaded binaries are stored in `~/.solc-select/artifacts/`.
+The versioned binaries are stored in `~/.solc-select/artifacts/`.
 
 ## Quickstart
 
 ```
 pip3 install solc-select
 ```
+
+To automatically install and use a version, run `solc-select use <version> --always-install`. 
 
 ### Running on ARM (Mac M1/M2)
 
