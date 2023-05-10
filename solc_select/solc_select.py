@@ -91,6 +91,12 @@ def install_artifacts(versions: [str]) -> bool:
     releases = get_available_versions()
     versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
 
+    if "all" not in versions:
+        not_available_versions = list(set(versions).difference([*releases]))
+        if not_available_versions:
+            print(f"{', '.join(not_available_versions)} solc versions are not available.")
+            return False
+
     for version, artifact in releases.items():
         if "all" not in versions:
             if versions and version not in versions:
