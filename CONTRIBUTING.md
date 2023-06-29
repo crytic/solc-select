@@ -7,7 +7,7 @@ Hi! Welcome to solc-select.
 Bug reports and feature suggestions can be submitted to our issue tracker. For bug reports, attaching the contract that caused the bug will help us in debugging and resolving the issue quickly. If you find a security vulnerability, do not open an issue; email opensource@trailofbits.com instead.
 
 ## Questions
-Questions can be submitted to the issue tracker, but you may get a faster response if you ask in our [chat room](https://empireslacking.herokuapp.com/) (in the #ethereum channel).
+Questions can be submitted to the issue tracker, but you may get a faster response if you ask in our [chat room](https://slack.empirehacking.nyc/) (in the #ethereum channel).
 
 ## Code 
 solc-select uses the pull request contribution model. Please make an account on Github, fork this repo, and submit code contributions via pull request. For more documentation, look [here](https://guides.github.com/activities/forking/).
