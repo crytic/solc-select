@@ -11,6 +11,7 @@ setup(
     license="AGPL-3.0",
     # pylint: disable=consider-using-with
     long_description=open("README.md", encoding="utf8").read(),
+    long_description_content_type="text/markdown",
     entry_points={
         "console_scripts": [
             "solc-select = solc_select.__main__:solc_select",
