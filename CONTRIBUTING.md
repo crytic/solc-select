@@ -40,12 +40,10 @@ These will also run in a github workflow on each platform.
 ## Developer Environment
 
 ```bash
-pip3 install virtualenvwrapper
-source /usr/local/bin/virtualenvwrapper.sh
-mkvirtualenv --python=`which python3` solc-select-dev
 git clone https://github.com/crytic/solc-select.git
-cd solc-select 
-python setup.py develop
+cd solc-select
+python3 -m venv env && source ./env/bin/activate
+python3 -m pip install -e .
 ```
 
 Start a shell using the solc-select virutal environment by running:
