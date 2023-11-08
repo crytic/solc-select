@@ -86,7 +86,6 @@ def solc_select() -> None:
 
 def solc() -> None:
     if not installed_versions():
-        print("No solc versions found, installing latest")
         switch_global_version(version="latest", always_install=True)
     res = current_version()
     if res:
