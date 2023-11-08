@@ -39,19 +39,12 @@ These will also run in a github workflow on each platform.
 
 ## Developer Environment
 
+Run `make dev` to create your own development environment. 
+
 ```bash
-pip3 install virtualenvwrapper
-source /usr/local/bin/virtualenvwrapper.sh
-mkvirtualenv --python=`which python3` solc-select-dev
 git clone https://github.com/crytic/solc-select.git
-cd solc-select 
-python setup.py develop
-```
-
-Start a shell using the solc-select virutal environment by running:
-
-```bash
-workon solc-select-dev
+cd solc-select
+make dev
 ```
 
 Update `solc-select` by running `git pull` from the `solc-select/` directory.
