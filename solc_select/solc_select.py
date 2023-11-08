@@ -192,7 +192,8 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
 
 
 def switch_global_version(version: str, always_install: bool) -> None:
-    if version == "latest": version = get_latest_release()
+    if version == "latest":
+        version = get_latest_release()
     if version in installed_versions():
         with open(f"{SOLC_SELECT_DIR}/global-version", "w", encoding="utf-8") as f:
             f.write(version)

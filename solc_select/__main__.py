@@ -19,7 +19,6 @@ from .solc_select import (
     halt_incompatible_system,
     halt_old_architecture,
     upgrade_architecture,
-    get_latest_release,
 )
 
 
@@ -86,7 +85,7 @@ def solc_select() -> None:
 
 
 def solc() -> None:
-    if installed_versions() == []:
+    if not installed_versions():
         print("No solc versions found, installing latest")
         switch_global_version(version="latest", always_install=True)
     res = current_version()
