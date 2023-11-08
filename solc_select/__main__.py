@@ -19,6 +19,7 @@ from .solc_select import (
     halt_incompatible_system,
     halt_old_architecture,
     upgrade_architecture,
+    get_latest_release
 )
 
 # pylint: disable=too-many-branches
@@ -40,7 +41,7 @@ def solc_select() -> None:
     parser_use = subparsers.add_parser("use", help="change the version of global solc compiler")
     parser_use.add_argument(
         USE_VERSION, help="solc version you want to use (eg: 0.4.25)", type=valid_version, nargs="?"
-    )
+    ) 
     parser_use.add_argument("--always-install", action="store_true")
     parser_use = subparsers.add_parser("versions", help="prints out all installed solc versions")
     parser_use.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
@@ -84,6 +85,9 @@ def solc_select() -> None:
 
 
 def solc() -> None:
+    if installed_versions() == []: 
+        print("No solc versions found, installing latest")
+        switch_global_version(version=get_latest_release(),always_install=True)
     res = current_version()
     if res:
         (version, _) = res
