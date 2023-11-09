@@ -60,7 +60,7 @@ def solc_select() -> None:
             install_artifacts(args.get(INSTALL_VERSIONS))
 
     elif args.get(USE_VERSION) is not None:
-        switch_global_version(args.get(USE_VERSION), args.get("always_install"))
+        switch_global_version(args.get(USE_VERSION), args.get("always_install"), silent=False)
 
     elif args.get(SHOW_VERSIONS) is not None:
         versions_installed = installed_versions()
@@ -86,7 +86,7 @@ def solc_select() -> None:
 
 def solc() -> None:
     if not installed_versions():
-        switch_global_version(version="latest", always_install=True)
+        switch_global_version(version="latest", always_install=True, silent=True)
     res = current_version()
     if res:
         (version, _) = res
