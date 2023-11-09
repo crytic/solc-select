@@ -21,6 +21,7 @@ from .solc_select import (
     upgrade_architecture,
 )
 
+
 # pylint: disable=too-many-branches
 def solc_select() -> None:
     parser = argparse.ArgumentParser()
@@ -84,6 +85,8 @@ def solc_select() -> None:
 
 
 def solc() -> None:
+    if not installed_versions():
+        switch_global_version(version="latest", always_install=True)
     res = current_version()
     if res:
         (version, _) = res

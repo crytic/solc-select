@@ -24,7 +24,13 @@ To automatically install and use a version, run `solc-select use <version> --alw
 
 ## Usage
 
-The global version of `solc` can be set with the `solc-select use <version>` command:
+By default, `solc-select` will install the most recent available Solidity file for your version. This will automatically be done when you run `solc` for the first time. 
+
+```bash 
+solc 
+```
+
+The global version of `solc` will automatically be set to to the latest version. You can reset this with the `solc-select use <version>` command:
 ```
 $ solc --version
 solc, the solidity compiler commandline interface
@@ -35,7 +41,6 @@ $ solc --version
 solc, the solidity compiler commandline interface
 Version: 0.4.24+commit.e67f0147.Linux.g++
 ```
-
 Use `SOLC_VERSION` environment variable to override the global version:
 ```
 $ solc --version
@@ -44,6 +49,14 @@ Version: 0.4.24+commit.e67f0147.Linux.g++
 $ SOLC_VERSION=0.5.2 solc --version
 solc, the solidity compiler commandline interface
 Version: 0.5.2+commit.1df8f40c.Linux.g++
+```
+
+By default, solc-select will halt if you try to use a version that you do not have installed already. Use the `--always-install` flags to bypass this. 
+
+```bash 
+solc-select use 0.8.1 --always-install
+Installing '0.8.1'...
+Version '0.8.1' installed.
 ```
 
 You can list all available versions with `solc-select install`:
@@ -55,23 +68,6 @@ Available versions to install:
 ...
 0.8.0
 0.8.1
-```
-
-And install the one you need with `solc-select install <version>`:
-```
-$ solc-select install 0.8.1
-Installing '0.8.1'...
-Version '0.8.1' installed.
-```
-
-You can also install the latest version with `solc-select install latest`
-and use the latest version with `solc-select use latest`
-
-Display the currently installed versions:
-```
-$ solc-select versions
-0.8.0
-0.4.2 (current, set by /Users/artur/.solc-select/global-version)
 ```
 
 ## Getting Help
