@@ -87,7 +87,7 @@ def artifact_path(version: str) -> Path:
     return ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
 
 
-def install_artifacts(versions: [str]) -> bool:
+def install_artifacts(versions: [str], silent: bool = False) -> bool:
     releases = get_available_versions()
     versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
 
@@ -110,7 +110,8 @@ def install_artifacts(versions: [str]) -> bool:
 
         artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
-        print(f"Installing solc '{version}'...")
+        if not silent:
+            print(f"Installing solc '{version}'...")
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
 
         verify_checksum(version)
@@ -125,7 +126,8 @@ def install_artifacts(versions: [str]) -> bool:
             )
         else:
             Path.chmod(artifact_file_dir.joinpath(f"solc-{version}"), 0o775)
-        print(f"Version '{version}' installed.")
+        if not silent:
+            print(f"Version '{version}' installed.")
     return True
 
 
@@ -191,17 +193,18 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
     )
 
 
-def switch_global_version(version: str, always_install: bool) -> None:
+def switch_global_version(version: str, always_install: bool, silent: bool = False) -> None:
     if version == "latest":
         version = get_latest_release()
     if version in installed_versions():
         with open(f"{SOLC_SELECT_DIR}/global-version", "w", encoding="utf-8") as f:
             f.write(version)
-        print("Switched global version to", version)
+        if not silent:
+            print("Switched global version to", version)
     elif version in get_available_versions():
         if always_install:
-            install_artifacts([version])
-            switch_global_version(version, always_install)
+            install_artifacts([version], silent)
+            switch_global_version(version, always_install, silent)
         else:
             raise argparse.ArgumentTypeError(f"'{version}' must be installed prior to use.")
     else:
