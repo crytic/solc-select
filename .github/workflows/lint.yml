@@ -47,7 +47,7 @@ jobs:
           cp pyproject.toml .github/linters
 
       - name: Pylint
-        uses: super-linter/super-linter/slim@v7.2.1
+        uses: super-linter/super-linter/slim@v7.3.0
         if: always()
         env:
           # run linter on everything to catch preexisting problems
@@ -81,3 +81,38 @@ jobs:
 
       - name: Run ruff format check
         run: ruff format --check .
+
+  black:
+    name: Lint Code Base (black)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          # super-linter needs the full git history to get the
+          # list of files that changed across commits
+          fetch-depth: 0
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          mkdir -p .github/linters
+          cp pyproject.toml .github/linters
+
+      - name: Black
+        uses: super-linter/super-linter/slim@v7.3.0
+        if: always()
+        env:
+          # run linter on everything to catch preexisting problems
+          VALIDATE_ALL_CODEBASE: true
+          DEFAULT_BRANCH: master
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Run only black
+          VALIDATE_PYTHON_BLACK: true
+          PYTHON_BLACK_CONFIG_FILE: pyproject.toml
+          FILTER_REGEX_EXCLUDE: .*tests/.*.(json|zip|sol)
