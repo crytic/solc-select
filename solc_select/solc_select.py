@@ -217,6 +217,13 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
 def switch_global_version(version: str, always_install: bool, silent: bool = False) -> None:
     if version == "latest":
         version = get_latest_release()
+
+    # Check version against platform minimum even if installed
+    if version != "latest" and Version(version) < Version(EARLIEST_RELEASE[soliditylang_platform()]):
+        raise argparse.ArgumentTypeError(
+            f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
+        )
+
     if version in installed_versions():
         with open(f"{SOLC_SELECT_DIR}/global-version", "w", encoding="utf-8") as f:
             f.write(version)
