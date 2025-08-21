@@ -11,6 +11,7 @@ from .constants import (
 )
 from .solc_select import (
     current_version,
+    get_emulation_prefix,
     get_installable_versions,
     halt_incompatible_system,
     halt_old_architecture,
@@ -101,11 +102,12 @@ def solc() -> None:
         path = ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
         halt_old_architecture(path)
         halt_incompatible_system(path)
+
+        # Use emulation if needed for ARM64 systems
+        cmd = get_emulation_prefix() + [str(path)] + sys.argv[1:]
+
         try:
-            subprocess.run(
-                [str(path)] + sys.argv[1:],
-                check=True,
-            )
+            subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
             sys.exit(e.returncode)
     else:
