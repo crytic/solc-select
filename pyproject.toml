@@ -48,7 +48,6 @@ dev = [
     "pytest-xdist>=3.0.0",
     # Linting and type checking
     "ruff>=0.1.0",
-    "pylint>=2.15.0",
     "mypy>=1.0.0",
     "types-setuptools",
 ]
@@ -68,9 +67,23 @@ select = [
     "I",  # isort
     "W",  # pycodestyle warnings
     "UP",  # pyupgrade
+    "B",  # flake8-bugbear (catches common bugs)
+    "C4",  # flake8-comprehensions (better comprehensions)
+    "SIM",  # flake8-simplify (simpler code)
+    "TCH",  # flake8-type-checking (type checking imports)
+    "RUF",  # Ruff-specific rules
+    "PLR",  # Pylint refactor checks
+    "PLE",  # Pylint error checks
+    "PLW",  # Pylint warning checks
 ]
 ignore = [
     "E501",  # line-too-long (handled by formatter)
+    "PLR0912",  # too-many-branches (existing code has complex logic)
+    "PLR0913",  # too-many-arguments (sometimes needed)
+    "PLR2004",  # magic-value-comparison (too strict)
+    "SIM102",  # collapsible-if (sometimes clearer as nested)
+    "SIM108",  # if-else-block-instead-of-if-exp (sometimes clearer)
+    "RUF005",  # collection-literal-concatenation (existing pattern)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -82,25 +95,6 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
-
-[tool.pylint.messages_control]
-disable = """
-missing-module-docstring,
-missing-class-docstring,
-missing-function-docstring,
-unnecessary-lambda,
-cyclic-import,
-line-too-long,
-invalid-name,
-fixme,
-too-many-return-statements,
-too-many-ancestors,
-logging-fstring-interpolation,
-logging-not-lazy,
-duplicate-code,
-import-error,
-unsubscriptable-object
-"""
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
