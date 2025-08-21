@@ -7,6 +7,7 @@ import shutil
 import sys
 import urllib.request
 from pathlib import Path
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
 from Crypto.Hash import keccak
@@ -25,6 +26,13 @@ from .constants import (
 from .utils import mac_binary_is_universal, mac_can_run_intel_binaries
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
+
+
+def validate_url_scheme(url: str) -> None:
+    """Validate that URL uses a safe scheme (http or https only)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"Unsafe URL scheme '{parsed.scheme}' in URL: {url}")
 
 
 def halt_old_architecture(path: Path) -> None:
@@ -123,6 +131,7 @@ def install_artifacts(versions: [str], silent: bool = False) -> bool:
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         if not silent:
             print(f"Installing solc '{version}'...")
+        validate_url_scheme(url)
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
 
         verify_checksum(version)
@@ -179,6 +188,7 @@ def verify_checksum(version: str) -> None:
 def get_soliditylang_checksums(version: str) -> (str, str):
     (_, list_url) = get_url(version=version)
     # pylint: disable=consider-using-with
+    validate_url_scheme(list_url)
     list_json = urllib.request.urlopen(list_url).read()
     builds = json.loads(list_json)["builds"]
     matches = list(filter(lambda b: b["version"] == version, builds))
@@ -262,11 +272,13 @@ def get_installable_versions() -> [str]:
 # pylint: disable=consider-using-with
 def get_available_versions() -> [str]:
     (_, list_url) = get_url()
+    validate_url_scheme(list_url)
     list_json = urllib.request.urlopen(list_url).read()
     available_releases = json.loads(list_json)["releases"]
     # pylint: disable=consider-using-with
     if soliditylang_platform() == LINUX_AMD64:
         (_, list_url) = get_url(version=EARLIEST_RELEASE[LINUX_AMD64])
+        validate_url_scheme(list_url)
         github_json = urllib.request.urlopen(list_url).read()
         additional_linux_versions = json.loads(github_json)["releases"]
         available_releases.update(additional_linux_versions)
@@ -288,6 +300,7 @@ def soliditylang_platform() -> str:
 
 def get_latest_release() -> str:
     (_, list_url) = get_url()
+    validate_url_scheme(list_url)
     list_json = urllib.request.urlopen(list_url).read()
     latest_release = json.loads(list_json)["latestRelease"]
     return latest_release
