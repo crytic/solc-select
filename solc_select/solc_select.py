@@ -81,7 +81,7 @@ def current_version() -> (str, str):
         source = source_path.as_posix()
         if Path.is_file(source_path):
             with open(source_path, encoding="utf-8") as f:
-                version = f.read()
+                version = f.read().strip()
         else:
             raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."

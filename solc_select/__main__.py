@@ -69,9 +69,13 @@ def solc_select() -> None:
         versions_installed = installed_versions()
         if versions_installed:
             (current_ver, source) = (None, None)
-            res = current_version()
-            if res:
-                (current_ver, source) = res
+            try:
+                res = current_version()
+                if res:
+                    (current_ver, source) = res
+            except argparse.ArgumentTypeError:
+                # No version is currently set, that's ok
+                res = None
             for version in sort_versions(versions_installed):
                 if res and version == current_ver:
                     print(f"{version} (current, set by {source})")
