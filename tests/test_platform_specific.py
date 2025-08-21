@@ -24,9 +24,9 @@ class TestLinuxSpecific:  # pylint: disable=too-few-public-methods
         # Test minimum version (0.4.0 on Linux)
         result = run_command("solc-select use 0.4.0", check=False)
         assert result.returncode == 0
-        assert "Switched global version to 0.4.0" in result.stdout, (
-            f"Failed to set minimum version. Output: {result.stdout}"
-        )
+        assert (
+            "Switched global version to 0.4.0" in result.stdout
+        ), f"Failed to set minimum version. Output: {result.stdout}"
 
         # Get and test latest version
         with urllib.request.urlopen(
@@ -37,9 +37,9 @@ class TestLinuxSpecific:  # pylint: disable=too-few-public-methods
 
         result = run_command(f"solc-select use {latest_release}", check=False)
         assert result.returncode == 0
-        assert f"Switched global version to {latest_release}" in result.stdout, (
-            f"Failed to set maximum version. Output: {result.stdout}"
-        )
+        assert (
+            f"Switched global version to {latest_release}" in result.stdout
+        ), f"Failed to set maximum version. Output: {result.stdout}"
 
         # Test version too low
         result = run_command("solc-select use 0.3.9", check=False)
@@ -69,9 +69,9 @@ class TestMacOSSpecific:  # pylint: disable=too-few-public-methods
         # Test minimum version (0.3.6 on macOS)
         result = run_command("solc-select use 0.3.6", check=False)
         assert result.returncode == 0
-        assert "Switched global version to 0.3.6" in result.stdout, (
-            f"Failed to set minimum version. Output: {result.stdout}"
-        )
+        assert (
+            "Switched global version to 0.3.6" in result.stdout
+        ), f"Failed to set minimum version. Output: {result.stdout}"
 
         # Get and test latest version
         with urllib.request.urlopen(
@@ -82,9 +82,9 @@ class TestMacOSSpecific:  # pylint: disable=too-few-public-methods
 
         result = run_command(f"solc-select use {latest_release}", check=False)
         assert result.returncode == 0
-        assert f"Switched global version to {latest_release}" in result.stdout, (
-            f"Failed to set maximum version. Output: {result.stdout}"
-        )
+        assert (
+            f"Switched global version to {latest_release}" in result.stdout
+        ), f"Failed to set maximum version. Output: {result.stdout}"
 
         # Test version too low
         result = run_command("solc-select use 0.3.5", check=False)
@@ -114,9 +114,9 @@ class TestWindowsSpecific:  # pylint: disable=too-few-public-methods
         # Test minimum version (0.4.5 on Windows, matching original bash test)
         result = run_command("solc-select use 0.4.5", check=False)
         assert result.returncode == 0
-        assert "Switched global version to 0.4.5" in result.stdout, (
-            f"Failed to set minimum version. Output: {result.stdout}"
-        )
+        assert (
+            "Switched global version to 0.4.5" in result.stdout
+        ), f"Failed to set minimum version. Output: {result.stdout}"
 
         # Get and test latest version
         with urllib.request.urlopen(
@@ -127,9 +127,9 @@ class TestWindowsSpecific:  # pylint: disable=too-few-public-methods
 
         result = run_command(f"solc-select use {latest_release}", check=False)
         assert result.returncode == 0
-        assert f"Switched global version to {latest_release}" in result.stdout, (
-            f"Failed to set maximum version. Output: {result.stdout}"
-        )
+        assert (
+            f"Switched global version to {latest_release}" in result.stdout
+        ), f"Failed to set maximum version. Output: {result.stdout}"
 
         # Test version too low (matching original bash test: 0.3.9)
         result = run_command("solc-select use 0.3.9", check=False)

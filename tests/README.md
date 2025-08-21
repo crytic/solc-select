@@ -35,7 +35,7 @@ pytest -m "not (linux or macos or windows)"
 # Run Linux-specific tests (only works on Linux)
 pytest -m linux
 
-# Run macOS-specific tests (only works on macOS)  
+# Run macOS-specific tests (only works on macOS)
 pytest -m macos
 
 # Run Windows-specific tests (only works on Windows)

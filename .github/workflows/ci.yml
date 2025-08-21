@@ -47,11 +47,9 @@ jobs:
         # Run pytest with appropriate platform markers
         # Skip slow tests (upgrade test) and version_boundaries tests in CI
         python -m pytest tests/ -v --tb=short -k "not version_boundaries" -m "not slow"
-  
+
   comprehensive-tests:
     name: Comprehensive Tests (Python ${{ matrix.python }} on ${{ matrix.os }})
-    # Only run on schedule or when labeled 'full-tests'
-    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'full-tests')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

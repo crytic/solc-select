@@ -35,9 +35,9 @@ class TestCompilerVersions:
         # Test expected compilation failure
         result = run_command(f"solc {test_contracts_dir}/solc045_fail_compile.sol", check=False)
         assert result.returncode != 0
-        assert "Error: Expected token Semicolon got 'Function'" in result.stdout, (
-            f"solc045_fail_compile did not fail as expected. Output: {result.stdout}"
-        )
+        assert (
+            "Error: Expected token Semicolon got 'Function'" in result.stdout
+        ), f"solc045_fail_compile did not fail as expected. Output: {result.stdout}"
 
     def test_solc_050(self, run_command, test_contracts_dir, backup_current_version):
         """Test Solidity 0.5.0 compilation behavior."""
@@ -83,9 +83,9 @@ class TestCompilerVersions:
         # Test deprecated 'now' keyword
         result = run_command(f"solc {test_contracts_dir}/solc070_fail_compile.sol", check=False)
         assert result.returncode != 0
-        assert '"now" has been deprecated.' in result.stdout, (
-            f"solc070_fail_compile did not show deprecation warning. Output: {result.stdout}"
-        )
+        assert (
+            '"now" has been deprecated.' in result.stdout
+        ), f"solc070_fail_compile did not show deprecation warning. Output: {result.stdout}"
 
         # Test successful compilation
         result = run_command(f"solc {test_contracts_dir}/solc070_success.sol", check=False)
@@ -106,16 +106,16 @@ class TestCompilerVersions:
         result = run_command(f"solc {test_contracts_dir}/solc080_success_warning.sol", check=False)
         # Should succeed but with warning
         assert result.returncode == 0
-        assert "Warning: Function state mutability can be restricted to pure" in result.stdout, (
-            f"solc080_success_warning did not show expected warning. Output: {result.stdout}"
-        )
+        assert (
+            "Warning: Function state mutability can be restricted to pure" in result.stdout
+        ), f"solc080_success_warning did not show expected warning. Output: {result.stdout}"
 
         # Test expected compilation failure
         result = run_command(f"solc {test_contracts_dir}/solc080_fail_compile.sol", check=False)
         assert result.returncode != 0
-        assert "Error: Explicit type conversion not allowed" in result.stdout, (
-            f"solc080_fail_compile did not fail as expected. Output: {result.stdout}"
-        )
+        assert (
+            "Error: Explicit type conversion not allowed" in result.stdout
+        ), f"solc080_fail_compile did not fail as expected. Output: {result.stdout}"
 
 
 class TestVersionSwitching:
@@ -150,9 +150,9 @@ class TestVersionSwitching:
         # Use with --always-install should install and switch
         result = run_command("solc-select use 0.8.9 --always-install", check=False)
         assert result.returncode == 0
-        assert "Switched global version to 0.8.9" in result.stdout, (
-            f"Failed to switch with --always-install. Output: {result.stdout}"
-        )
+        assert (
+            "Switched global version to 0.8.9" in result.stdout
+        ), f"Failed to switch with --always-install. Output: {result.stdout}"
 
     def test_use_without_install(self, run_command, solc_select_path, backup_current_version):
         """Test that 'use' fails when version is not installed."""
@@ -184,9 +184,9 @@ class TestVersionSwitching:
         # Use without install should fail
         result = run_command("solc-select use 0.8.1", check=False)
         assert result.returncode != 0
-        assert "'0.8.1' must be installed prior to use" in result.stdout, (
-            f"Did not fail as expected when version not installed. Output: {result.stdout}"
-        )
+        assert (
+            "'0.8.1' must be installed prior to use" in result.stdout
+        ), f"Did not fail as expected when version not installed. Output: {result.stdout}"
 
         # Clean up: install 0.8.1 for other tests
         run_command("solc-select install 0.8.1", check=False)

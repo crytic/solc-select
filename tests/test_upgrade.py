@@ -62,14 +62,14 @@ class TestUpgrade:  # pylint: disable=too-few-public-methods
             new_versions = sorted(result.stdout.strip().split("\n"))
 
             # Verify solc version wasn't changed
-            assert old_solc_version == new_solc_version, (
-                f"solc version changed during upgrade: {old_solc_version} -> {new_solc_version}"
-            )
+            assert (
+                old_solc_version == new_solc_version
+            ), f"solc version changed during upgrade: {old_solc_version} -> {new_solc_version}"
 
             # Verify all versions are still installed
-            assert old_versions == new_versions, (
-                f"Installed versions changed during upgrade.\nOld: {old_versions}\nNew: {new_versions}"
-            )
+            assert (
+                old_versions == new_versions
+            ), f"Installed versions changed during upgrade.\nOld: {old_versions}\nNew: {new_versions}"
 
         finally:
             # Ensure development version is reinstalled for other tests

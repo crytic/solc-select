@@ -1,48 +1,48 @@
---- 
-body: 
-  - 
-    attributes: 
+---
+body:
+  -
+    attributes:
       value: |
           Please check the issues tab to avoid duplicates.
           Thanks for taking the time to fill out this bug report!
     type: markdown
-  - 
-    attributes: 
+  -
+    attributes:
       label: "Describe the issue:"
     id: what-happened
     type: textarea
-    validations: 
+    validations:
       required: true
-  - 
-    attributes: 
+  -
+    attributes:
       description: "It can be a github repo, etherscan link, or code snippet."
       label: "Code example to reproduce the issue:"
       placeholder: "`contract A {}`\n"
     id: reproduce
     type: textarea
-    validations: 
+    validations:
       required: true
-  - 
-    attributes: 
+  -
+    attributes:
       description: |
-          What version of solc-select are you running? 
+          What version of solc-select are you running?
           Run `solc-select--version`
       label: "Version:"
     id: version
     type: textarea
-    validations: 
+    validations:
       required: true
-  - 
-    attributes: 
+  -
+    attributes:
       description: |
-          Please copy and paste any relevant log output. This 
+          Please copy and paste any relevant log output. This
           will be automatically formatted into code, so no need for backticks.
       render: shell
       label: "Relevant log output:"
     id: logs
     type: textarea
 description: "File a bug report"
-labels: 
+labels:
   - bug-candidate
 name: "Bug Report"
 title: "[Bug-Candidate]: "

@@ -50,6 +50,8 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "types-setuptools",
+    # Development tools
+    "pre-commit>=3.5.0",
 ]
 
 [project.scripts]
@@ -109,6 +111,6 @@ addopts = [
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "linux: marks tests to run only on Linux",
-    "macos: marks tests to run only on macOS", 
+    "macos: marks tests to run only on macOS",
     "windows: marks tests to run only on Windows",
 ]
