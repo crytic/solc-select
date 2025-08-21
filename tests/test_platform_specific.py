@@ -111,10 +111,10 @@ class TestWindowsSpecific:  # pylint: disable=too-few-public-methods
         # Install all versions (as original script does)
         run_command("solc-select install all", check=False)
 
-        # Test minimum version (0.4.11 on Windows)
-        result = run_command("solc-select use 0.4.11", check=False)
+        # Test minimum version (0.4.5 on Windows, matching original bash test)
+        result = run_command("solc-select use 0.4.5", check=False)
         assert result.returncode == 0
-        assert "Switched global version to 0.4.11" in result.stdout, (
+        assert "Switched global version to 0.4.5" in result.stdout, (
             f"Failed to set minimum version. Output: {result.stdout}"
         )
 
@@ -131,11 +131,11 @@ class TestWindowsSpecific:  # pylint: disable=too-few-public-methods
             f"Failed to set maximum version. Output: {result.stdout}"
         )
 
-        # Test version too low
-        result = run_command("solc-select use 0.4.10", check=False)
+        # Test version too low (matching original bash test: 0.3.9)
+        result = run_command("solc-select use 0.3.9", check=False)
         assert result.returncode != 0
         assert (
-            "Invalid version - only solc versions above '0.4.11' are available" in result.stdout
+            "Invalid version - only solc versions above '0.4.5' are available" in result.stdout
         ), f"Did not fail for version too low. Output: {result.stdout}"
 
         # Test version too high
