@@ -15,14 +15,13 @@ from typing import Generator
 import pytest
 
 
-@pytest.fixture(scope="session")
-def solc_select_path() -> Path:
+@pytest.fixture(scope="session", name="solc_select_path")
+def _solc_select_path() -> Path:
     """Get the path to solc-select artifacts directory."""
     virtual_env = os.environ.get("VIRTUAL_ENV")
     if virtual_env:
         return Path(virtual_env) / ".solc-select"
-    else:
-        return Path.home() / ".solc-select"
+    return Path.home() / ".solc-select"
 
 
 @pytest.fixture(scope="function")

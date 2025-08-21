@@ -27,7 +27,7 @@ def main():
         cmd.extend(["-m", "not (linux or macos)"])
 
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, check=False)
     return result.returncode
 
 
