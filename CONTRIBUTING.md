@@ -1,4 +1,4 @@
-# Contribuing to solc-select 
+# Contributing to solc-select 
 
 Hi! Welcome to solc-select. 
 
@@ -20,26 +20,31 @@ Some pull request guidelines:
 - Fill out the pull request description with a summary of what your patch does, key changes that have been made, and any further points of discussion, if applicable.
 - Title your pull request with a brief description of what it's changing. "Fixes #123" is a good comment to add to the description, but makes for an unclear title on its own.
 
-## Linters
+## Development Setup
 
-Several linters and security checkers are run on the PRs.
+### Setting up the Development Environment
 
-To run them locally in the root dir of the repository:
+#### Using uv (recommended - fastest)
 
-- `pylint solc_select --rcfile pyproject.toml`
-- `black . --config pyproject.toml`
+```bash
+git clone https://github.com/crytic/solc-select.git
+cd solc-select
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e .
+```
 
-We use pylint `2.8.2` black `20.8b1`.
+#### Using pip
 
-## Running Tests
+```bash
+git clone https://github.com/crytic/solc-select.git
+cd solc-select
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -e .
+```
 
-These tests can be run locally by using the  `bash test_{linux | macos | windows}.sh` respective scripts. 
-
-These will also run in a github workflow on each platform.
-
-## Developer Environment
-
-Run `make dev` to create your own development environment. 
+#### Using make
 
 ```bash
 git clone https://github.com/crytic/solc-select.git
@@ -47,4 +52,43 @@ cd solc-select
 make dev
 ```
 
-Update `solc-select` by running `git pull` from the `solc-select/` directory.
+### Code Quality
+
+We use automated tools to maintain code quality. Several linters and security checkers are run on all PRs.
+
+To run them locally:
+
+```bash
+# Code formatting and linting
+ruff check .           # Check for linting issues
+ruff format --check .  # Check formatting
+ruff format .          # Auto-format code
+
+# Type checking (optional but recommended)
+pip install pylint
+pylint solc_select --rcfile pyproject.toml
+```
+
+## Running Tests
+
+Tests are platform-specific and can be run locally:
+
+```bash
+# Run tests for your platform
+bash scripts/test_linux.sh    # On Linux
+bash scripts/test_macos.sh    # On macOS  
+bash scripts/test_windows.sh  # On Windows
+
+# Tests also run automatically in GitHub Actions on all platforms
+```
+
+## Updating Your Fork
+
+To keep your fork up to date with the latest changes:
+
+```bash
+git remote add upstream https://github.com/crytic/solc-select.git
+git fetch upstream
+git checkout dev
+git merge upstream/dev
+```
