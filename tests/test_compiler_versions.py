@@ -5,6 +5,9 @@ This module tests compilation with different Solidity versions,
 exactly mirroring the behavior of the original test_solc.sh script.
 """
 
+import os
+import shutil
+
 import pytest
 
 
@@ -20,6 +23,7 @@ class TestCompilerVersions:
 
     def test_solc_045(self, run_command, test_contracts_dir, backup_current_version):
         """Test Solidity 0.4.5 compilation behavior."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.4.5
         result = run_command("solc-select use 0.4.5", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.4.5: {result.stdout}"
@@ -37,6 +41,7 @@ class TestCompilerVersions:
 
     def test_solc_050(self, run_command, test_contracts_dir, backup_current_version):
         """Test Solidity 0.5.0 compilation behavior."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.5.0
         result = run_command("solc-select use 0.5.0", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.5.0: {result.stdout}"
@@ -55,6 +60,7 @@ class TestCompilerVersions:
 
     def test_solc_060(self, run_command, test_contracts_dir, backup_current_version):
         """Test Solidity 0.6.0 compilation behavior."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.6.0
         result = run_command("solc-select use 0.6.0", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.6.0: {result.stdout}"
@@ -69,6 +75,7 @@ class TestCompilerVersions:
 
     def test_solc_070(self, run_command, test_contracts_dir, backup_current_version):
         """Test Solidity 0.7.0 compilation behavior."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.7.0
         result = run_command("solc-select use 0.7.0", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.7.0: {result.stdout}"
@@ -86,6 +93,7 @@ class TestCompilerVersions:
 
     def test_solc_080(self, run_command, test_contracts_dir, backup_current_version):
         """Test Solidity 0.8.0 compilation behavior."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.8.0
         result = run_command("solc-select use 0.8.0", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.8.0: {result.stdout}"
@@ -115,12 +123,11 @@ class TestVersionSwitching:
 
     def test_always_install_flag(self, run_command, solc_select_path, backup_current_version):
         """Test --always-install flag functionality."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Safely remove 0.8.9 if it exists
         artifacts_path = solc_select_path / "artifacts"
 
         # Validate path to ensure we're in the right place
-        import os
-
         path_parts = str(artifacts_path).replace(os.sep, "/").split("/")
         if len(path_parts) < 2 or path_parts[-2:] != [".solc-select", "artifacts"]:
             pytest.fail(f"Unsafe artifacts path: {artifacts_path}")
@@ -135,8 +142,6 @@ class TestVersionSwitching:
                         file_path.unlink()
                     elif file_path.is_dir():
                         # On macOS, solc binaries are directories
-                        import shutil
-
                         shutil.rmtree(file_path)
                 except (PermissionError, OSError):
                     # If we can't delete, that's okay - test will still work
@@ -151,11 +156,11 @@ class TestVersionSwitching:
 
     def test_use_without_install(self, run_command, solc_select_path, backup_current_version):
         """Test that 'use' fails when version is not installed."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Safely remove 0.8.1 if it exists
         artifacts_path = solc_select_path / "artifacts"
 
         # Validate path to ensure we're in the right place
-        import os
 
         path_parts = str(artifacts_path).replace(os.sep, "/").split("/")
         if len(path_parts) < 2 or path_parts[-2:] != [".solc-select", "artifacts"]:
@@ -171,8 +176,6 @@ class TestVersionSwitching:
                         file_path.unlink()
                     elif file_path.is_dir():
                         # On macOS, solc binaries are directories
-                        import shutil
-
                         shutil.rmtree(file_path)
                 except (PermissionError, OSError):
                     # If we can't delete, that's okay - test will still work

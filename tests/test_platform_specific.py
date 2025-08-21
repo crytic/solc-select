@@ -11,12 +11,13 @@ import urllib.request
 import pytest
 
 
-class TestLinuxSpecific:
+class TestLinuxSpecific:  # pylint: disable=too-few-public-methods
     """Linux-specific version boundary tests."""
 
     @pytest.mark.linux
     def test_linux_version_boundaries(self, run_command, backup_current_version):
         """Test Linux version boundaries and constraints."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Install all versions (as original script does)
         run_command("solc-select install all", check=False)
 
@@ -55,12 +56,13 @@ class TestLinuxSpecific:
         ), f"Did not fail for version too high. Output: {result.stdout}"
 
 
-class TestMacOSSpecific:
+class TestMacOSSpecific:  # pylint: disable=too-few-public-methods
     """macOS-specific version boundary tests."""
 
     @pytest.mark.macos
     def test_macos_version_boundaries(self, run_command, backup_current_version):
         """Test macOS version boundaries and constraints."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Install all versions (as original script does)
         run_command("solc-select install all", check=False)
 
@@ -99,12 +101,13 @@ class TestMacOSSpecific:
         ), f"Did not fail for version too high. Output: {result.stdout}"
 
 
-class TestWindowsSpecific:
+class TestWindowsSpecific:  # pylint: disable=too-few-public-methods
     """Windows-specific version boundary tests."""
 
     @pytest.mark.windows
     def test_windows_version_boundaries(self, run_command, backup_current_version):
         """Test Windows version boundaries and constraints."""
+        _ = backup_current_version  # Fixture ensures clean state
         # Install all versions (as original script does)
         run_command("solc-select install all", check=False)
 

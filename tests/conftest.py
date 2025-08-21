@@ -137,7 +137,7 @@ def ensure_solc_select_installed():
     development version is being tested.
     """
     # Check if solc-select is available
-    result = subprocess.run(["solc-select", "--help"], capture_output=True, text=True)
+    result = subprocess.run(["solc-select", "--help"], capture_output=True, text=True, check=False)
 
     if result.returncode != 0:
         pytest.exit("solc-select is not installed. Please run: pip install -e .")

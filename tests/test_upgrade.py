@@ -10,11 +10,11 @@ from pathlib import Path
 import pytest
 
 
-class TestUpgrade:
+class TestUpgrade:  # pylint: disable=too-few-public-methods
     """Test solc-select upgrade behavior."""
 
     @pytest.mark.slow  # This test reinstalls packages, so it's slow
-    def test_upgrade_preserves_versions(self, run_command, tmp_path):
+    def test_upgrade_preserves_versions(self, run_command, tmp_path):  # pylint: disable=unused-argument
         """
         Test that upgrading solc-select preserves installed versions.
 
