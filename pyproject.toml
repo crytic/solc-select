@@ -40,6 +40,19 @@ Homepage = "https://github.com/crytic/solc-select"
 Repository = "https://github.com/crytic/solc-select.git"
 Issues = "https://github.com/crytic/solc-select/issues"
 
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    # Linting and type checking
+    "ruff>=0.1.0",
+    "pylint>=2.15.0",
+    "mypy>=1.0.0",
+    "types-setuptools",
+]
+
 [project.scripts]
 solc-select = "solc_select.__main__:solc_select"
 solc = "solc_select.__main__:solc"
@@ -88,3 +101,20 @@ duplicate-code,
 import-error,
 unsubscriptable-object
 """
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "linux: marks tests to run only on Linux",
+    "macos: marks tests to run only on macOS", 
+    "windows: marks tests to run only on Windows",
+]
