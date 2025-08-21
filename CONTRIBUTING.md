@@ -71,13 +71,23 @@ pylint solc_select --rcfile pyproject.toml
 
 ## Running Tests
 
-Tests are platform-specific and can be run locally:
+Tests use pytest and can be run locally:
 
 ```bash
-# Run tests for your platform
-bash scripts/test_linux.sh    # On Linux
-bash scripts/test_macos.sh    # On macOS  
-bash scripts/test_windows.sh  # On Windows
+# Install development dependencies (includes pytest)
+pip install -e ".[dev]"
+
+# Run all tests
+pytest tests/
+
+# Run specific test file
+pytest tests/test_compiler_versions.py
+
+# Run tests with verbose output
+pytest tests/ -v
+
+# Skip slow tests (upgrade test) and platform boundary tests
+pytest tests/ -k "not version_boundaries" -m "not slow"
 
 # Tests also run automatically in GitHub Actions on all platforms
 ```
