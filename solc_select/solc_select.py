@@ -1,24 +1,26 @@
 import argparse
 import hashlib
 import json
-from zipfile import ZipFile
 import os
-import shutil
 import re
+import shutil
 import sys
 import urllib.request
 from pathlib import Path
-from packaging.version import Version
+from zipfile import ZipFile
+
 from Crypto.Hash import keccak
+from packaging.version import Version
+
 from .constants import (
-    LINUX_AMD64,
-    MACOSX_AMD64,
-    WINDOWS_AMD64,
-    EARLIEST_RELEASE,
-    SOLC_SELECT_DIR,
     ARTIFACTS_DIR,
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
+    EARLIEST_RELEASE,
+    LINUX_AMD64,
+    MACOSX_AMD64,
+    SOLC_SELECT_DIR,
+    WINDOWS_AMD64,
 )
 from .utils import mac_binary_is_universal, mac_can_run_intel_binaries
 

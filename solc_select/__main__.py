@@ -1,24 +1,25 @@
 import argparse
 import subprocess
 import sys
+
 from .constants import (
     ARTIFACTS_DIR,
     INSTALL_VERSIONS,
     SHOW_VERSIONS,
-    USE_VERSION,
     UPGRADE,
+    USE_VERSION,
 )
 from .solc_select import (
-    valid_install_arg,
-    valid_version,
-    get_installable_versions,
-    install_artifacts,
-    switch_global_version,
     current_version,
-    installed_versions,
+    get_installable_versions,
     halt_incompatible_system,
     halt_old_architecture,
+    install_artifacts,
+    installed_versions,
+    switch_global_version,
     upgrade_architecture,
+    valid_install_arg,
+    valid_version,
 )
 from .utils import sort_versions
 
