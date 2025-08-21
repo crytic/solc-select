@@ -219,7 +219,9 @@ def switch_global_version(version: str, always_install: bool, silent: bool = Fal
         version = get_latest_release()
 
     # Check version against platform minimum even if installed
-    if version != "latest" and Version(version) < Version(EARLIEST_RELEASE[soliditylang_platform()]):
+    if version != "latest" and Version(version) < Version(
+        EARLIEST_RELEASE[soliditylang_platform()]
+    ):
         raise argparse.ArgumentTypeError(
             f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
         )
