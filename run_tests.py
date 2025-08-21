@@ -14,7 +14,7 @@ def main():
     """Run the test suite."""
     # Basic pytest command
     cmd = [sys.executable, "-m", "pytest", "tests/", "-v"]
-    
+
     # Add platform-specific marker based on current platform
     if sys.platform == "linux":
         # Run all non-Windows, non-macOS tests plus Linux tests
@@ -25,7 +25,7 @@ def main():
     elif sys.platform == "win32":
         # Run all non-Linux, non-macOS tests plus Windows tests
         cmd.extend(["-m", "not (linux or macos)"])
-    
+
     print(f"Running: {' '.join(cmd)}")
     result = subprocess.run(cmd)
     return result.returncode
