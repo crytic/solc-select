@@ -2,8 +2,8 @@
 # See https://pre-commit.com for more information
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version should match the version in pyproject.toml
-    rev: v0.8.4
+    # Ruff version - using latest stable
+    rev: v0.12.10
     hooks:
       # Run the linter
       - id: ruff
