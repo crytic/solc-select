@@ -47,7 +47,7 @@ jobs:
           cp pyproject.toml .github/linters
 
       - name: Pylint
-        uses: super-linter/super-linter/slim@v7.3.0
+        uses: super-linter/super-linter/slim@v8.1.0
         if: always()
         env:
           # run linter on everything to catch preexisting problems
@@ -83,7 +83,7 @@ jobs:
           cp pyproject.toml .github/linters
 
       - name: Black
-        uses: super-linter/super-linter/slim@v7.3.0
+        uses: super-linter/super-linter/slim@v8.1.0
         if: always()
         env:
           # run linter on everything to catch preexisting problems
