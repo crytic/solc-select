@@ -24,7 +24,7 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-2022"]
         type: ["solc", "solc_upgrade", "os_specific"]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: actions/setup-python@v5
       id: python
       with:
