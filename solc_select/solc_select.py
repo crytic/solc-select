@@ -50,12 +50,7 @@ def check_emulation_available() -> bool:
 
     # On macOS, check for Rosetta 2
     if sys.platform == "darwin":
-        # Check if we can run x86_64 binaries
-        try:
-            result = subprocess.run(["arch", "-x86_64", "true"], capture_output=True, check=False)
-            return result.returncode == 0
-        except (FileNotFoundError, OSError):
-            return False
+        return mac_can_run_intel_binaries()
 
     # On Linux, check for qemu-x86_64
     try:
@@ -72,9 +67,9 @@ def get_emulation_prefix() -> list:
     if get_arch() != "arm64":
         return []
 
-    # On macOS, use arch command for Rosetta 2
-    if sys.platform == "darwin" and check_emulation_available():
-        return ["arch", "-x86_64"]
+    # On macOS, let Rosetta handle it automatically
+    if sys.platform == "darwin":
+        return []
 
     # On Linux, use qemu
     if sys.platform.startswith("linux") and check_emulation_available():
@@ -127,11 +122,6 @@ def warn_about_arm64(force: bool = False) -> None:
         warning_file.touch()
 
 
-def validate_url_scheme(url: str) -> None:
-    """Validate that URL uses a safe scheme (http or https only)."""
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        raise ValueError(f"Unsafe URL scheme '{parsed.scheme}' in URL: {url}")
 
 
 def halt_old_architecture(path: Path) -> None:
@@ -234,7 +224,6 @@ def install_artifacts(versions: [str], silent: bool = False) -> bool:
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         if not silent:
             print(f"Installing solc '{version}'...")
-        validate_url_scheme(url)
         urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
 
         verify_checksum(version)
@@ -291,7 +280,6 @@ def verify_checksum(version: str) -> None:
 def get_soliditylang_checksums(version: str) -> (str, str):
     (_, list_url) = get_url(version=version)
     # pylint: disable=consider-using-with
-    validate_url_scheme(list_url)
     list_json = urllib.request.urlopen(list_url).read()
     builds = json.loads(list_json)["builds"]
     matches = list(filter(lambda b: b["version"] == version, builds))
@@ -322,13 +310,6 @@ def switch_global_version(version: str, always_install: bool, silent: bool = Fal
         version = get_latest_release()
 
     # Check version against platform minimum even if installed
-    if version != "latest" and Version(version) < Version(
-        EARLIEST_RELEASE[soliditylang_platform()]
-    ):
-        raise argparse.ArgumentTypeError(
-            f"Invalid version - only solc versions above '{EARLIEST_RELEASE[soliditylang_platform()]}' are available"
-        )
-
     if version in installed_versions():
         with open(f"{SOLC_SELECT_DIR}/global-version", "w", encoding="utf-8") as f:
             f.write(version)
@@ -384,14 +365,12 @@ def get_installable_versions() -> [str]:
 # pylint: disable=consider-using-with
 def get_available_versions() -> [str]:
     (_, list_url) = get_url()
-    validate_url_scheme(list_url)
     list_json = urllib.request.urlopen(list_url).read()
     available_releases = json.loads(list_json)["releases"]
     # pylint: disable=consider-using-with
     if soliditylang_platform() == LINUX_AMD64:
         (_, list_url) = get_url(version=EARLIEST_RELEASE[LINUX_AMD64])
-        validate_url_scheme(list_url)
-        github_json = urllib.request.urlopen(list_url).read()
+            github_json = urllib.request.urlopen(list_url).read()
         additional_linux_versions = json.loads(github_json)["releases"]
         available_releases.update(additional_linux_versions)
 
@@ -412,7 +391,6 @@ def soliditylang_platform() -> str:
 
 def get_latest_release() -> str:
     (_, list_url) = get_url()
-    validate_url_scheme(list_url)
     list_json = urllib.request.urlopen(list_url).read()
     latest_release = json.loads(list_json)["latestRelease"]
     return latest_release

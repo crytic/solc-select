@@ -23,7 +23,7 @@ pip3 install solc-select
 ### Using uv (recommended for development)
 
 ```bash
-uv pip install solc-select
+uv tool install solc-select
 ```
 
 To automatically install and use a version, run `solc-select use <version> --always-install`.
