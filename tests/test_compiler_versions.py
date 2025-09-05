@@ -5,14 +5,6 @@ This module tests compilation with different Solidity versions,
 exactly mirroring the behavior of the original test_solc.sh script.
 """
 
-import os
-import shutil
-
-import pytest
-
-# Mark all tests in this module as fast (using data isolation only)
-pytestmark = pytest.mark.fast
-
 
 class TestCompilerVersions:
     """Test compilation with different Solidity compiler versions."""
@@ -135,4 +127,3 @@ class TestVersionSwitching:
         assert "'0.8.1' must be installed prior to use" in result.stdout, (
             f"Did not fail as expected when version not installed. Output: {result.stdout}"
         )
-

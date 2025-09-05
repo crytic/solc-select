@@ -40,37 +40,10 @@ jobs:
         source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
         python -m pip install --upgrade pip
         pip3 install -e ".[dev]"
-    - name: Run Fast Tests (Parallel)
+    - name: Run Tests
       shell: bash
       run: |
         source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
-        # Run fast tests in parallel, skip platform-specific boundary tests in CI
-        python -m pytest tests/ -v --tb=short -m "fast" -k "not version_boundaries" -n auto
-    - name: Run Slow Tests (Limited Parallel)
-      shell: bash
-      run: |
-        source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
-        # Run slow tests with limited parallelism to avoid resource contention
-        python -m pytest tests/ -v --tb=short -m "slow" -n 2
+        # Run all tests in parallel
+        python -m pytest tests/ -v --tb=short -n auto
 
-  comprehensive-tests:
-    name: Comprehensive Tests (Python ${{ matrix.python }} on ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]  # Run comprehensive tests on one Python version
-        os: ["ubuntu-latest", "macos-latest", "windows-2022"]
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Install solc-select and test dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip3 install -e ".[dev]"
-    - name: Run Comprehensive Tests
-      run: |
-        # Run ALL tests including slow and version_boundaries, but limit parallelism for slow tests
-        python -m pytest tests/ -v --tb=short -m "fast" -n auto
-        python -m pytest tests/ -v --tb=short -m "slow" -n 2

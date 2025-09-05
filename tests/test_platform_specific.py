@@ -9,9 +9,6 @@ import urllib.request
 
 import pytest
 
-# Mark all tests in this module as fast (using data isolation only)
-pytestmark = pytest.mark.fast
-
 # Platform configuration matrix
 PLATFORM_CONFIGS = {
     "linux": {
@@ -20,13 +17,13 @@ PLATFORM_CONFIGS = {
         "marker": pytest.mark.linux,
     },
     "macos": {
-        "min_version": "0.3.6", 
+        "min_version": "0.3.6",
         "api_url": "https://binaries.soliditylang.org/macosx-amd64/list.json",
         "marker": pytest.mark.macos,
     },
     "windows": {
         "min_version": "0.4.5",
-        "api_url": "https://binaries.soliditylang.org/windows-amd64/list.json", 
+        "api_url": "https://binaries.soliditylang.org/windows-amd64/list.json",
         "marker": pytest.mark.windows,
     },
 }
@@ -35,17 +32,22 @@ PLATFORM_CONFIGS = {
 class TestPlatformSpecific:  # pylint: disable=too-few-public-methods
     """Platform-specific version boundary tests."""
 
-    @pytest.mark.parametrize("platform,config", [
-        pytest.param("linux", PLATFORM_CONFIGS["linux"], marks=pytest.mark.linux, id="linux"),
-        pytest.param("macos", PLATFORM_CONFIGS["macos"], marks=pytest.mark.macos, id="macos"), 
-        pytest.param("windows", PLATFORM_CONFIGS["windows"], marks=pytest.mark.windows, id="windows"),
-    ])
+    @pytest.mark.parametrize(
+        "platform,config",
+        [
+            pytest.param("linux", PLATFORM_CONFIGS["linux"], marks=pytest.mark.linux, id="linux"),
+            pytest.param("macos", PLATFORM_CONFIGS["macos"], marks=pytest.mark.macos, id="macos"),
+            pytest.param(
+                "windows", PLATFORM_CONFIGS["windows"], marks=pytest.mark.windows, id="windows"
+            ),
+        ],
+    )
     def test_version_boundaries(self, platform, config, run_command, isolated_solc_data):
         """Test version boundaries and constraints for all platforms."""
-        
+
         min_version = config["min_version"]
         api_url = config["api_url"]
-        
+
         # Install minimum and latest versions
         run_command(f"solc-select install {min_version} latest", check=True)
 
@@ -68,10 +70,11 @@ class TestPlatformSpecific:  # pylint: disable=too-few-public-methods
         )
 
         # Test version too low (use a version that's definitely below minimum for all platforms)
-        result = run_command(f"solc-select use 0.2.0", check=False)
+        result = run_command("solc-select use 0.2.0", check=False)
         assert result.returncode != 0
         assert (
-            f"Invalid version - only solc versions above '{min_version}' are available" in result.stdout
+            f"Invalid version - only solc versions above '{min_version}' are available"
+            in result.stdout
         ), f"Did not fail for version too low on {platform}. Output: {result.stdout}"
 
         # Test version too high

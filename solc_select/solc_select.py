@@ -10,7 +10,6 @@ import subprocess
 import sys
 import urllib.request
 from pathlib import Path
-from urllib.parse import urlparse
 from zipfile import ZipFile
 
 from Crypto.Hash import keccak
@@ -120,8 +119,6 @@ def warn_about_arm64(force: bool = False) -> None:
     # Mark that we've shown the warning
     with contextlib.suppress(OSError):
         warning_file.touch()
-
-
 
 
 def halt_old_architecture(path: Path) -> None:
