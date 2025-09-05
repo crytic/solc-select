@@ -206,9 +206,18 @@ def install_artifacts(versions: [str], silent: bool = False) -> bool:
             print(f"{', '.join(not_available_versions)} solc versions are not available.")
             return False
 
+    already_installed = installed_versions()
     for version, artifact in releases.items():
         if "all" not in versions:
             if versions and version not in versions:
+                continue
+
+        artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
+
+        if version in already_installed:
+            if os.listdir(artifact_file_dir):
+                if not silent:
+                    print(f"Version '{version}' is already installed, skipping...")
                 continue
 
         (url, _) = get_url(version, artifact)
@@ -217,7 +226,6 @@ def install_artifacts(versions: [str], silent: bool = False) -> bool:
             url = CRYTIC_SOLC_ARTIFACTS + artifact
             print(url)
 
-        artifact_file_dir = ARTIFACTS_DIR.joinpath(f"solc-{version}")
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         if not silent:
             print(f"Installing solc '{version}'...")
