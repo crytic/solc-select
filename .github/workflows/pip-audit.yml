@@ -33,7 +33,6 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install .
 
-
       - name: Run pip-audit
         uses: pypa/gh-action-pip-audit@v1.1.0
         with:
