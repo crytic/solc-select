@@ -370,7 +370,7 @@ def get_available_versions() -> [str]:
     # pylint: disable=consider-using-with
     if soliditylang_platform() == LINUX_AMD64:
         (_, list_url) = get_url(version=EARLIEST_RELEASE[LINUX_AMD64])
-            github_json = urllib.request.urlopen(list_url).read()
+        github_json = urllib.request.urlopen(list_url).read()
         additional_linux_versions = json.loads(github_json)["releases"]
         available_releases.update(additional_linux_versions)
 
