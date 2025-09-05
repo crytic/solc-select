@@ -133,7 +133,7 @@ def run_command(
 @pytest.fixture(scope="session")
 def test_contracts_dir() -> Path:
     """Path to test Solidity contracts."""
-    return Path(__file__).parent.parent / "scripts" / "solidity_tests"
+    return Path(__file__).parent / "solidity_tests"
 
 
 # Platform markers for conditional test execution
