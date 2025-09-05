@@ -10,22 +10,17 @@ import shutil
 
 import pytest
 
+# Mark all tests in this module as fast (using data isolation only)
+pytestmark = pytest.mark.fast
+
 
 class TestCompilerVersions:
     """Test compilation with different Solidity compiler versions."""
 
-    @pytest.fixture(scope="function", autouse=True)
-    def install_required_versions(self, run_command):
-        """Install all required compiler versions before running tests."""
-        # Install all versions needed for tests, exactly as bash script did
-        run_command("solc-select install 0.4.5 0.5.0 0.6.0 0.7.0 0.8.0 0.8.1 0.8.9", check=False)
-        # Don't fail if already installed
-
-    def test_solc_045(self, run_command, test_contracts_dir, backup_current_version):
+    def test_solc_045(self, run_command, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.4.5 compilation behavior."""
-        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.4.5
-        result = run_command("solc-select use 0.4.5", check=False)
+        result = run_command("solc-select use 0.4.5 --always-install", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.4.5: {result.stdout}"
 
         # Test successful compilation
@@ -39,11 +34,10 @@ class TestCompilerVersions:
             f"solc045_fail_compile did not fail as expected. Output: {result.stdout}"
         )
 
-    def test_solc_050(self, run_command, test_contracts_dir, backup_current_version):
+    def test_solc_050(self, run_command, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.5.0 compilation behavior."""
-        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.5.0
-        result = run_command("solc-select use 0.5.0", check=False)
+        result = run_command("solc-select use 0.5.0 --always-install", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.5.0: {result.stdout}"
 
         # Test successful compilation
@@ -58,11 +52,10 @@ class TestCompilerVersions:
             in result.stdout
         ), f"solc050_fail_compile did not fail as expected. Output: {result.stdout}"
 
-    def test_solc_060(self, run_command, test_contracts_dir, backup_current_version):
+    def test_solc_060(self, run_command, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.6.0 compilation behavior."""
-        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.6.0
-        result = run_command("solc-select use 0.6.0", check=False)
+        result = run_command("solc-select use 0.6.0 --always-install", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.6.0: {result.stdout}"
 
         # Test try/catch feature (new in 0.6.0)
@@ -73,11 +66,10 @@ class TestCompilerVersions:
         result = run_command(f"solc {test_contracts_dir}/solc060_success_receive.sol", check=False)
         assert result.returncode == 0, f"solc060_success_receive failed with: {result.stdout}"
 
-    def test_solc_070(self, run_command, test_contracts_dir, backup_current_version):
+    def test_solc_070(self, run_command, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.7.0 compilation behavior."""
-        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.7.0
-        result = run_command("solc-select use 0.7.0", check=False)
+        result = run_command("solc-select use 0.7.0 --always-install", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.7.0: {result.stdout}"
 
         # Test deprecated 'now' keyword
@@ -91,11 +83,10 @@ class TestCompilerVersions:
         result = run_command(f"solc {test_contracts_dir}/solc070_success.sol", check=False)
         assert result.returncode == 0, f"solc070_success failed with: {result.stdout}"
 
-    def test_solc_080(self, run_command, test_contracts_dir, backup_current_version):
+    def test_solc_080(self, run_command, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.8.0 compilation behavior."""
-        _ = backup_current_version  # Fixture ensures clean state
         # Switch to 0.8.0
-        result = run_command("solc-select use 0.8.0", check=False)
+        result = run_command("solc-select use 0.8.0 --always-install", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.8.0: {result.stdout}"
 
         # Test successful compilation
@@ -121,31 +112,10 @@ class TestCompilerVersions:
 class TestVersionSwitching:
     """Test version switching functionality."""
 
-    def test_always_install_flag(self, run_command, solc_select_path, backup_current_version):
+    def test_always_install_flag(self, run_command, isolated_solc_data):
         """Test --always-install flag functionality."""
-        _ = backup_current_version  # Fixture ensures clean state
-        # Safely remove 0.8.9 if it exists
-        artifacts_path = solc_select_path / "artifacts"
-
-        # Validate path to ensure we're in the right place
-        path_parts = str(artifacts_path).replace(os.sep, "/").split("/")
-        if len(path_parts) < 2 or path_parts[-2:] != [".solc-select", "artifacts"]:
-            pytest.fail(f"Unsafe artifacts path: {artifacts_path}")
-
-        # Remove specific solc versions (can be files or directories)
-        for filename in ["solc-0.8.9", "solc-0.8.9.exe"]:
-            file_path = artifacts_path / filename
-            if file_path.exists():
-                try:
-                    if file_path.is_file():
-                        file_path.chmod(0o755)  # Ensure we have permission
-                        file_path.unlink()
-                    elif file_path.is_dir():
-                        # On macOS, solc binaries are directories
-                        shutil.rmtree(file_path)
-                except (PermissionError, OSError):
-                    # If we can't delete, that's okay - test will still work
-                    pass
+        # In isolated environment, 0.8.9 won't be installed initially
+        # No need for complex path validation or manual cleanup
 
         # Use with --always-install should install and switch
         result = run_command("solc-select use 0.8.9 --always-install", check=False)
@@ -154,32 +124,10 @@ class TestVersionSwitching:
             f"Failed to switch with --always-install. Output: {result.stdout}"
         )
 
-    def test_use_without_install(self, run_command, solc_select_path, backup_current_version):
+    def test_use_without_install(self, run_command, isolated_solc_data):
         """Test that 'use' fails when version is not installed."""
-        _ = backup_current_version  # Fixture ensures clean state
-        # Safely remove 0.8.1 if it exists
-        artifacts_path = solc_select_path / "artifacts"
-
-        # Validate path to ensure we're in the right place
-
-        path_parts = str(artifacts_path).replace(os.sep, "/").split("/")
-        if len(path_parts) < 2 or path_parts[-2:] != [".solc-select", "artifacts"]:
-            pytest.fail(f"Unsafe artifacts path: {artifacts_path}")
-
-        # Remove specific solc versions (can be files or directories)
-        for filename in ["solc-0.8.1", "solc-0.8.1.exe"]:
-            file_path = artifacts_path / filename
-            if file_path.exists():
-                try:
-                    if file_path.is_file():
-                        file_path.chmod(0o755)  # Ensure we have permission
-                        file_path.unlink()
-                    elif file_path.is_dir():
-                        # On macOS, solc binaries are directories
-                        shutil.rmtree(file_path)
-                except (PermissionError, OSError):
-                    # If we can't delete, that's okay - test will still work
-                    pass
+        # In isolated environment, 0.8.1 won't be installed initially
+        # No need for complex cleanup logic
 
         # Use without install should fail
         result = run_command("solc-select use 0.8.1", check=False)
@@ -188,5 +136,3 @@ class TestVersionSwitching:
             f"Did not fail as expected when version not installed. Output: {result.stdout}"
         )
 
-        # Clean up: install 0.8.1 for other tests
-        run_command("solc-select install 0.8.1", check=False)

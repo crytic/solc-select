@@ -109,7 +109,8 @@ addopts = [
     "--tb=short",
 ]
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "slow: marks tests as slow (full Python env isolation)",
+    "fast: marks tests as fast (data isolation only)", 
     "linux: marks tests to run only on Linux",
     "macos: marks tests to run only on macOS",
     "windows: marks tests to run only on Windows",

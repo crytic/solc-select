@@ -1,94 +1,99 @@
 """
 Pytest configuration and fixtures for solc-select tests.
 
-This module provides conservative test fixtures that closely mirror
-the original bash test behavior while ensuring proper isolation and cleanup.
+This module provides isolated test environments that prevent
+threading issues when tests run in parallel.
 """
 
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Generator
+from typing import Dict, Generator
 
 import pytest
 
 
-@pytest.fixture(scope="session", name="solc_select_path")
-def _solc_select_path() -> Path:
-    """Get the path to solc-select artifacts directory."""
-    virtual_env = os.environ.get("VIRTUAL_ENV")
-    if virtual_env:
-        return Path(virtual_env) / ".solc-select"
-    return Path.home() / ".solc-select"
+@pytest.fixture(scope="function")
+def isolated_solc_data(tmp_path, monkeypatch):
+    """
+    Create isolated solc-select data environment for each test.
+    
+    Uses VIRTUAL_ENV to redirect solc-select to a temporary directory.
+    This provides fast isolation for tests that only need solc data separation.
+    """
+    temp_venv = tmp_path / "venv"
+    temp_venv.mkdir()
+    
+    # Redirect solc-select to use our temp directory via VIRTUAL_ENV
+    monkeypatch.setenv("VIRTUAL_ENV", str(temp_venv))
+    
+    yield temp_venv
 
 
 @pytest.fixture(scope="function")
-def backup_current_version(solc_select_path: Path) -> Generator[None, None, None]:
+def isolated_python_env(tmp_path):
     """
-    Backup and restore the current solc version.
-
-    This fixture ensures that each test starts with a clean state
-    and doesn't affect the user's current solc configuration.
+    Create completely isolated Python environment for tests that install/uninstall solc-select.
+    
+    Creates a real virtual environment to prevent pip install/uninstall race conditions.
+    This is slower but necessary for tests like upgrade tests.
     """
-    global_version_file = solc_select_path / "global-version"
-    backup_file = None
+    venv_path = tmp_path / "test_venv"
+    
+    # Create real virtual environment
+    subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True)
+    
+    # Get paths for the virtual environment
+    if sys.platform == "win32":
+        python_exe = venv_path / "Scripts" / "python.exe"
+        pip_exe = venv_path / "Scripts" / "pip.exe"
+    else:
+        python_exe = venv_path / "bin" / "python"
+        pip_exe = venv_path / "bin" / "pip"
+    
+    yield {
+        "venv_path": venv_path,
+        "python": str(python_exe),
+        "pip": str(pip_exe),
+        "env": {"VIRTUAL_ENV": str(venv_path), "PATH": str(venv_path / ("Scripts" if sys.platform == "win32" else "bin")) + os.pathsep + os.environ.get("PATH", "")}
+    }
 
-    # Backup current version if it exists
-    if global_version_file.exists():
-        backup_file = global_version_file.with_suffix(".backup")
-        shutil.copy2(global_version_file, backup_file)
 
-    yield
-
-    # Restore original version
-    if backup_file and backup_file.exists():
-        shutil.copy2(backup_file, global_version_file)
-        backup_file.unlink()
-    elif global_version_file.exists():
-        # If there was no original version, remove the file
-        global_version_file.unlink()
-
-
-@pytest.fixture(scope="function")
-def clean_artifacts(solc_select_path: Path) -> Generator[None, None, None]:
+def run_in_venv(venv_info: Dict, cmd: str, check: bool = True, **kwargs) -> subprocess.CompletedProcess:
     """
-    Clean up test artifacts after each test.
-
-    This is used for tests that need complete isolation and
-    should start with no installed versions.
+    Run a command in an isolated virtual environment.
+    
+    Args:
+        venv_info: Dictionary from isolated_python_env fixture
+        cmd: Command to run
+        check: Whether to raise on non-zero exit code
+        **kwargs: Additional arguments to subprocess.run
+    
+    Returns:
+        CompletedProcess instance with stdout, stderr, and returncode
     """
-    artifacts_dir = solc_select_path / "artifacts"
-    backup_dir = None
-
-    # Backup existing artifacts if they exist
-    if artifacts_dir.exists():
-        backup_dir = artifacts_dir.with_suffix(".backup")
-        if backup_dir.exists():
-            shutil.rmtree(backup_dir)
-        shutil.copytree(artifacts_dir, backup_dir)
-        shutil.rmtree(artifacts_dir)
-
-    yield
-
-    # Clean up test artifacts
-    if artifacts_dir.exists():
-        shutil.rmtree(artifacts_dir)
-
-    # Restore original artifacts if they existed
-    if backup_dir and backup_dir.exists():
-        shutil.copytree(backup_dir, artifacts_dir)
-        shutil.rmtree(backup_dir)
+    env = os.environ.copy()
+    env.update(venv_info["env"])
+    
+    return subprocess.run(
+        cmd,
+        shell=True,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=check,
+        **kwargs
+    )
 
 
 @pytest.fixture(scope="function")
 def run_command():
     """
     Execute shell commands and return output.
-
-    This fixture provides a conservative way to run commands,
-    exactly as the bash tests did.
+    
+    This fixture is kept for backward compatibility with tests using isolated_solc_data.
+    For tests using isolated_python_env, use run_in_venv instead.
     """
 
     def _run(
@@ -148,6 +153,8 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "linux: mark test to run only on Linux")
     config.addinivalue_line("markers", "macos: mark test to run only on macOS")
     config.addinivalue_line("markers", "windows: mark test to run only on Windows")
+    config.addinivalue_line("markers", "fast: mark test as fast (data isolation only)")
+    config.addinivalue_line("markers", "slow: mark test as slow (full Python env isolation)")
 
 
 def pytest_runtest_setup(item):
