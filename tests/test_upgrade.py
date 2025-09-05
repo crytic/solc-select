@@ -25,7 +25,7 @@ class TestUpgrade:  # pylint: disable=too-few-public-methods
         project_root = Path(__file__).parent.parent
 
         # Install release version from PyPI
-        run_in_venv(venv, "pip install 'solc-select>=1.0'", check=True)
+        run_in_venv(venv, 'pip install "solc-select>=1.0"', check=True)
 
         # Install additional versions
         run_in_venv(venv, "solc-select install 0.4.11 0.5.0 0.6.12 0.7.3 0.8.0 0.8.3", check=False)
