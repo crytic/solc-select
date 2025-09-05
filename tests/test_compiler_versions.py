@@ -5,11 +5,13 @@ This module tests compilation with different Solidity versions,
 exactly mirroring the behavior of the original test_solc.sh script.
 """
 
+from .conftest import run_command
+
 
 class TestCompilerVersions:
     """Test compilation with different Solidity compiler versions."""
 
-    def test_solc_045(self, run_command, test_contracts_dir, isolated_solc_data):
+    def test_solc_045(self, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.4.5 compilation behavior."""
         # Switch to 0.4.5
         result = run_command("solc-select use 0.4.5 --always-install", check=False)
@@ -26,7 +28,7 @@ class TestCompilerVersions:
             f"solc045_fail_compile did not fail as expected. Output: {result.stdout}"
         )
 
-    def test_solc_050(self, run_command, test_contracts_dir, isolated_solc_data):
+    def test_solc_050(self, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.5.0 compilation behavior."""
         # Switch to 0.5.0
         result = run_command("solc-select use 0.5.0 --always-install", check=False)
@@ -44,7 +46,7 @@ class TestCompilerVersions:
             in result.stdout
         ), f"solc050_fail_compile did not fail as expected. Output: {result.stdout}"
 
-    def test_solc_060(self, run_command, test_contracts_dir, isolated_solc_data):
+    def test_solc_060(self, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.6.0 compilation behavior."""
         # Switch to 0.6.0
         result = run_command("solc-select use 0.6.0 --always-install", check=False)
@@ -58,7 +60,7 @@ class TestCompilerVersions:
         result = run_command(f"solc {test_contracts_dir}/solc060_success_receive.sol", check=False)
         assert result.returncode == 0, f"solc060_success_receive failed with: {result.stdout}"
 
-    def test_solc_070(self, run_command, test_contracts_dir, isolated_solc_data):
+    def test_solc_070(self, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.7.0 compilation behavior."""
         # Switch to 0.7.0
         result = run_command("solc-select use 0.7.0 --always-install", check=False)
@@ -75,7 +77,7 @@ class TestCompilerVersions:
         result = run_command(f"solc {test_contracts_dir}/solc070_success.sol", check=False)
         assert result.returncode == 0, f"solc070_success failed with: {result.stdout}"
 
-    def test_solc_080(self, run_command, test_contracts_dir, isolated_solc_data):
+    def test_solc_080(self, test_contracts_dir, isolated_solc_data):
         """Test Solidity 0.8.0 compilation behavior."""
         # Switch to 0.8.0
         result = run_command("solc-select use 0.8.0 --always-install", check=False)
@@ -104,7 +106,7 @@ class TestCompilerVersions:
 class TestVersionSwitching:
     """Test version switching functionality."""
 
-    def test_always_install_flag(self, run_command, isolated_solc_data):
+    def test_always_install_flag(self, isolated_solc_data):
         """Test --always-install flag functionality."""
         # In isolated environment, 0.8.9 won't be installed initially
         # No need for complex path validation or manual cleanup
@@ -116,7 +118,7 @@ class TestVersionSwitching:
             f"Failed to switch with --always-install. Output: {result.stdout}"
         )
 
-    def test_use_without_install(self, run_command, isolated_solc_data):
+    def test_use_without_install(self, isolated_solc_data):
         """Test that 'use' fails when version is not installed."""
         # In isolated environment, 0.8.1 won't be installed initially
         # No need for complex cleanup logic

@@ -9,6 +9,8 @@ import urllib.request
 
 import pytest
 
+from .conftest import run_command
+
 # Platform configuration matrix
 PLATFORM_CONFIGS = {
     "linux": {
@@ -42,7 +44,7 @@ class TestPlatformSpecific:  # pylint: disable=too-few-public-methods
             ),
         ],
     )
-    def test_version_boundaries(self, platform, config, run_command, isolated_solc_data):
+    def test_version_boundaries(self, platform, config, isolated_solc_data):
         """Test version boundaries and constraints for all platforms."""
 
         min_version = config["min_version"]
