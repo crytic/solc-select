@@ -27,7 +27,7 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-2022"]
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       id: python
       with:
         python-version: ${{ matrix.python }}
