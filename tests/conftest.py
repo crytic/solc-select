@@ -83,9 +83,17 @@ def run_in_venv(
     env = os.environ.copy()
     env.update(venv_info["env"])
 
-    return subprocess.run(
-        cmd, shell=True, env=env, capture_output=True, text=True, check=check, **kwargs
-    )
+    try:
+        return subprocess.run(
+            cmd, shell=True, env=env, capture_output=True, text=True, check=check, **kwargs
+        )
+    except subprocess.CalledProcessError as e:
+        print("Command failed with CalledProcessError.")
+        print("Exit code:", e.returncode)
+        print("Command:", e.cmd)
+        print("Stdout:", e.stdout)
+        print("Stderr:", e.stderr)
+        raise
 
 
 @pytest.fixture(scope="function")
