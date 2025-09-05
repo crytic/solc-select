@@ -28,22 +28,12 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-python@v6
-      id: python
       with:
         python-version: ${{ matrix.python }}
-    - name: Create Python virtual environment
-      run: |
-        ${{ steps.python.outputs.python-path }} -m venv test-venv
+    - uses: astral-sh/setup-uv@v4
     - name: Install solc-select and test dependencies
-      shell: bash
       run: |
-        source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
-        python -m pip install --upgrade pip
-        pip3 install -e ".[dev]"
+        uv sync --extra dev
     - name: Run Tests
-      shell: bash
       run: |
-        source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
-        # Run all tests in parallel
-        python -m pytest tests/ -v --tb=short -n auto
-
+        uv run python -m pytest tests/ -v --tb=short -n auto
