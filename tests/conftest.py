@@ -52,6 +52,9 @@ def isolated_python_env(tmp_path):
         python_exe = venv_path / "bin" / "python"
         pip_exe = venv_path / "bin" / "pip"
 
+    # Upgrade pip in the virtual environment
+    subprocess.run([str(python_exe), "-m", "pip", "install", "--upgrade", "pip"], check=True)
+
     yield {
         "venv_path": venv_path,
         "python": str(python_exe),
