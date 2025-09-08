@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,28 +40,76 @@ Homepage = "https://github.com/crytic/solc-select"
 Repository = "https://github.com/crytic/solc-select.git"
 Issues = "https://github.com/crytic/solc-select/issues"
 
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    # Linting and type checking
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-setuptools",
+    # Development tools
+    "pre-commit>=3.5.0",
+]
+
 [project.scripts]
 solc-select = "solc_select.__main__:solc_select"
 solc = "solc_select.__main__:solc"
 
-[tool.black]
-target-version = ["py38"]
+[tool.ruff]
+target-version = "py38"
 line-length = 100
-[tool.pylint.messages_control]
-disable = """
-missing-module-docstring,
-missing-class-docstring,
-missing-function-docstring,
-unnecessary-lambda,
-cyclic-import,
-line-too-long,
-invalid-name,
-fixme,
-too-many-return-statements,
-too-many-ancestors,
-logging-fstring-interpolation,
-logging-not-lazy,
-duplicate-code,
-import-error,
-unsubscriptable-object
-"""
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "W",  # pycodestyle warnings
+    "UP",  # pyupgrade
+    "B",  # flake8-bugbear (catches common bugs)
+    "C4",  # flake8-comprehensions (better comprehensions)
+    "SIM",  # flake8-simplify (simpler code)
+    "TCH",  # flake8-type-checking (type checking imports)
+    "RUF",  # Ruff-specific rules
+    "PLR",  # Pylint refactor checks
+    "PLE",  # Pylint error checks
+    "PLW",  # Pylint warning checks
+]
+ignore = [
+    "E501",  # line-too-long (handled by formatter)
+    "PLR0912",  # too-many-branches (existing code has complex logic)
+    "PLR0913",  # too-many-arguments (sometimes needed)
+    "PLR2004",  # magic-value-comparison (too strict)
+    "SIM102",  # collapsible-if (sometimes clearer as nested)
+    "SIM108",  # if-else-block-instead-of-if-exp (sometimes clearer)
+    "RUF005",  # collection-literal-concatenation (existing pattern)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports in __init__ files
+
+[tool.ruff.format]
+# Match black's formatting style
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "linux: marks tests to run only on Linux",
+    "macos: marks tests to run only on macOS",
+    "windows: marks tests to run only on Windows",
+]

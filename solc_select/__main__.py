@@ -1,24 +1,26 @@
 import argparse
 import subprocess
 import sys
+
 from .constants import (
     ARTIFACTS_DIR,
     INSTALL_VERSIONS,
     SHOW_VERSIONS,
-    USE_VERSION,
     UPGRADE,
+    USE_VERSION,
 )
 from .solc_select import (
-    valid_install_arg,
-    valid_version,
-    get_installable_versions,
-    install_artifacts,
-    switch_global_version,
     current_version,
-    installed_versions,
+    get_emulation_prefix,
+    get_installable_versions,
     halt_incompatible_system,
     halt_old_architecture,
+    install_artifacts,
+    installed_versions,
+    switch_global_version,
     upgrade_architecture,
+    valid_install_arg,
+    valid_version,
 )
 from .utils import sort_versions
 
@@ -68,9 +70,13 @@ def solc_select() -> None:
         versions_installed = installed_versions()
         if versions_installed:
             (current_ver, source) = (None, None)
-            res = current_version()
-            if res:
-                (current_ver, source) = res
+            try:
+                res = current_version()
+                if res:
+                    (current_ver, source) = res
+            except argparse.ArgumentTypeError:
+                # No version is currently set, that's ok
+                res = None
             for version in sort_versions(versions_installed):
                 if res and version == current_ver:
                     print(f"{version} (current, set by {source})")
@@ -96,11 +102,12 @@ def solc() -> None:
         path = ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
         halt_old_architecture(path)
         halt_incompatible_system(path)
+
+        # Use emulation if needed for ARM64 systems
+        cmd = get_emulation_prefix() + [str(path)] + sys.argv[1:]
+
         try:
-            subprocess.run(
-                [str(path)] + sys.argv[1:],
-                check=True,
-            )
+            subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
             sys.exit(e.returncode)
     else:

@@ -14,35 +14,25 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   tests:
-    name: CI (Python ${{ matrix.python }} on ${{ matrix.os }}, ${{ matrix.type }} test)
+    name: CI (Python ${{ matrix.python }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         os: ["ubuntu-latest", "macos-latest", "windows-2022"]
-        type: ["solc", "solc_upgrade", "os_specific"]
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-python@v6
-      id: python
+    - uses: astral-sh/setup-uv@v4
       with:
         python-version: ${{ matrix.python }}
-    - name: Create Python virtual environment
+    - name: Install solc-select and test dependencies
       run: |
-        ${{ steps.python.outputs.python-path }} -m venv test-venv
-    - name: Install solc-select
-      shell: bash
-      run: |
-        source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
-        python -m pip install --upgrade pip
-        pip3 install .
+        uv sync --extra dev
     - name: Run Tests
-      shell: bash
-      env:
-        TEST_TYPE: ${{ (matrix.type != 'os_specific' && matrix.type) || runner.os }}
       run: |
-        source test-venv/${{ (runner.os == 'Windows' && 'Scripts') || 'bin' }}/activate
-        TEST_TYPE="$(echo "$TEST_TYPE" | tr '[:upper:]' '[:lower:]')"
-        bash scripts/test_${TEST_TYPE}.sh
+        uv run python -m pytest tests/ -v --tb=short -n auto

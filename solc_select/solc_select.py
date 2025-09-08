@@ -1,28 +1,124 @@
 import argparse
+import contextlib
 import hashlib
 import json
-from zipfile import ZipFile
 import os
-import shutil
+import platform
 import re
+import shutil
+import subprocess
 import sys
 import urllib.request
 from pathlib import Path
-from packaging.version import Version
+from zipfile import ZipFile
+
 from Crypto.Hash import keccak
+from packaging.version import Version
+
 from .constants import (
-    LINUX_AMD64,
-    MACOSX_AMD64,
-    WINDOWS_AMD64,
-    EARLIEST_RELEASE,
-    SOLC_SELECT_DIR,
     ARTIFACTS_DIR,
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
+    EARLIEST_RELEASE,
+    LINUX_AMD64,
+    MACOSX_AMD64,
+    SOLC_SELECT_DIR,
+    WINDOWS_AMD64,
 )
 from .utils import mac_binary_is_universal, mac_can_run_intel_binaries
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
+
+
+def get_arch() -> str:
+    """Get the current system architecture."""
+    machine = platform.machine().lower()
+    if machine in ["x86_64", "amd64"]:
+        return "amd64"
+    elif machine in ["aarch64", "arm64"]:
+        return "arm64"
+    elif machine in ["i386", "i686"]:
+        return "386"
+    return machine
+
+
+def check_emulation_available() -> bool:
+    """Check if x86_64 emulation is available."""
+    if get_arch() != "arm64":
+        return False
+
+    # On macOS, check for Rosetta 2
+    if sys.platform == "darwin":
+        return mac_can_run_intel_binaries()
+
+    # On Linux, check for qemu-x86_64
+    try:
+        result = subprocess.run(
+            ["which", "qemu-x86_64"], capture_output=True, text=True, check=False
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, OSError):
+        return False
+
+
+def get_emulation_prefix() -> list:
+    """Get the command prefix for emulation if needed."""
+    if get_arch() != "arm64":
+        return []
+
+    # On macOS, let Rosetta handle it automatically
+    if sys.platform == "darwin":
+        return []
+
+    # On Linux, use qemu
+    if sys.platform.startswith("linux") and check_emulation_available():
+        return ["qemu-x86_64"]
+
+    return []
+
+
+def warn_about_arm64(force: bool = False) -> None:
+    """Warn ARM64 users about compatibility and suggest solutions."""
+    if get_arch() != "arm64":
+        return
+
+    # Check if we've already warned
+    warning_file = SOLC_SELECT_DIR.joinpath(".arm64_warning_shown")
+    if not force and warning_file.exists():
+        return
+
+    print("\n⚠️  WARNING: ARM64 Architecture Detected", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+
+    if check_emulation_available():
+        if sys.platform == "darwin":
+            print("✓ Rosetta 2 detected - will use emulation for x86 binaries", file=sys.stderr)
+        else:
+            print("✓ qemu-x86_64 detected - will use emulation for x86 binaries", file=sys.stderr)
+        print("  Note: Performance will be slower than native execution", file=sys.stderr)
+    else:
+        if sys.platform == "darwin":
+            print(
+                "✗ solc binaries are x86_64 only, and Rosetta 2 is not available", file=sys.stderr
+            )
+        else:
+            print("✗ solc binaries are x86_64 only, and qemu is not installed", file=sys.stderr)
+        print("\nTo use solc-select on ARM64, you can:", file=sys.stderr)
+        print("  1. Install qemu for x86_64 emulation:", file=sys.stderr)
+        if sys.platform.startswith("linux"):
+            print("     sudo apt-get install qemu-user-static  # Debian/Ubuntu", file=sys.stderr)
+            print("     sudo dnf install qemu-user-static      # Fedora", file=sys.stderr)
+            print("     sudo pacman -S qemu-user-static        # Arch", file=sys.stderr)
+        elif sys.platform == "darwin":
+            print("     Use Rosetta 2 (installed automatically on Apple Silicon)", file=sys.stderr)
+        print("  2. Use an x86_64 Docker container", file=sys.stderr)
+        print("  3. Use a cloud-based development environment", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    print(file=sys.stderr)
+
+    # Mark that we've shown the warning
+    with contextlib.suppress(OSError):
+        warning_file.touch()
 
 
 def halt_old_architecture(path: Path) -> None:
@@ -71,7 +167,7 @@ def current_version() -> (str, str):
         source = source_path.as_posix()
         if Path.is_file(source_path):
             with open(source_path, encoding="utf-8") as f:
-                version = f.read()
+                version = f.read().strip()
         else:
             raise argparse.ArgumentTypeError(
                 "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
@@ -97,6 +193,10 @@ def artifact_path(version: str) -> Path:
 
 
 def install_artifacts(versions: [str], silent: bool = False) -> bool:
+    # Warn ARM64 users about compatibility on first install
+    if get_arch() == "arm64" and not silent:
+        warn_about_arm64()
+
     releases = get_available_versions()
     versions = [get_latest_release() if ver == "latest" else ver for ver in versions]
 
@@ -205,6 +305,8 @@ def get_url(version: str = "", artifact: str = "") -> (str, str):
 def switch_global_version(version: str, always_install: bool, silent: bool = False) -> None:
     if version == "latest":
         version = get_latest_release()
+
+    # Check version against platform minimum even if installed
     if version in installed_versions():
         with open(f"{SOLC_SELECT_DIR}/global-version", "w", encoding="utf-8") as f:
             f.write(version)

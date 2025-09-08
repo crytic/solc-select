@@ -12,10 +12,18 @@ official artifacts for many historial and modern `solc` versions for Linux and m
 
 The versioned binaries are stored in `~/.solc-select/artifacts/`.
 
-## Quickstart
+## Installation
+
+### Using pip
 
 ```bash
 pip3 install solc-select
+```
+
+### Using uv (recommended for development)
+
+```bash
+uv tool install solc-select
 ```
 
 To automatically install and use a version, run `solc-select use <version> --always-install`.
@@ -26,13 +34,19 @@ To automatically install and use a version, run `solc-select use <version> --alw
 
 ## Usage
 
-By default, `solc-select` will install the most recent available Solidity file for your version. This will automatically be done when you run `solc` for the first time.
+### Quick Start
 
 ```bash
-solc
+# Install and set a specific Solidity version
+solc-select use 0.8.19 --always-install
+
+# Check the current version
+solc --version
 ```
 
-The global version of `solc` will automatically be set to to the latest version. You can reset this with the `solc-select use <version>` command:
+### Managing Versions
+
+The global version of `solc` will automatically be set to the latest version. You can change this with the `solc-select use <version>` command:
 
 ```shell
 $ solc --version
@@ -64,16 +78,23 @@ Installing '0.8.1'...
 Version '0.8.1' installed.
 ```
 
-You can list all available versions with `solc-select install`:
+### Available Commands
 
 ```shell
-$ solc-select install
-Available versions to install:
-0.3.6
-0.4.0
-...
-0.8.0
-0.8.1
+# List all available versions
+solc-select install
+
+# Install a specific version
+solc-select install 0.8.19
+
+# Switch to an installed version
+solc-select use 0.8.19
+
+# List installed versions
+solc-select versions
+
+# Install and switch to a version in one command
+solc-select use 0.8.19 --always-install
 ```
 
 ## Getting Help

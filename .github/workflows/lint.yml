@@ -1,11 +1,6 @@
 ---
 name: Lint Code Base
 
-defaults:
-  run:
-    # To load bashrc
-    shell: bash -ieo pipefail {0}
-
 on:
   pull_request:
     branches: [master, dev]
@@ -19,78 +14,22 @@ concurrency:
 
 permissions:
   contents: read
-  packages: read
-  # To report GitHub Actions status checks
-  statuses: write
 
 jobs:
-  pylint:
-    name: Lint Code Base (pylint)
+  lint:
+    name: Lint Code Base
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v5
-        with:
-          # super-linter needs the full git history to get the
-          # list of files that changed across commits
-          fetch-depth: 0
+      - uses: actions/checkout@v5
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.8
+      - uses: astral-sh/setup-uv@v4
 
-      - name: Install dependencies
-        run: |
-          mkdir -p .github/linters
-          cp pyproject.toml .github/linters
+      - name: Install solc-select and test dependencies
+        run: uv sync --extra dev
 
-      - name: Pylint
-        uses: super-linter/super-linter/slim@v8.1.0
-        if: always()
-        env:
-          # run linter on everything to catch preexisting problems
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Run only pylint
-          VALIDATE_PYTHON: true
-          VALIDATE_PYTHON_PYLINT: true
-          PYTHON_PYLINT_CONFIG_FILE: pyproject.toml
-          FILTER_REGEX_EXCLUDE: .*tests/.*.(json|zip|sol)
+      - name: Run ruff check
+        run: uv run ruff check .
 
-  black:
-    name: Lint Code Base (black)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v5
-        with:
-          # super-linter needs the full git history to get the
-          # list of files that changed across commits
-          fetch-depth: 0
-
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.8
-
-      - name: Install dependencies
-        run: |
-          mkdir -p .github/linters
-          cp pyproject.toml .github/linters
-
-      - name: Black
-        uses: super-linter/super-linter/slim@v8.1.0
-        if: always()
-        env:
-          # run linter on everything to catch preexisting problems
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Run only black
-          VALIDATE_PYTHON_BLACK: true
-          PYTHON_BLACK_CONFIG_FILE: pyproject.toml
-          FILTER_REGEX_EXCLUDE: .*tests/.*.(json|zip|sol)
+      - name: Run ruff format check
+        run: uv run ruff format --check .

@@ -1,7 +1,7 @@
-from pathlib import Path
 import platform
 import subprocess
 import sys
+from pathlib import Path
 from typing import List
 
 from packaging.version import Version
