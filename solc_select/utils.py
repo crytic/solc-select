@@ -7,7 +7,7 @@ from typing import List
 from packaging.version import Version
 
 
-def mac_binary_is_universal(path: Path):
+def mac_binary_is_universal(path: Path) -> bool:
     """Check if the Mac binary is Universal or not. Will throw an exception if run on non-macOS."""
     assert sys.platform == "darwin"
     result = subprocess.run(["/usr/bin/file", str(path)], capture_output=True, check=False)
