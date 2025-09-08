@@ -4,7 +4,7 @@ Test Solidity compiler version-specific functionality.
 This module tests compilation with different Solidity versions.
 """
 
-from .conftest import run_command
+from .utils import run_command
 
 
 class TestCompilerVersions:

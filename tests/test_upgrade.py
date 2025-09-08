@@ -7,7 +7,7 @@ compiler versions.
 
 from pathlib import Path
 
-from .conftest import run_in_venv
+from .utils import run_in_venv
 
 
 class TestUpgrade:  # pylint: disable=too-few-public-methods

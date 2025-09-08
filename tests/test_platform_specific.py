@@ -9,7 +9,7 @@ import urllib.request
 
 import pytest
 
-from .conftest import run_command
+from .utils import run_command
 
 # Platform configuration matrix
 PLATFORM_CONFIGS = {
