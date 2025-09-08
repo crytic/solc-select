@@ -30,7 +30,7 @@ To automatically install and use a version, run `solc-select use <version> --alw
 
 ### Running on ARM (Mac M1/M2)
 
-`solc` older than 0.8.24 requires Rosetta to be installed. See the FAQ on [how to install Rosetta](#oserror-errno-86-bad-cpu-type-in-executable).
+`solc-select` provides native ARM64 support for versions 0.8.5-0.8.23, and universal binary support for 0.8.24+. For versions older than 0.8.5, Rosetta is required. See the FAQ on [how to install Rosetta](#oserror-errno-86-bad-cpu-type-in-executable).
 
 ## Usage
 
@@ -107,10 +107,10 @@ Feel free to stop by our [Slack channel](https://empirehacking.slack.com/) for h
 
 On newer `solc-select` versions, this might show as `solc binaries for macOS are
 Intel-only. Please install Rosetta on your Mac to continue.` or `solc binaries
-previous to 0.8.24 for macOS are Intel-only. Please install Rosetta on your Mac
+previous to 0.8.5 for macOS are Intel-only. Please install Rosetta on your Mac
 to continue.`
 
-`solc` releases earlier than 0.8.24 require Rosetta to be installed. To see
+`solc` releases earlier than 0.8.5 require Rosetta to be installed. Versions 0.8.5-0.8.23 run natively on ARM64, and 0.8.24+ use universal binaries. To see
 whether you have Rosetta installed on your Mac, run
 
 ```bash

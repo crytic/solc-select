@@ -26,3 +26,10 @@ CRYTIC_SOLC_ARTIFACTS = "https://raw.githubusercontent.com/crytic/solc/master/li
 CRYTIC_SOLC_JSON = (
     "https://raw.githubusercontent.com/crytic/solc/new-list-json/linux/amd64/list.json"
 )
+
+ALLOY_SOLC_ARTIFACTS = "https://raw.githubusercontent.com/alloy-rs/solc-builds/203ef20a24a6c2cb763e1c8c4c1836e85db2512d/macosx/aarch64/"
+ALLOY_SOLC_JSON = "https://raw.githubusercontent.com/alloy-rs/solc-builds/203ef20a24a6c2cb763e1c8c4c1836e85db2512d/macosx/aarch64/list.json"
+
+# Alloy ARM64 version range (0.8.24+ are universal binaries)
+ALLOY_ARM64_MIN_VERSION = "0.8.5"
+ALLOY_ARM64_MAX_VERSION = "0.8.23"

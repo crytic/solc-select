@@ -7,6 +7,18 @@ from typing import List
 from packaging.version import Version
 
 
+def get_arch() -> str:
+    """Get the current system architecture."""
+    machine = platform.machine().lower()
+    if machine in ["x86_64", "amd64"]:
+        return "amd64"
+    elif machine in ["aarch64", "arm64"]:
+        return "arm64"
+    elif machine in ["i386", "i686"]:
+        return "386"
+    return machine
+
+
 def mac_binary_is_universal(path: Path) -> bool:
     """Check if the Mac binary is Universal or not. Will throw an exception if run on non-macOS."""
     assert sys.platform == "darwin"
@@ -15,6 +27,17 @@ def mac_binary_is_universal(path: Path) -> bool:
         text in result.stdout.decode() for text in ("Mach-O universal binary", "x86_64", "arm64")
     )
     return result.returncode == 0 and is_universal
+
+
+def mac_binary_is_native(path: Path):
+    """Check if the Mac binary matches the current system architecture. Will throw an exception if run on non-macOS."""
+    assert sys.platform == "darwin"
+    result = subprocess.run(["/usr/bin/file", str(path)], capture_output=True, check=False)
+    output = result.stdout.decode()
+
+    arch_in_file = "arm64" if get_arch() == "arm64" else "x86_64"
+    is_native = "Mach-O" in output and arch_in_file in output
+    return result.returncode == 0 and is_native
 
 
 def mac_can_run_intel_binaries() -> bool:
