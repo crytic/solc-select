@@ -27,7 +27,7 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-2022"]
     steps:
     - uses: actions/checkout@v5
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python }}
     - name: Install solc-select and test dependencies
