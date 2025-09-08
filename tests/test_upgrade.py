@@ -2,7 +2,7 @@
 Test solc-select upgrade functionality.
 
 This module tests that upgrading solc-select preserves installed
-compiler versions, exactly mirroring test_solc_upgrade.sh.
+compiler versions.
 """
 
 from pathlib import Path

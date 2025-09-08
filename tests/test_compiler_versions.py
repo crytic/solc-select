@@ -1,8 +1,7 @@
 """
 Test Solidity compiler version-specific functionality.
 
-This module tests compilation with different Solidity versions,
-exactly mirroring the behavior of the original test_solc.sh script.
+This module tests compilation with different Solidity versions.
 """
 
 from .conftest import run_command

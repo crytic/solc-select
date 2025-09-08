@@ -1,33 +1,39 @@
 # solc-select Test Suite
 
-This directory contains the pytest-based test suite for solc-select, converted from the original bash scripts.
+This directory contains the pytest-based test suite for solc-select.
 
 ## Test Structure
 
 - `conftest.py` - Pytest configuration and fixtures for test isolation
-- `test_compiler_versions.py` - Tests for different Solidity compiler versions (from test_solc.sh)
-- `test_platform_specific.py` - Platform-specific boundary tests (from test_linux.sh, test_macos.sh, test_windows.sh)
-- `test_upgrade.py` - Tests for upgrade functionality (from test_solc_upgrade.sh)
+- `test_compiler_versions.py` - Tests for different Solidity compiler versions
+- `test_platform_specific.py` - Platform-specific boundary tests
+- `test_upgrade.py` - Tests for upgrade functionality
 
 ## Running Tests
 
 ### Install test dependencies
+
 ```bash
 # Install with all development dependencies (testing + linting)
 pip install -e ".[dev]"
 ```
 
 ### Run all tests
+
 ```bash
 pytest
 ```
 
 ### Run specific test files
+
 ```bash
 pytest tests/test_compiler_versions.py
+pytest tests/test_platform_specific.py
+pytest tests/test_upgrade.py
 ```
 
 ### Run platform-specific tests
+
 ```bash
 # Only run tests for current platform
 pytest -m "not (linux or macos or windows)"
@@ -43,38 +49,37 @@ pytest -m windows
 ```
 
 ### Run tests in parallel (faster)
+
 ```bash
 pytest -n auto
-```
-
-### Skip slow tests (like upgrade test)
-```bash
-pytest -m "not slow"
 ```
 
 ## Test Fixtures
 
 The test suite uses several fixtures to ensure proper isolation:
 
-- `backup_current_version` - Backs up and restores the current solc version
-- `clean_artifacts` - Provides complete isolation by backing up all installed versions
-- `run_command` - Executes shell commands exactly as the bash tests did
-- `test_contracts_dir` - Path to test Solidity contracts
+- `isolated_solc_data` - Creates isolated solc-select data environment using VIRTUAL_ENV
+- `isolated_python_env` - Creates completely isolated Python environment for install/uninstall tests
+- `test_contracts_dir` - Path to test Solidity contracts in `tests/solidity_tests/`
 
-## Comparison with Bash Tests
+### Helper Functions
 
-The pytest tests are designed to be a conservative 1:1 conversion of the bash tests:
+- `run_command` - Executes shell commands for tests using `isolated_solc_data`
+- `run_in_venv` - Executes commands in isolated virtual environments
 
-| Bash Script | Pytest Module | Description |
-|------------|---------------|-------------|
-| test_solc.sh | test_compiler_versions.py | Compiler version tests |
-| test_linux.sh | test_platform_specific.py::TestLinuxSpecific | Linux boundary tests |
-| test_macos.sh | test_platform_specific.py::TestMacOSSpecific | macOS boundary tests |
-| test_windows.sh | test_platform_specific.py::TestWindowsSpecific | Windows boundary tests |
-| test_solc_upgrade.sh | test_upgrade.py | Upgrade preservation tests |
+## Test Organization
 
-The tests maintain the exact same:
-- Command execution patterns
-- Error message checking
-- Version installation behavior
-- Platform-specific constraints
+| Test Module | Test Class | Description |
+|------------|-------------|-------------|
+| test_compiler_versions.py | TestCompilerVersions | Compiler version tests |
+| test_compiler_versions.py | TestVersionSwitching | Version switching functionality tests |
+| test_platform_specific.py | TestPlatformSpecific | Platform boundary tests |
+| test_upgrade.py | TestUpgrade | Upgrade preservation tests |
+
+## Test Configuration
+
+Test configuration is defined in `pyproject.toml` under `[tool.pytest.ini_options]`, including:
+
+- Custom markers for platform-specific tests (linux, macos, windows)
+- Test discovery patterns
+- Default options for verbose output and strict marker checking
