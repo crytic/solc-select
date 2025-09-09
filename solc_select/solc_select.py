@@ -10,6 +10,7 @@ import subprocess
 import sys
 import urllib.request
 from pathlib import Path
+from typing import Dict, List, Tuple
 from zipfile import ZipFile
 
 from Crypto.Hash import keccak
@@ -61,7 +62,7 @@ def check_emulation_available() -> bool:
         return False
 
 
-def get_emulation_prefix() -> list:
+def get_emulation_prefix() -> List[str]:
     """Get the command prefix for emulation if needed."""
     if get_arch() != "arm64":
         return []
@@ -159,7 +160,7 @@ def upgrade_architecture() -> None:
         raise argparse.ArgumentTypeError("Run `solc-select install --help` for more information")
 
 
-def current_version() -> (str, str):
+def current_version() -> Tuple[str, str]:
     source = "SOLC_VERSION"
     version = os.environ.get(source)
     if not version:
@@ -182,7 +183,7 @@ def current_version() -> (str, str):
     return version, source
 
 
-def installed_versions() -> [str]:
+def installed_versions() -> List[str]:
     return [
         f.replace("solc-", "") for f in sorted(os.listdir(ARTIFACTS_DIR)) if f.startswith("solc-")
     ]
@@ -192,7 +193,7 @@ def artifact_path(version: str) -> Path:
     return ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
 
 
-def install_artifacts(versions: [str], silent: bool = False) -> bool:
+def install_artifacts(versions: List[str], silent: bool = False) -> bool:
     # Warn ARM64 users about compatibility on first install
     if get_arch() == "arm64" and not silent:
         warn_about_arm64()
@@ -282,7 +283,7 @@ def verify_checksum(version: str) -> None:
         )
 
 
-def get_soliditylang_checksums(version: str) -> (str, str):
+def get_soliditylang_checksums(version: str) -> Tuple[str, str]:
     (_, list_url) = get_url(version=version)
     # pylint: disable=consider-using-with
     list_json = urllib.request.urlopen(list_url).read()
@@ -297,7 +298,7 @@ def get_soliditylang_checksums(version: str) -> (str, str):
     return matches[0]["sha256"], matches[0]["keccak256"]
 
 
-def get_url(version: str = "", artifact: str = "") -> (str, str):
+def get_url(version: str = "", artifact: str = "") -> Tuple[str, str]:
     if soliditylang_platform() == LINUX_AMD64:
         if version != "" and is_older_linux(version):
             return (
@@ -361,14 +362,14 @@ def valid_install_arg(arg: str) -> str:
     return valid_version(arg)
 
 
-def get_installable_versions() -> [str]:
+def get_installable_versions() -> List[str]:
     installable = list(set(get_available_versions()) - set(installed_versions()))
     installable.sort(key=Version)
     return installable
 
 
 # pylint: disable=consider-using-with
-def get_available_versions() -> [str]:
+def get_available_versions() -> Dict[str, str]:
     (_, list_url) = get_url()
     list_json = urllib.request.urlopen(list_url).read()
     available_releases = json.loads(list_json)["releases"]
