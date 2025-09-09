@@ -1,13 +1,11 @@
 import argparse
 import contextlib
 import hashlib
-import json
 import os
 import re
 import shutil
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from zipfile import ZipFile
@@ -30,6 +28,7 @@ from .constants import (
     WINDOWS_AMD64,
 )
 from .utils import (
+    create_http_session,
     get_arch,
     mac_binary_is_native,
     mac_binary_is_universal,
@@ -242,7 +241,13 @@ def install_artifacts(versions: List[str], silent: bool = False) -> bool:
         Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
         if not silent:
             print(f"Installing solc '{version}'...")
-        urllib.request.urlretrieve(url, artifact_file_dir.joinpath(f"solc-{version}"))
+        session = create_http_session()
+        response = session.get(url)
+        response.raise_for_status()
+
+        with open(artifact_file_dir.joinpath(f"solc-{version}"), "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
 
         verify_checksum(version)
 
@@ -310,9 +315,10 @@ def verify_checksum(version: str) -> None:
 
 def get_soliditylang_checksums(version: str) -> Tuple[str, Optional[str]]:
     (_, list_url) = get_url(version=version)
-    # pylint: disable=consider-using-with
-    list_json = urllib.request.urlopen(list_url).read()
-    builds = json.loads(list_json)["builds"]
+    session = create_http_session()
+    response = session.get(list_url)
+    response.raise_for_status()
+    builds = response.json()["builds"]
     matches = list(filter(lambda b: b["version"] == version, builds))
 
     if not matches or not matches[0]["sha256"]:
@@ -414,21 +420,24 @@ def get_installable_versions() -> List[str]:
     return installable
 
 
-# pylint: disable=consider-using-with
 def get_available_versions() -> Dict[str, str]:
+    session = create_http_session()
     (_, list_url) = get_url()
-    list_json = urllib.request.urlopen(list_url).read()
-    available_releases = json.loads(list_json)["releases"]
-    # pylint: disable=consider-using-with
+    response = session.get(list_url)
+    response.raise_for_status()
+    available_releases = response.json()["releases"]
+
     if soliditylang_platform() == LINUX_AMD64:
         (_, list_url) = get_url(version=EARLIEST_RELEASE[LINUX_AMD64])
-        github_json = urllib.request.urlopen(list_url).read()
-        additional_linux_versions = json.loads(github_json)["releases"]
+        response = session.get(list_url)
+        response.raise_for_status()
+        additional_linux_versions = response.json()["releases"]
         available_releases.update(additional_linux_versions)
     elif sys.platform == "darwin" and get_arch() == "arm64":
         # Fetch Alloy versions for ARM64 Darwin
-        alloy_json = urllib.request.urlopen(ALLOY_SOLC_JSON).read()
-        alloy_releases = json.loads(alloy_json)["releases"]
+        response = session.get(ALLOY_SOLC_JSON)
+        response.raise_for_status()
+        alloy_releases = response.json()["releases"]
         # Filter to only include versions in the supported range (0.8.24+ are already universal)
         filtered_alloy_releases = {
             version: release
@@ -455,7 +464,9 @@ def soliditylang_platform() -> str:
 
 
 def get_latest_release() -> str:
+    session = create_http_session()
     (_, list_url) = get_url()
-    list_json = urllib.request.urlopen(list_url).read()
-    latest_release = json.loads(list_json)["latestRelease"]
+    response = session.get(list_url)
+    response.raise_for_status()
+    latest_release = response.json()["latestRelease"]
     return latest_release

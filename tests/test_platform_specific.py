@@ -4,10 +4,8 @@ Platform-specific tests for solc-select.
 This module contains tests that are specific to Linux, macOS, and Windows.
 """
 
-import json
-import urllib.request
-
 import pytest
+import requests
 
 from .utils import run_command
 
@@ -61,9 +59,10 @@ class TestPlatformSpecific:  # pylint: disable=too-few-public-methods
         )
 
         # Get and test latest version
-        with urllib.request.urlopen(api_url) as response:
-            data = json.loads(response.read())
-            latest_release = data["latestRelease"]
+        response = requests.get(api_url)
+        response.raise_for_status()
+        data = response.json()
+        latest_release = data["latestRelease"]
 
         result = run_command(f"solc-select use {latest_release}", check=False)
         assert result.returncode == 0
