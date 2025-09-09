@@ -3,20 +3,23 @@ import contextlib
 import hashlib
 import json
 import os
-import platform
 import re
 import shutil
 import subprocess
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from zipfile import ZipFile
 
 from Crypto.Hash import keccak
 from packaging.version import Version
 
 from .constants import (
+    ALLOY_ARM64_MAX_VERSION,
+    ALLOY_ARM64_MIN_VERSION,
+    ALLOY_SOLC_ARTIFACTS,
+    ALLOY_SOLC_JSON,
     ARTIFACTS_DIR,
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
@@ -26,21 +29,14 @@ from .constants import (
     SOLC_SELECT_DIR,
     WINDOWS_AMD64,
 )
-from .utils import mac_binary_is_universal, mac_can_run_intel_binaries
+from .utils import (
+    get_arch,
+    mac_binary_is_native,
+    mac_binary_is_universal,
+    mac_can_run_intel_binaries,
+)
 
 Path.mkdir(ARTIFACTS_DIR, parents=True, exist_ok=True)
-
-
-def get_arch() -> str:
-    """Get the current system architecture."""
-    machine = platform.machine().lower()
-    if machine in ["x86_64", "amd64"]:
-        return "amd64"
-    elif machine in ["aarch64", "arm64"]:
-        return "arm64"
-    elif machine in ["i386", "i686"]:
-        return "386"
-    return machine
 
 
 def check_emulation_available() -> bool:
@@ -91,22 +87,34 @@ def warn_about_arm64(force: bool = False) -> None:
     print("\n⚠️  WARNING: ARM64 Architecture Detected", file=sys.stderr)
     print("=" * 50, file=sys.stderr)
 
-    if check_emulation_available():
-        if sys.platform == "darwin":
-            print("✓ Rosetta 2 detected - will use emulation for x86 binaries", file=sys.stderr)
+    show_remediation = False
+
+    if sys.platform == "darwin":
+        print("✓ Native ARM64 binaries available for versions 0.8.5-0.8.23", file=sys.stderr)
+        print("✓ Universal binaries available for versions 0.8.24+", file=sys.stderr)
+        if check_emulation_available():
+            print("✓ Rosetta 2 detected - will use emulation for older versions", file=sys.stderr)
+            print("  Note: Performance will be slower for emulated versions", file=sys.stderr)
         else:
-            print("✓ qemu-x86_64 detected - will use emulation for x86 binaries", file=sys.stderr)
-        print("  Note: Performance will be slower than native execution", file=sys.stderr)
-    else:
-        if sys.platform == "darwin":
             print(
-                "✗ solc binaries are x86_64 only, and Rosetta 2 is not available", file=sys.stderr
+                "⚠ Rosetta 2 not available - versions prior to 0.8.5 are x86_64 only and will not work",
+                file=sys.stderr,
             )
+            show_remediation = True
+    elif sys.platform == "linux":
+        if check_emulation_available():
+            print("✓ qemu-x86_64 detected - will use emulation for x86 binaries", file=sys.stderr)
+            print("  Note: Performance will be slower than native execution", file=sys.stderr)
         else:
             print("✗ solc binaries are x86_64 only, and qemu is not installed", file=sys.stderr)
+            show_remediation = True
+    else:
+        show_remediation = True
+
+    if show_remediation:
         print("\nTo use solc-select on ARM64, you can:", file=sys.stderr)
-        print("  1. Install qemu for x86_64 emulation:", file=sys.stderr)
-        if sys.platform.startswith("linux"):
+        print("  1. Install software for x86_64 emulation:", file=sys.stderr)
+        if sys.platform == "linux":
             print("     sudo apt-get install qemu-user-static  # Debian/Ubuntu", file=sys.stderr)
             print("     sudo dnf install qemu-user-static      # Fedora", file=sys.stderr)
             print("     sudo pacman -S qemu-user-static        # Arch", file=sys.stderr)
@@ -140,8 +148,12 @@ def halt_incompatible_system(path: Path) -> None:
         if mac_binary_is_universal(path):
             return
 
+        # If the binary is native to this architecture, we can run it
+        if mac_binary_is_native(path):
+            return
+
         raise argparse.ArgumentTypeError(
-            "solc binaries previous to 0.8.24 for macOS are Intel-only. Please install Rosetta on your Mac to continue. Refer to the solc-select README for instructions."
+            "solc binaries previous to 0.8.5 for macOS are Intel-only. Please install Rosetta on your Mac to continue. Refer to the solc-select README for instructions."
         )
     # TODO: check for Linux aarch64 (e.g. RPi), presence of QEMU+binfmt
 
@@ -261,6 +273,14 @@ def is_older_windows(version: str) -> bool:
     return soliditylang_platform() == WINDOWS_AMD64 and Version(version) <= Version("0.7.1")
 
 
+def is_alloy_aarch64_version(version: str) -> bool:
+    return (
+        sys.platform == "darwin"
+        and get_arch() == "arm64"
+        and Version(ALLOY_ARM64_MIN_VERSION) <= Version(version) <= Version(ALLOY_ARM64_MAX_VERSION)
+    )
+
+
 def verify_checksum(version: str) -> None:
     (sha256_hash, keccak256_hash) = get_soliditylang_checksums(version)
 
@@ -274,16 +294,21 @@ def verify_checksum(version: str) -> None:
             sha256_factory.update(chunk)
             keccak_factory.update(chunk)
 
-        local_sha256_file_hash = f"0x{sha256_factory.hexdigest()}"
-        local_keccak256_file_hash = f"0x{keccak_factory.hexdigest()}"
+        local_sha256_file_hash = sha256_factory.hexdigest()
+        local_keccak256_file_hash = keccak_factory.hexdigest()
 
-    if sha256_hash != local_sha256_file_hash or keccak256_hash != local_keccak256_file_hash:
+    if sha256_hash != local_sha256_file_hash:
         raise argparse.ArgumentTypeError(
-            f"Error: Checksum mismatch {soliditylang_platform()} - {version}"
+            f"Error: SHA256 checksum mismatch {soliditylang_platform()} - {version}"
+        )
+
+    if keccak256_hash is not None and keccak256_hash != local_keccak256_file_hash:
+        raise argparse.ArgumentTypeError(
+            f"Error: Keccak256 checksum mismatch {soliditylang_platform()} - {version}"
         )
 
 
-def get_soliditylang_checksums(version: str) -> Tuple[str, str]:
+def get_soliditylang_checksums(version: str) -> Tuple[str, Optional[str]]:
     (_, list_url) = get_url(version=version)
     # pylint: disable=consider-using-with
     list_json = urllib.request.urlopen(list_url).read()
@@ -295,7 +320,16 @@ def get_soliditylang_checksums(version: str) -> Tuple[str, str]:
             f"Error: Unable to retrieve checksum for {soliditylang_platform()} - {version}"
         )
 
-    return matches[0]["sha256"], matches[0]["keccak256"]
+    sha256_hash = matches[0]["sha256"]
+    keccak256_hash = matches[0].get("keccak256")
+
+    # Normalize checksums by removing 0x prefix if present
+    if sha256_hash and sha256_hash.startswith("0x"):
+        sha256_hash = sha256_hash[2:]
+    if keccak256_hash and keccak256_hash.startswith("0x"):
+        keccak256_hash = keccak256_hash[2:]
+
+    return sha256_hash, keccak256_hash
 
 
 def get_url(version: str = "", artifact: str = "") -> Tuple[str, str]:
@@ -304,6 +338,18 @@ def get_url(version: str = "", artifact: str = "") -> Tuple[str, str]:
             return (
                 CRYTIC_SOLC_ARTIFACTS + artifact,
                 CRYTIC_SOLC_JSON,
+            )
+    elif sys.platform == "darwin" and get_arch() == "arm64":
+        if version != "" and is_alloy_aarch64_version(version):
+            return (
+                ALLOY_SOLC_ARTIFACTS + artifact,
+                ALLOY_SOLC_JSON,
+            )
+        else:
+            # Fall back to Intel binaries for versions outside supported range
+            return (
+                f"https://binaries.soliditylang.org/{MACOSX_AMD64}/{artifact}",
+                f"https://binaries.soliditylang.org/{MACOSX_AMD64}/list.json",
             )
     return (
         f"https://binaries.soliditylang.org/{soliditylang_platform()}/{artifact}",
@@ -379,6 +425,19 @@ def get_available_versions() -> Dict[str, str]:
         github_json = urllib.request.urlopen(list_url).read()
         additional_linux_versions = json.loads(github_json)["releases"]
         available_releases.update(additional_linux_versions)
+    elif sys.platform == "darwin" and get_arch() == "arm64":
+        # Fetch Alloy versions for ARM64 Darwin
+        alloy_json = urllib.request.urlopen(ALLOY_SOLC_JSON).read()
+        alloy_releases = json.loads(alloy_json)["releases"]
+        # Filter to only include versions in the supported range (0.8.24+ are already universal)
+        filtered_alloy_releases = {
+            version: release
+            for version, release in alloy_releases.items()
+            if Version(ALLOY_ARM64_MIN_VERSION)
+            <= Version(version)
+            <= Version(ALLOY_ARM64_MAX_VERSION)
+        }
+        available_releases.update(filtered_alloy_releases)
 
     return available_releases
 
