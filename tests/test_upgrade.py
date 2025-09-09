@@ -66,3 +66,18 @@ class TestUpgrade:  # pylint: disable=too-few-public-methods
         assert old_versions == new_versions, (
             f"Installed versions changed during upgrade.\nOld: {old_versions}\nNew: {new_versions}"
         )
+
+    def test_cache_already_installed(self, isolated_python_env):
+        venv = isolated_python_env
+        project_root = Path(__file__).parent.parent
+
+        # Install development version
+        run_in_venv(venv, f"pip install -e {project_root}", check=True)
+
+        run_in_venv(venv, "solc-select install 0.8.20", check=False)
+
+        result = run_in_venv(venv, "solc-select install 0.8.20", check=False)
+        already_installed = result.stdout.strip()
+        assert "Version '0.8.20' is already installed, skipping.." in already_installed, (
+            "No skipping already installed versions"
+        )
