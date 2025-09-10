@@ -6,6 +6,8 @@ import re
 import shutil
 import subprocess
 import sys
+from functools import partial
+from io import BufferedRandom
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from zipfile import ZipFile
@@ -232,37 +234,42 @@ def install_artifacts(versions: List[str], silent: bool = False) -> bool:
                     print(f"Version '{version}' is already installed, skipping...")
                 continue
 
+        if not silent:
+            print(f"Installing solc '{version}'...")
+
         (url, _) = get_url(version, artifact)
 
         if is_linux_0818(version):
             url = CRYTIC_SOLC_ARTIFACTS + artifact
-            print(url)
 
-        Path.mkdir(artifact_file_dir, parents=True, exist_ok=True)
-        if not silent:
-            print(f"Installing solc '{version}'...")
+        artifact_file_dir.mkdir(parents=True, exist_ok=True)
+        bin_path = Path(artifact_file_dir.joinpath(f"solc-{version}"))
+
         session = create_http_session()
         response = session.get(url)
         response.raise_for_status()
 
-        with open(artifact_file_dir.joinpath(f"solc-{version}"), "wb") as f:
+        with open(bin_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
 
-        verify_checksum(version)
+            # will throw and leave the file non-executable if hashes mismatch
+            verify_checksum(version, f)
+            f.close()
 
         if is_older_windows(version):
-            with ZipFile(artifact_file_dir.joinpath(f"solc-{version}"), "r") as zip_ref:
+            with ZipFile(bin_path, "r") as zip_ref:
                 zip_ref.extractall(path=artifact_file_dir)
                 zip_ref.close()
-            Path.unlink(artifact_file_dir.joinpath(f"solc-{version}"))
-            Path(artifact_file_dir.joinpath("solc.exe")).rename(
-                Path(artifact_file_dir.joinpath(f"solc-{version}")),
-            )
+            bin_path.unlink()
+            Path(artifact_file_dir.joinpath("solc.exe")).rename(bin_path)
         else:
-            Path.chmod(artifact_file_dir.joinpath(f"solc-{version}"), 0o775)
+            # make file executable after hashes were verified
+            bin_path.chmod(0o775)
+
         if not silent:
             print(f"Version '{version}' installed.")
+
     return True
 
 
@@ -286,21 +293,21 @@ def is_alloy_aarch64_version(version: str) -> bool:
     )
 
 
-def verify_checksum(version: str) -> None:
+def verify_checksum(version: str, f: BufferedRandom) -> None:
     (sha256_hash, keccak256_hash) = get_soliditylang_checksums(version)
 
+    sha256_factory = hashlib.sha256()
+    keccak_factory = keccak.new(digest_bits=256)
+
     # calculate sha256 and keccak256 checksum of the local file
-    with open(ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}"), "rb") as f:
-        sha256_factory = hashlib.sha256()
-        keccak_factory = keccak.new(digest_bits=256)
+    # 1024000(~1MB chunk)
+    f.seek(0)
+    for chunk in iter(lambda: f.read(1024000), b""):
+        sha256_factory.update(chunk)
+        keccak_factory.update(chunk)
 
-        # 1024000(~1MB chunk)
-        for chunk in iter(lambda: f.read(1024000), b""):
-            sha256_factory.update(chunk)
-            keccak_factory.update(chunk)
-
-        local_sha256_file_hash = sha256_factory.hexdigest()
-        local_keccak256_file_hash = keccak_factory.hexdigest()
+    local_sha256_file_hash = sha256_factory.hexdigest()
+    local_keccak256_file_hash = keccak_factory.hexdigest()
 
     if sha256_hash != local_sha256_file_hash:
         raise argparse.ArgumentTypeError(
