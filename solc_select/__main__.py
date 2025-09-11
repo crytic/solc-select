@@ -2,10 +2,10 @@ import argparse
 import sys
 
 from .constants import (
-    INSTALL_VERSIONS,
-    SHOW_VERSIONS,
-    UPGRADE,
-    USE_VERSION,
+    INSTALL_COMMAND,
+    UPGRADE_COMMAND,
+    USE_COMMAND,
+    VERSIONS_COMMAND,
 )
 from .exceptions import (
     ChecksumMismatchError,
@@ -64,7 +64,8 @@ def solc_select_upgrade(service: SolcService) -> None:
     service.upgrade_architecture()
 
 
-def solc_select() -> None:
+def create_parser() -> argparse.ArgumentParser:
+    """Create and configure the argument parser."""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
         help="Allows users to install and quickly switch between Solidity compiler versions",
@@ -73,50 +74,55 @@ def solc_select() -> None:
 
     # Install command
     parser_install = subparsers.add_parser(
-        "install", help="list and install available solc versions"
+        INSTALL_COMMAND, help="list and install available solc versions"
     )
     parser_install.add_argument(
-        INSTALL_VERSIONS,
+        "versions",
         help='specific versions you want to install "0.4.25", "all" or "latest"',
         nargs="*",
         default=[],
     )
 
     # Use command
-    parser_use = subparsers.add_parser("use", help="change the version of global solc compiler")
-    parser_use.add_argument(
-        USE_VERSION, help="solc version you want to use (eg: 0.4.25)", nargs="?"
+    parser_use = subparsers.add_parser(
+        USE_COMMAND, help="change the version of global solc compiler"
     )
+    parser_use.add_argument("version", help="solc version you want to use (eg: 0.4.25)", nargs="?")
     parser_use.add_argument("--always-install", action="store_true")
 
     # Versions command
     parser_versions = subparsers.add_parser(
-        "versions", help="prints out all installed solc versions"
+        VERSIONS_COMMAND, help="prints out all installed solc versions"
     )
-    parser_versions.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
+    parser_versions.add_argument("versions", nargs="*", help=argparse.SUPPRESS)
 
     # Upgrade command
-    parser_upgrade = subparsers.add_parser("upgrade", help="upgrades solc-select")
-    parser_upgrade.add_argument(UPGRADE, nargs="*", help=argparse.SUPPRESS)
+    parser_upgrade = subparsers.add_parser(UPGRADE_COMMAND, help="upgrades solc-select")
+    parser_upgrade.add_argument("upgrade", nargs="*", help=argparse.SUPPRESS)
 
+    return parser
+
+
+def solc_select() -> None:
+    parser = create_parser()
     args = parser.parse_args()
 
     # Create service instance
     service = SolcService()
 
     try:
-        if args.command == "install":
-            solc_select_install(service, args.INSTALL_VERSIONS)
+        if args.command == INSTALL_COMMAND:
+            solc_select_install(service, args.versions)
 
-        elif args.command == "use":
-            if not args.USE_VERSION:
-                parser.error("the following arguments are required: USE_VERSION")
-            solc_select_use(service, args.USE_VERSION, args.always_install)
+        elif args.command == USE_COMMAND:
+            if not args.version:
+                parser.error("the following arguments are required: version")
+            solc_select_use(service, args.version, args.always_install)
 
-        elif args.command == "versions":
+        elif args.command == VERSIONS_COMMAND:
             solc_select_versions(service)
 
-        elif args.command == "upgrade":
+        elif args.command == UPGRADE_COMMAND:
             solc_select_upgrade(service)
 
         else:
