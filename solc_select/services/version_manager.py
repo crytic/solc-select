@@ -4,10 +4,14 @@ Version management service for solc-select.
 This module handles validation, resolution, and management of Solidity compiler versions.
 """
 
-import argparse
 from typing import List
 
 from ..constants import EARLIEST_RELEASE
+from ..exceptions import (
+    PlatformNotSupportedError,
+    VersionNotFoundError,
+    VersionResolutionError,
+)
 from ..models import Platform, SolcVersion
 from ..repositories import CompositeRepository
 
@@ -62,25 +66,31 @@ class VersionManager:
             Validated SolcVersion
 
         Raises:
-            argparse.ArgumentTypeError: If version is invalid
+            VersionResolutionError: If 'latest' version cannot be resolved
+            VersionNotFoundError: If version is invalid or not available
+            PlatformNotSupportedError: If version is not supported on current platform
         """
         if version_str == "latest":
             try:
                 return self.get_latest_version()
             except Exception as e:
-                raise argparse.ArgumentTypeError(f"Could not resolve latest version: {e}")
+                raise VersionResolutionError("latest", str(e)) from e
 
         try:
             version = SolcVersion.parse(version_str)
-        except ValueError:
-            raise argparse.ArgumentTypeError(f"Invalid version '{version_str}'.")
+        except ValueError as e:
+            available_versions = self.get_available_versions()
+            available_strs = [str(v) for v in available_versions[:5]]  # Show first 5
+            raise VersionNotFoundError(
+                version_str, available_strs, "Check the version format (e.g., '0.8.19')"
+            ) from e
 
         # Check minimum version for platform
         if not version.is_compatible_with_platform(self.platform):
             platform_key = self.platform.get_soliditylang_key()
             earliest = EARLIEST_RELEASE.get(platform_key, "0.0.0")
-            raise argparse.ArgumentTypeError(
-                f"Invalid version - only solc versions above '{earliest}' are available"
+            raise PlatformNotSupportedError(
+                str(version), self.platform.get_soliditylang_key(), earliest
             )
 
         # Check if version exists in available releases
@@ -88,11 +98,12 @@ class VersionManager:
         if version not in available_versions:
             latest = self.get_latest_version()
             if version > latest:
-                raise argparse.ArgumentTypeError(
-                    f"Invalid version '{latest}' is the latest available version"
+                raise VersionNotFoundError(
+                    str(version), [str(latest)], f"'{latest}' is the latest available version"
                 )
             else:
-                raise argparse.ArgumentTypeError(f"Version '{version}' is not available")
+                available_strs = [str(v) for v in available_versions[:5]]  # Show first 5
+                raise VersionNotFoundError(str(version), available_strs)
 
         return version
 

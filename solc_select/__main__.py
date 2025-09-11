@@ -7,6 +7,17 @@ from .constants import (
     UPGRADE,
     USE_VERSION,
 )
+from .exceptions import (
+    ChecksumMismatchError,
+    InstallationError,
+    NetworkError,
+    NoVersionSetError,
+    PlatformNotSupportedError,
+    SolcSelectError,
+    VersionNotFoundError,
+    VersionNotInstalledError,
+    VersionResolutionError,
+)
 from .services.solc_service import SolcService
 from .utils import sort_versions
 
@@ -34,8 +45,8 @@ def solc_select_versions(service: SolcService) -> None:
     if installed:
         try:
             current_version, source = service.get_current_version()
-        except argparse.ArgumentTypeError:
-            # No version is currently set, that's ok
+        except (NoVersionSetError, VersionNotInstalledError):
+            # No version is currently set or not installed, that's ok for the versions command
             current_version = None
 
         installed_strs = [str(v) for v in installed]
@@ -45,9 +56,7 @@ def solc_select_versions(service: SolcService) -> None:
             else:
                 print(version_str)
     else:
-        print(
-            "No solc version installed. Run `solc-select install --help` for more information"
-        )
+        print("No solc version installed. Run `solc-select install --help` for more information")
 
 
 def solc_select_upgrade(service: SolcService) -> None:
@@ -114,7 +123,28 @@ def solc_select() -> None:
             parser.parse_args(["--help"])
             sys.exit(0)
 
-    except argparse.ArgumentTypeError as e:
+    except VersionNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if e.available_versions:
+            print("Hint: Run 'solc-select install' to see all available versions", file=sys.stderr)
+        sys.exit(1)
+    except ChecksumMismatchError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Try downloading again or report this issue if it persists", file=sys.stderr)
+        sys.exit(1)
+    except (InstallationError, NetworkError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Check your network connection and try again", file=sys.stderr)
+        sys.exit(1)
+    except PlatformNotSupportedError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Use a newer version that supports your platform", file=sys.stderr)
+        sys.exit(1)
+    except VersionResolutionError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Check your network connection or specify a specific version", file=sys.stderr)
+        sys.exit(1)
+    except SolcSelectError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:

@@ -125,6 +125,6 @@ class TestVersionSwitching:
         # Use without install should fail
         result = run_command("solc-select use 0.8.1", check=False)
         assert result.returncode != 0
-        assert "'0.8.1' must be installed prior to use" in result.stdout, (
+        assert "Version '0.8.1' is not installed" in result.stdout, (
             f"Did not fail as expected when version not installed. Output: {result.stdout}"
         )

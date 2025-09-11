@@ -5,7 +5,6 @@ This module handles downloading, verification, installation, and management
 of Solidity compiler artifacts.
 """
 
-import argparse
 import hashlib
 import os
 from functools import partial
@@ -17,15 +16,10 @@ from zipfile import ZipFile
 from Crypto.Hash import keccak
 
 from ..constants import ARTIFACTS_DIR
+from ..exceptions import ChecksumMismatchError, SolcSelectError
 from ..infrastructure.http_client import create_http_session
 from ..models import Platform, SolcArtifact, SolcVersion
 from ..repositories import CompositeRepository
-
-
-class ChecksumVerificationError(Exception):
-    """Raised when checksum verification fails."""
-
-    pass
 
 
 class ArtifactManager:
@@ -143,7 +137,7 @@ class ArtifactManager:
             file_handle: Open file handle to verify
 
         Raises:
-            ChecksumVerificationError: If checksums don't match
+            ChecksumMismatchError: If checksums don't match
         """
         sha256_factory = hashlib.sha256()
         keccak_factory = keccak.new(digest_bits=256)
@@ -159,17 +153,11 @@ class ArtifactManager:
 
         # Verify SHA256
         if artifact.checksum_sha256 != local_sha256:
-            raise ChecksumVerificationError(
-                f"SHA256 checksum mismatch for {artifact.version} on {self.platform.get_soliditylang_key()}: "
-                f"expected {artifact.checksum_sha256}, got {local_sha256}"
-            )
+            raise ChecksumMismatchError(artifact.checksum_sha256, local_sha256, "SHA256")
 
         # Verify Keccak256 if available
         if artifact.checksum_keccak256 and artifact.checksum_keccak256 != local_keccak256:
-            raise ChecksumVerificationError(
-                f"Keccak256 checksum mismatch for {artifact.version} on {self.platform.get_soliditylang_key()}: "
-                f"expected {artifact.checksum_keccak256}, got {local_keccak256}"
-            )
+            raise ChecksumMismatchError(artifact.checksum_keccak256, local_keccak256, "Keccak256")
 
     def download_and_install(self, version: SolcVersion, silent: bool = False) -> bool:
         """Download and install a Solidity compiler version.
@@ -182,7 +170,8 @@ class ArtifactManager:
             True if successful, False otherwise
 
         Raises:
-            argparse.ArgumentTypeError: If installation fails
+            InstallationError: If installation fails
+            ChecksumMismatchError: If checksum verification fails
         """
         if self.is_installed(version) and not silent:
             print(f"Version '{version}' is already installed, skipping...")
@@ -232,8 +221,8 @@ class ArtifactManager:
             if artifact.file_path.exists():
                 artifact.file_path.unlink()
 
-            if isinstance(e, ChecksumVerificationError):
-                raise argparse.ArgumentTypeError(str(e))
+            if isinstance(e, ChecksumMismatchError):
+                raise e
             else:
                 if not silent:
                     print(f"Error installing {version}: {e}")
@@ -276,7 +265,7 @@ class ArtifactManager:
             try:
                 if not self.download_and_install(version, silent):
                     success = False
-            except argparse.ArgumentTypeError as e:
+            except SolcSelectError as e:
                 if not silent:
                     print(f"Error: {e}")
                 success = False

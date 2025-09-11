@@ -41,7 +41,9 @@ class TestVersionVerification:  # pylint: disable=too-few-public-methods
             # Run solc --version with the specific version set
             result = run_in_venv(venv, f"SOLC_VERSION={version} solc --version", check=True)
             output = result.stdout.lower()
-            
+
             # Check that output contains "solidity compiler" and the version
-            assert "solidity compiler" in output, f"Version {version}: Missing 'solidity compiler' in output"
+            assert "solidity compiler" in output, (
+                f"Version {version}: Missing 'solidity compiler' in output"
+            )
             assert version in output, f"Version {version}: Version number not found in output"

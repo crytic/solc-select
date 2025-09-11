@@ -5,11 +5,18 @@ This module provides a high-level interface that coordinates between
 all the other services and provides the main business logic operations.
 """
 
-import argparse
 import subprocess
 import sys
 from typing import List, Optional, Tuple
 
+from ..exceptions import (
+    ArchitectureUpgradeError,
+    InstallationError,
+    NoVersionSetError,
+    SolcSelectError,
+    VersionNotFoundError,
+    VersionNotInstalledError,
+)
 from ..infrastructure.filesystem import FilesystemManager
 from ..models import Platform, SolcVersion
 from ..repositories import CompositeRepository
@@ -39,25 +46,20 @@ class SolcService:
             Tuple of (version, source) where source is the setting origin
 
         Raises:
-            argparse.ArgumentTypeError: If version is set but not installed
+            NoVersionSetError: If no version is currently set
+            VersionNotInstalledError: If version is set but not installed
         """
         version = self.filesystem.get_current_version()
         source = self.filesystem.get_version_source()
 
         if version is None:
-            raise argparse.ArgumentTypeError(
-                "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
-            )
+            raise NoVersionSetError()
 
         # Check if version is actually installed
         installed_versions = self.artifact_manager.get_installed_versions()
         if version not in installed_versions:
             installed_strs = [str(v) for v in installed_versions]
-            raise argparse.ArgumentTypeError(
-                f"\nVersion '{version}' not installed (set by {source})."
-                f"\nRun `solc-select install {version}`."
-                f"\nOr use one of the following versions: {installed_strs}"
-            )
+            raise VersionNotInstalledError(str(version), installed_strs, source)
 
         return version, source
 
@@ -103,7 +105,7 @@ class SolcService:
             # Install versions
             return self.artifact_manager.install_versions(versions, silent)
 
-        except argparse.ArgumentTypeError as e:
+        except SolcSelectError as e:
             if not silent:
                 print(f"Error: {e}")
             return False
@@ -119,7 +121,9 @@ class SolcService:
             silent: Whether to suppress output messages
 
         Raises:
-            argparse.ArgumentTypeError: If version is invalid or not available
+            VersionNotFoundError: If version is invalid or not available
+            VersionNotInstalledError: If version is not installed
+            InstallationError: If installation fails
         """
         # Resolve "latest" to actual version
         if version_str == "latest":
@@ -137,25 +141,26 @@ class SolcService:
             if self.install_versions([str(version)], silent):
                 self.switch_global_version(str(version), always_install=False, silent=silent)
             else:
-                raise argparse.ArgumentTypeError(f"Failed to install version {version}")
+                raise InstallationError(str(version), "Installation failed")
         else:
             available_versions = self.version_manager.get_available_versions()
             if version in available_versions:
-                raise argparse.ArgumentTypeError(f"'{version}' must be installed prior to use.")
+                raise VersionNotInstalledError(str(version))
             else:
-                raise argparse.ArgumentTypeError(f"Unknown version '{version}'")
+                available_strs = [str(v) for v in available_versions[:5]]  # Show first 5
+                raise VersionNotFoundError(str(version), available_strs)
 
     def upgrade_architecture(self) -> None:
         """Upgrade from old architecture to new directory structure.
 
         Raises:
-            argparse.ArgumentTypeError: If upgrade fails or no versions to upgrade
+            ArchitectureUpgradeError: If upgrade fails or no versions to upgrade
         """
         currently_installed = self.get_installed_versions()
 
         if not currently_installed:
-            raise argparse.ArgumentTypeError(
-                "Run `solc-select install --help` for more information"
+            raise ArchitectureUpgradeError(
+                "No installed versions found. Run `solc-select install --help` for more information"
             )
 
         # Check if we actually have old-format installations
@@ -169,7 +174,7 @@ class SolcService:
             if self.install_versions(version_strs, silent=True):
                 print("solc-select is now up to date! 🎉")
             else:
-                raise argparse.ArgumentTypeError("Failed to upgrade installations")
+                raise ArchitectureUpgradeError("Failed to reinstall existing versions")
         else:
             print("solc-select is already up to date")
 
@@ -188,7 +193,7 @@ class SolcService:
 
         try:
             version, _ = self.get_current_version()
-        except argparse.ArgumentTypeError as e:
+        except SolcSelectError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
 

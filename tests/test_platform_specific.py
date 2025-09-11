@@ -74,13 +74,13 @@ class TestPlatformSpecific:  # pylint: disable=too-few-public-methods
         result = run_command("solc-select use 0.2.0", check=False)
         assert result.returncode != 0
         assert (
-            f"Invalid version - only solc versions above '{min_version}' are available"
-            in result.stdout
+            "Version '0.2.0' is not supported on" in result.stdout
+            and f"Minimum supported version is '{min_version}'" in result.stdout
         ), f"Did not fail for version too low on {platform}. Output: {result.stdout}"
 
         # Test version too high
         result = run_command("solc-select use 0.100.8", check=False)
         assert result.returncode != 0
-        assert (
-            f"Invalid version '{latest_release}' is the latest available version" in result.stdout
-        ), f"Did not fail for version too high on {platform}. Output: {result.stdout}"
+        assert f"'{latest_release}' is the latest available version" in result.stdout, (
+            f"Did not fail for version too high on {platform}. Output: {result.stdout}"
+        )
