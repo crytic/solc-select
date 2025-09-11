@@ -5,9 +5,32 @@ This module provides centralized HTTP client configuration with
 retry logic and proper timeout handling.
 """
 
+from typing import Any, Mapping, Optional, Union
+
 import requests
 from requests.adapters import HTTPAdapter
+from requests.models import PreparedRequest, Response
 from urllib3.util.retry import Retry
+
+
+class TimeoutHTTPAdapter(HTTPAdapter):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.timeout = kwargs.pop("timeout", None)
+        super().__init__(*args, **kwargs)
+
+    def send(
+        self,
+        request: PreparedRequest,
+        stream: bool = False,
+        timeout: Union[float, tuple[float, float], tuple[float, None], None] = None,
+        verify: Union[bool, str] = True,
+        cert: Union[bytes, str, tuple[Union[bytes, str], Union[bytes, str]], None] = None,
+        proxies: Optional[Mapping[str, str]] = None,
+    ) -> Response:
+        timeout = timeout or self.timeout
+        return super().send(
+            request, stream=stream, timeout=timeout, verify=verify, cert=cert, proxies=proxies
+        )
 
 
 def create_http_session() -> requests.Session:
@@ -21,12 +44,8 @@ def create_http_session() -> requests.Session:
         status_forcelist=[429, 500, 502, 503, 504],
     )
 
-    adapter = HTTPAdapter(max_retries=retry_strategy)
+    adapter = TimeoutHTTPAdapter(timeout=(10, 30), max_retries=retry_strategy)
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-
-    # Set standard timeouts (connect_timeout, read_timeout)
-    # Note: Session.timeout is not a standard attribute, but we'll add it as a custom attribute
-    session.timeout = (10, 60)  # type: ignore[attr-defined]  # 10s connection, 60s read for downloads
 
     return session
