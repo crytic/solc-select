@@ -17,7 +17,7 @@ from ..models import SolcVersion
 class FilesystemManager:
     """Manages filesystem operations for solc-select."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.artifacts_dir = ARTIFACTS_DIR
         self.config_dir = SOLC_SELECT_DIR
         self._ensure_directories()

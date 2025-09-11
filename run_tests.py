@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 
-def main():
+def main() -> int:
     """Run the test suite."""
     # Basic pytest command
     cmd = [sys.executable, "-m", "pytest", "tests/", "-v"]

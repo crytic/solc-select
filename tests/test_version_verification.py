@@ -6,6 +6,7 @@ work correctly and return expected version information.
 """
 
 from pathlib import Path
+from typing import Any
 
 from .utils import run_in_venv
 
@@ -13,7 +14,7 @@ from .utils import run_in_venv
 class TestVersionVerification:  # pylint: disable=too-few-public-methods
     """Test solc-select version verification behavior."""
 
-    def test_all_versions_work_correctly(self, isolated_python_env):
+    def test_all_versions_work_correctly(self, isolated_python_env: Any) -> None:
         """
         Test that all installed Solidity versions work correctly.
 

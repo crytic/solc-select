@@ -7,12 +7,12 @@ but are used across multiple test files.
 
 import os
 import subprocess
-from typing import Dict
+from typing import Any, Dict
 
 
 def run_in_venv(
-    venv_info: Dict, cmd: str, check: bool = True, **kwargs
-) -> subprocess.CompletedProcess:
+    venv_info: Dict[str, Any], cmd: str, check: bool = True, **kwargs: Any
+) -> subprocess.CompletedProcess[str]:
     """
     Run a command in an isolated virtual environment.
 
@@ -43,7 +43,7 @@ def run_in_venv(
 
 def run_command(
     cmd: str, check: bool = True, capture_stderr: bool = True
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[str]:
     """
     Execute shell commands and return output.
 

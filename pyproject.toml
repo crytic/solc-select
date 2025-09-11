@@ -51,6 +51,8 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "types-setuptools",
+    "types-requests",
+    "types-urllib3",
     # Development tools
     "pre-commit>=3.5.0",
 ]
@@ -114,3 +116,22 @@ markers = [
     "macos: marks tests to run only on macOS",
     "windows: marks tests to run only on Windows",
 ]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+# Additional strict checks for maximum safety
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+extra_checks = true
+# Error on missing imports (don't allow implicit Any)
+disallow_any_unimported = true

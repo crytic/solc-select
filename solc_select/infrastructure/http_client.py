@@ -7,7 +7,7 @@ retry logic and proper timeout handling.
 
 import requests
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 
 
 def create_http_session() -> requests.Session:
@@ -26,6 +26,7 @@ def create_http_session() -> requests.Session:
     session.mount("https://", adapter)
 
     # Set standard timeouts (connect_timeout, read_timeout)
-    session.timeout = (10, 60)  # 10s connection, 60s read for downloads
+    # Note: Session.timeout is not a standard attribute, but we'll add it as a custom attribute
+    session.timeout = (10, 60)  # type: ignore[attr-defined]  # 10s connection, 60s read for downloads
 
     return session

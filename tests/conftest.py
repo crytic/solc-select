@@ -9,12 +9,15 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any, Dict, Generator
 
 import pytest
 
 
 @pytest.fixture(scope="function")
-def isolated_solc_data(tmp_path, monkeypatch):
+def isolated_solc_data(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[Path, None, None]:
     """
     Create isolated solc-select data environment for each test.
 
@@ -31,7 +34,7 @@ def isolated_solc_data(tmp_path, monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def isolated_python_env(tmp_path):
+def isolated_python_env(tmp_path: Path) -> Generator[Dict[str, Any], None, None]:
     """
     Create completely isolated Python environment for tests that install/uninstall solc-select.
 
@@ -74,14 +77,14 @@ def test_contracts_dir() -> Path:
 
 
 # Platform markers for conditional test execution
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers."""
     config.addinivalue_line("markers", "linux: mark test to run only on Linux")
     config.addinivalue_line("markers", "macos: mark test to run only on macOS")
     config.addinivalue_line("markers", "windows: mark test to run only on Windows")
 
 
-def pytest_runtest_setup(item):
+def pytest_runtest_setup(item: pytest.Item) -> None:
     """Skip tests based on platform markers."""
     if "linux" in item.keywords and sys.platform != "linux":
         pytest.skip("Test requires Linux")

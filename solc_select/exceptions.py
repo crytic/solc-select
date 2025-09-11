@@ -145,7 +145,7 @@ class VersionResolutionError(SolcSelectError):
 class NoVersionSetError(SolcSelectError):
     """Raised when no solc version is currently set."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             "No solc version set. Run `solc-select use VERSION` or set SOLC_VERSION environment variable."
         )

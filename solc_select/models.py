@@ -68,7 +68,7 @@ class Platform:
     os_type: str  # 'linux', 'darwin', 'windows'
     architecture: str  # 'amd64', 'arm64'
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate platform components."""
         valid_os = {"linux", "darwin", "windows"}
         valid_arch = {"amd64", "arm64", "386"}
@@ -260,7 +260,7 @@ class SolcArtifact:
     checksum_keccak256: Optional[str]
     file_path: Path
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate artifact properties."""
         if not self.download_url:
             raise ValueError("Download URL cannot be empty")

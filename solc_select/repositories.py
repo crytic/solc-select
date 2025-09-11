@@ -28,7 +28,7 @@ from .models import Platform, SolcVersion
 class AbstractSolcRepository(ABC):
     """Abstract base class for Solidity compiler repositories."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.session = create_http_session()
 
     @property
@@ -94,7 +94,7 @@ class AbstractSolcRepository(ABC):
 class SoliditylangRepository(AbstractSolcRepository):
     """Repository for binaries.soliditylang.org - the main Solidity releases."""
 
-    def __init__(self, platform: Platform):
+    def __init__(self, platform: Platform) -> None:
         super().__init__()
         self.platform = platform
         platform_key = platform.get_soliditylang_key()
@@ -124,7 +124,7 @@ class SoliditylangRepository(AbstractSolcRepository):
 class CryticRepository(AbstractSolcRepository):
     """Repository for crytic/solc - provides additional Linux versions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @property
@@ -153,7 +153,7 @@ class CryticRepository(AbstractSolcRepository):
 class AlloyRepository(AbstractSolcRepository):
     """Repository for alloy-rs/solc-builds - provides native ARM64 Darwin binaries."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @property
