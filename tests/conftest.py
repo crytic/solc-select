@@ -82,6 +82,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "linux: mark test to run only on Linux")
     config.addinivalue_line("markers", "macos: mark test to run only on macOS")
     config.addinivalue_line("markers", "windows: mark test to run only on Windows")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:

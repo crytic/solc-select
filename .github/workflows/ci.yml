@@ -35,4 +35,4 @@ jobs:
         uv sync --extra dev
     - name: Run Tests
       run: |
-        uv run python -m pytest tests/ -v --tb=short -n auto
+        uv run python -m pytest tests/ -v --tb=short -n auto -m "not slow"

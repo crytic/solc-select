@@ -115,6 +115,7 @@ markers = [
     "linux: marks tests to run only on Linux",
     "macos: marks tests to run only on macOS",
     "windows: marks tests to run only on Windows",
+    "slow: marks tests as slow running",
 ]
 
 [tool.mypy]
