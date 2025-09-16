@@ -7,17 +7,18 @@ of Solidity compiler artifacts.
 
 import hashlib
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from io import BufferedRandom
 from pathlib import Path
 from typing import List
 from zipfile import ZipFile
 
+import requests
 from Crypto.Hash import keccak
 
 from ..constants import ARTIFACTS_DIR
 from ..exceptions import ChecksumMismatchError, SolcSelectError
-from ..infrastructure.http_client import create_http_session
 from ..models import Platform, SolcArtifact, SolcVersion
 from ..repositories import CompositeRepository
 
@@ -25,10 +26,12 @@ from ..repositories import CompositeRepository
 class ArtifactManager:
     """Service for managing Solidity compiler artifacts."""
 
-    def __init__(self, repository: CompositeRepository, platform: Platform):
+    def __init__(
+        self, repository: CompositeRepository, platform: Platform, session: requests.Session
+    ):
         self.repository = repository
         self.platform = platform
-        self.session = create_http_session()
+        self.session = session
 
     def get_installed_versions(self) -> List[SolcVersion]:
         """Get list of installed versions.
@@ -193,13 +196,20 @@ class ArtifactManager:
 
         try:
             # Download the file
-            response = self.session.get(artifact.download_url)
+            response = self.session.get(artifact.download_url, stream=True)
             response.raise_for_status()
 
             # Write and verify the file
             with open(artifact.file_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                try:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:  # Filter out keep-alive chunks
+                            f.write(chunk)
+                except KeyboardInterrupt:
+                    # Clean up partially downloaded file on interrupt
+                    if artifact.file_path.exists():
+                        artifact.file_path.unlink(missing_ok=True)
+                    raise
 
                 # Verify checksums
                 self.verify_checksum(artifact, f)
@@ -250,7 +260,7 @@ class ArtifactManager:
         artifact.file_path.chmod(0o775)
 
     def install_versions(self, versions: List[SolcVersion], silent: bool = False) -> bool:
-        """Install multiple versions.
+        """Install multiple versions concurrently.
 
         Args:
             versions: List of versions to install
@@ -259,15 +269,76 @@ class ArtifactManager:
         Returns:
             True if all installations succeeded, False otherwise
         """
-        success = True
+        if not versions:
+            return True
 
-        for version in versions:
+        # For single version, use sequential approach
+        if len(versions) == 1:
             try:
-                if not self.download_and_install(version, silent):
-                    success = False
+                return self.download_and_install(versions[0], silent)
             except SolcSelectError as e:
                 if not silent:
                     print(f"Error: {e}")
-                success = False
+                return False
 
-        return success
+        # For multiple versions, use parallel approach
+        if not silent:
+            print(f"Installing {len(versions)} versions concurrently...")
+
+        success_count = 0
+        total_count = len(versions)
+
+        # Use ThreadPoolExecutor with max 5 concurrent downloads
+        executor = ThreadPoolExecutor(max_workers=5)
+        future_to_version = {}
+
+        try:
+            # Submit all download jobs
+            future_to_version = {
+                executor.submit(self.download_and_install, version, True): version
+                for version in versions
+            }
+
+            # Process completed downloads
+            for future in as_completed(future_to_version):
+                version = future_to_version[future]
+                try:
+                    result = future.result()
+                    if result:
+                        success_count += 1
+                        if not silent:
+                            print(
+                                f"✓ Version '{version}' installed ({success_count}/{total_count})"
+                            )
+                    elif not silent:
+                        print(
+                            f"✗ Version '{version}' failed to install ({success_count}/{total_count})"
+                        )
+                except SolcSelectError as e:
+                    if not silent:
+                        print(f"✗ Version '{version}' failed: {e} ({success_count}/{total_count})")
+
+        except KeyboardInterrupt:
+            if not silent:
+                print(f"\nCancelling installation... ({success_count}/{total_count} completed)")
+
+            # Cancel all pending futures
+            for future in future_to_version:
+                future.cancel()
+
+            # Shutdown executor immediately without waiting for running tasks
+            executor.shutdown(wait=False)
+            raise
+
+        finally:
+            # Clean shutdown for normal completion
+            if not executor._shutdown:
+                executor.shutdown(wait=True)
+
+        if not silent:
+            if success_count == total_count:
+                print(f"All {total_count} versions installed successfully!")
+            else:
+                print(f"{success_count}/{total_count} versions installed successfully")
+
+        return success_count == total_count

@@ -21,15 +21,15 @@ from .constants import (
     EARLIEST_RELEASE,
     LINUX_AMD64,
 )
-from .infrastructure.http_client import create_http_session
 from .models import Platform, SolcVersion
 
 
 class AbstractSolcRepository(ABC):
     """Abstract base class for Solidity compiler repositories."""
 
-    def __init__(self) -> None:
-        self.session = create_http_session()
+    def __init__(self, session: requests.Session) -> None:
+        self.session = session
+        self._versions_cache: Optional[Dict[str, str]] = None
 
     @property
     @abstractmethod
@@ -45,10 +45,17 @@ class AbstractSolcRepository(ABC):
 
     def get_available_versions(self) -> Dict[str, str]:
         """Get available versions as a dict of version -> artifact_filename."""
+        # Return cached data if available
+        if self._versions_cache is not None:
+            return self._versions_cache
+
+        # Fetch from network and cache
         response = self.session.get(self.list_url)
         response.raise_for_status()
         all_releases = response.json()["releases"]
-        return self._filter_versions(all_releases)
+        filtered_versions = self._filter_versions(all_releases)
+        self._versions_cache = filtered_versions
+        return filtered_versions
 
     def _filter_versions(self, releases: Dict[str, str]) -> Dict[str, str]:
         """Filter versions based on repository-specific criteria.
@@ -94,12 +101,13 @@ class AbstractSolcRepository(ABC):
 class SoliditylangRepository(AbstractSolcRepository):
     """Repository for binaries.soliditylang.org - the main Solidity releases."""
 
-    def __init__(self, platform: Platform) -> None:
-        super().__init__()
+    def __init__(self, platform: Platform, session: requests.Session) -> None:
+        super().__init__(session)
         self.platform = platform
         platform_key = platform.get_soliditylang_key()
         self._base_url = f"https://binaries.soliditylang.org/{platform_key}/"
         self._list_url = f"https://binaries.soliditylang.org/{platform_key}/list.json"
+        self._latest_cache: Optional[SolcVersion] = None
 
     @property
     def base_url(self) -> str:
@@ -115,17 +123,24 @@ class SoliditylangRepository(AbstractSolcRepository):
 
     def get_latest_version(self) -> SolcVersion:
         """Get the latest available version."""
+        # Return cached data if available
+        if self._latest_cache is not None:
+            return self._latest_cache
+
+        # Fetch from network and cache
         response = self.session.get(self.list_url)
         response.raise_for_status()
         latest_str = response.json()["latestRelease"]
-        return SolcVersion.parse(latest_str)
+        latest_version = SolcVersion.parse(latest_str)
+        self._latest_cache = latest_version
+        return latest_version
 
 
 class CryticRepository(AbstractSolcRepository):
     """Repository for crytic/solc - provides additional Linux versions."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, session: requests.Session) -> None:
+        super().__init__(session)
 
     @property
     def base_url(self) -> str:
@@ -153,8 +168,8 @@ class CryticRepository(AbstractSolcRepository):
 class AlloyRepository(AbstractSolcRepository):
     """Repository for alloy-rs/solc-builds - provides native ARM64 Darwin binaries."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, session: requests.Session) -> None:
+        super().__init__(session)
 
     @property
     def base_url(self) -> str:
@@ -190,19 +205,19 @@ class AlloyRepository(AbstractSolcRepository):
 class CompositeRepository:
     """Composite repository that manages multiple underlying repositories."""
 
-    def __init__(self, platform: Platform):
+    def __init__(self, platform: Platform, session: requests.Session):
         self.platform = platform
         self.repositories: List[AbstractSolcRepository] = []
 
         # Always include the main soliditylang repository
-        self.repositories.append(SoliditylangRepository(platform))
+        self.repositories.append(SoliditylangRepository(platform, session))
 
         # Add platform-specific repositories
         if platform.get_soliditylang_key() == LINUX_AMD64:
-            self.repositories.append(CryticRepository())
+            self.repositories.append(CryticRepository(session))
 
         if platform.os_type == "darwin" and platform.architecture == "arm64":
-            self.repositories.append(AlloyRepository())
+            self.repositories.append(AlloyRepository(session))
 
     def get_available_versions(self) -> Dict[str, str]:
         """Get all available versions from all repositories."""

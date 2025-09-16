@@ -18,6 +18,7 @@ from ..exceptions import (
     VersionNotInstalledError,
 )
 from ..infrastructure.filesystem import FilesystemManager
+from ..infrastructure.http_client import create_http_session
 from ..models import Platform, SolcVersion
 from ..repositories import CompositeRepository
 from .artifact_manager import ArtifactManager
@@ -34,9 +35,10 @@ class SolcService:
 
         self.platform = platform
         self.filesystem = FilesystemManager()
-        self.repository = CompositeRepository(platform)
+        self.session = create_http_session()
+        self.repository = CompositeRepository(platform, self.session)
         self.version_manager = VersionManager(self.repository, platform)
-        self.artifact_manager = ArtifactManager(self.repository, platform)
+        self.artifact_manager = ArtifactManager(self.repository, platform, self.session)
         self.platform_service = PlatformService(platform)
 
     def get_current_version(self) -> Tuple[Optional[SolcVersion], str]:
