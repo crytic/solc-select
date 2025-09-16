@@ -7,7 +7,7 @@ and artifacts from different sources (soliditylang.org, crytic, alloy, etc.).
 
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from packaging.version import Version
@@ -44,7 +44,7 @@ class AbstractSolcRepository(ABC):
         pass
 
     @lru_cache(maxsize=5)  # noqa: B019
-    def _fetch_list_json(self) -> Dict:
+    def _fetch_list_json(self) -> Dict[str, Any]:
         """Fetch and cache the list.json data from the repository.
 
         Returns:
@@ -52,7 +52,7 @@ class AbstractSolcRepository(ABC):
         """
         response = self.session.get(self.list_url)
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
     @property
     @lru_cache(maxsize=5)  # noqa: B019
@@ -61,6 +61,21 @@ class AbstractSolcRepository(ABC):
         list_data = self._fetch_list_json()
         all_releases = list_data["releases"]
         return self._filter_versions(all_releases)
+
+    @property
+    @lru_cache(maxsize=5)  # noqa: B019
+    def latest_version(self) -> SolcVersion:
+        """Get the latest available version.
+
+        Default implementation parses from available versions.
+        Subclasses can override this for more efficient implementations.
+        """
+        versions = self.available_versions
+        if not versions:
+            raise ValueError("No versions available")
+
+        version_objs = [SolcVersion.parse(v) for v in versions]
+        return max(version_objs)
 
     def _filter_versions(self, releases: Dict[str, str]) -> Dict[str, str]:
         """Filter versions based on repository-specific criteria.
@@ -216,7 +231,9 @@ class CompositeRepository:
         if platform.os_type == "darwin" and platform.architecture == "arm64":
             self.repositories.append(AlloyRepository(session))
 
-    def get_available_versions(self) -> Dict[str, str]:
+    @property
+    @lru_cache(maxsize=5)  # noqa: B019
+    def available_versions(self) -> Dict[str, str]:
         """Get all available versions from all repositories."""
         all_versions = {}
 
@@ -230,27 +247,30 @@ class CompositeRepository:
 
         return all_versions
 
+    @property
+    @lru_cache(maxsize=5)  # noqa: B019
+    def latest_version(self) -> SolcVersion:
+        """Get the latest version across all repositories."""
+        latest_versions = []
+
+        for repo in self.repositories:
+            try:
+                latest_versions.append(repo.latest_version)
+            except (ValueError, requests.RequestException):
+                # Continue if one repository fails
+                continue
+
+        if not latest_versions:
+            raise ValueError("No versions available from any repository")
+
+        return max(latest_versions)
+
     def get_repository_for_version(self, version: SolcVersion) -> AbstractSolcRepository:
         """Get the appropriate repository for a specific version."""
-        # Check for platform-specific repositories (including Crytic special cases)
+        # Check for platform-specific repositories
         for repo in reversed(self.repositories):  # Check specialized repos first
             if repo.supports_version(version, self.platform):
                 return repo
 
         # Fallback to main soliditylang repository
         return self.repositories[0]
-
-    def get_latest_version(self) -> SolcVersion:
-        """Get the latest version from the main repository."""
-        main_repo = self.repositories[0]
-        if isinstance(main_repo, SoliditylangRepository):
-            return main_repo.latest_version
-
-        # Fallback: parse from available versions
-        versions = self.get_available_versions()
-        if not versions:
-            raise ValueError("No versions available")
-
-        version_objs = [SolcVersion.parse(v) for v in versions]
-        latest = max(version_objs)
-        return latest

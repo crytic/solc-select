@@ -29,7 +29,7 @@ class VersionManager:
         Returns:
             List of available versions sorted by version number
         """
-        releases = self.repository.get_available_versions()
+        releases = self.repository.available_versions
         versions = []
 
         for version_str in releases:
@@ -54,7 +54,7 @@ class VersionManager:
         Raises:
             ValueError: If no versions are available
         """
-        return self.repository.get_latest_version()
+        return self.repository.latest_version
 
     def validate_version(self, version_str: str) -> SolcVersion:
         """Validate and parse a version string.
