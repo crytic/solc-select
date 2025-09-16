@@ -176,8 +176,9 @@ class ArtifactManager:
             InstallationError: If installation fails
             ChecksumMismatchError: If checksum verification fails
         """
-        if self.is_installed(version) and not silent:
-            print(f"Version '{version}' is already installed, skipping...")
+        if self.is_installed(version):
+            if not silent:
+                print(f"Version '{version}' is already installed, skipping...")
             return True
 
         if not silent:
