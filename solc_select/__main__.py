@@ -1,5 +1,6 @@
 import argparse
 import sys
+from typing import List
 
 from .constants import (
     INSTALL_COMMAND,
@@ -22,7 +23,7 @@ from .services.solc_service import SolcService
 from .utils import sort_versions
 
 
-def solc_select_install(service: SolcService, versions: list[str]) -> None:
+def solc_select_install(service: SolcService, versions: List[str]) -> None:
     """Handle the install command."""
     if not versions:
         print("Available versions to install:")

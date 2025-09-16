@@ -5,7 +5,7 @@ This module provides centralized HTTP client configuration with
 retry logic and proper timeout handling.
 """
 
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -22,9 +22,9 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         self,
         request: PreparedRequest,
         stream: bool = False,
-        timeout: Union[float, tuple[float, float], tuple[float, None], None] = None,
+        timeout: Union[float, Tuple[float, float], Tuple[float, None], None] = None,
         verify: Union[bool, str] = True,
-        cert: Union[bytes, str, tuple[Union[bytes, str], Union[bytes, str]], None] = None,
+        cert: Union[bytes, str, Tuple[Union[bytes, str], Union[bytes, str]], None] = None,
         proxies: Optional[Mapping[str, str]] = None,
     ) -> Response:
         timeout = timeout or self.timeout

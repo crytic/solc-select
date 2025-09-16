@@ -5,13 +5,15 @@ This module contains helper functions that are not pytest fixtures
 but are used across multiple test files.
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
-from typing import Any, Dict
+from typing import Any
 
 
 def run_in_venv(
-    venv_info: Dict[str, Any], cmd: str, check: bool = True, **kwargs: Any
+    venv_info: dict[str, Any], cmd: str, check: bool = True, **kwargs: Any
 ) -> subprocess.CompletedProcess[str]:
     """
     Run a command in an isolated virtual environment.

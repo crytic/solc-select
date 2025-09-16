@@ -136,3 +136,6 @@ strict_equality = true
 extra_checks = true
 # Error on missing imports (don't allow implicit Any)
 disallow_any_unimported = true
+
+[tool.uv]
+python-preference = "only-managed"
