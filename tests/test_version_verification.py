@@ -41,7 +41,7 @@ class TestVersionVerification:  # pylint: disable=too-few-public-methods
         # Test each version
         for version in versions:
             # Run solc --version with the specific version set
-            result = run_command(f"SOLC_VERSION={version} solc --version", check=True)
+            result = run_command("solc --version", check=True, env={"SOLC_VERSION": version})
             output = result.stdout.lower()
 
             # Check that output contains "solidity compiler" and the version

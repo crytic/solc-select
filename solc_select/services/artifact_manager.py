@@ -308,15 +308,17 @@ class ArtifactManager:
                         success_count += 1
                         if not silent:
                             print(
-                                f"✓ Version '{version}' installed ({success_count}/{total_count})"
+                                f"[OK] Version '{version}' installed ({success_count}/{total_count})"
                             )
                     elif not silent:
                         print(
-                            f"✗ Version '{version}' failed to install ({success_count}/{total_count})"
+                            f"[FAIL] Version '{version}' failed to install ({success_count}/{total_count})"
                         )
                 except SolcSelectError as e:
                     if not silent:
-                        print(f"✗ Version '{version}' failed: {e} ({success_count}/{total_count})")
+                        print(
+                            f"[FAIL] Version '{version}' failed: {e} ({success_count}/{total_count})"
+                        )
 
         except KeyboardInterrupt:
             if not silent:

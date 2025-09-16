@@ -73,7 +73,7 @@ class FilesystemManager:
             return "SOLC_VERSION"
 
         global_version_file = self.config_dir / "global-version"
-        return str(global_version_file)
+        return global_version_file.as_posix()
 
     def get_artifact_directory(self, version: SolcVersion) -> Path:
         """Get the directory for a version's artifacts.
