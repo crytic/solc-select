@@ -111,7 +111,7 @@ class ArtifactManager:
         repo = self.repository.get_repository_for_version(version)
 
         # Get available versions to find the artifact filename
-        available = repo.get_available_versions()
+        available = repo.available_versions
         version_str = str(version)
 
         if version_str not in available:

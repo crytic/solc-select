@@ -6,6 +6,7 @@ and artifacts from different sources (soliditylang.org, crytic, alloy, etc.).
 """
 
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -29,7 +30,6 @@ class AbstractSolcRepository(ABC):
 
     def __init__(self, session: requests.Session) -> None:
         self.session = session
-        self._versions_cache: Optional[Dict[str, str]] = None
 
     @property
     @abstractmethod
@@ -43,19 +43,24 @@ class AbstractSolcRepository(ABC):
         """Get the URL for the list.json file containing version information."""
         pass
 
-    def get_available_versions(self) -> Dict[str, str]:
-        """Get available versions as a dict of version -> artifact_filename."""
-        # Return cached data if available
-        if self._versions_cache is not None:
-            return self._versions_cache
+    @lru_cache(maxsize=5)  # noqa: B019
+    def _fetch_list_json(self) -> Dict:
+        """Fetch and cache the list.json data from the repository.
 
-        # Fetch from network and cache
+        Returns:
+            The parsed JSON data from the list.json endpoint
+        """
         response = self.session.get(self.list_url)
         response.raise_for_status()
-        all_releases = response.json()["releases"]
-        filtered_versions = self._filter_versions(all_releases)
-        self._versions_cache = filtered_versions
-        return filtered_versions
+        return response.json()
+
+    @property
+    @lru_cache(maxsize=5)  # noqa: B019
+    def available_versions(self) -> Dict[str, str]:
+        """Get available versions as a dict of version -> artifact_filename."""
+        list_data = self._fetch_list_json()
+        all_releases = list_data["releases"]
+        return self._filter_versions(all_releases)
 
     def _filter_versions(self, releases: Dict[str, str]) -> Dict[str, str]:
         """Filter versions based on repository-specific criteria.
@@ -71,9 +76,8 @@ class AbstractSolcRepository(ABC):
 
     def get_checksums(self, version: SolcVersion) -> Tuple[str, Optional[str]]:
         """Get SHA256 and optional Keccak256 checksums for a version."""
-        response = self.session.get(self.list_url)
-        response.raise_for_status()
-        builds = response.json()["builds"]
+        list_data = self._fetch_list_json()
+        builds = list_data["builds"]
 
         version_str = str(version)
         matches = [b for b in builds if b["version"] == version_str]
@@ -107,7 +111,6 @@ class SoliditylangRepository(AbstractSolcRepository):
         platform_key = platform.get_soliditylang_key()
         self._base_url = f"https://binaries.soliditylang.org/{platform_key}/"
         self._list_url = f"https://binaries.soliditylang.org/{platform_key}/list.json"
-        self._latest_cache: Optional[SolcVersion] = None
 
     @property
     def base_url(self) -> str:
@@ -121,19 +124,13 @@ class SoliditylangRepository(AbstractSolcRepository):
         """Check if this repository supports the version on the platform."""
         return version.is_compatible_with_platform(platform)
 
-    def get_latest_version(self) -> SolcVersion:
+    @property
+    @lru_cache(maxsize=5)  # noqa: B019
+    def latest_version(self) -> SolcVersion:
         """Get the latest available version."""
-        # Return cached data if available
-        if self._latest_cache is not None:
-            return self._latest_cache
-
-        # Fetch from network and cache
-        response = self.session.get(self.list_url)
-        response.raise_for_status()
-        latest_str = response.json()["latestRelease"]
-        latest_version = SolcVersion.parse(latest_str)
-        self._latest_cache = latest_version
-        return latest_version
+        list_data = self._fetch_list_json()
+        latest_str = list_data["latestRelease"]
+        return SolcVersion.parse(latest_str)
 
 
 class CryticRepository(AbstractSolcRepository):
@@ -225,7 +222,7 @@ class CompositeRepository:
 
         for repo in self.repositories:
             try:
-                versions = repo.get_available_versions()
+                versions = repo.available_versions
                 all_versions.update(versions)
             except requests.RequestException:
                 # Continue if one repository fails
@@ -247,7 +244,7 @@ class CompositeRepository:
         """Get the latest version from the main repository."""
         main_repo = self.repositories[0]
         if isinstance(main_repo, SoliditylangRepository):
-            return main_repo.get_latest_version()
+            return main_repo.latest_version
 
         # Fallback: parse from available versions
         versions = self.get_available_versions()
