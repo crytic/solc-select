@@ -39,7 +39,7 @@ jobs:
       - build-release
     steps:
       - name: fetch dists
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: solc-select-dists
           path: dist/
