@@ -313,7 +313,7 @@ def get_soliditylang_checksums(version: str) -> Tuple[str, Optional[str]]:
     # pylint: disable=consider-using-with
     list_json = urllib.request.urlopen(list_url).read()
     builds = json.loads(list_json)["builds"]
-    matches = list(filter(lambda b: b["version"] == version, builds))
+    matches = list(filter(lambda b: b["version"] == version and "prerelease" not in b, builds))
 
     if not matches or not matches[0]["sha256"]:
         raise argparse.ArgumentTypeError(
