@@ -319,7 +319,7 @@ def get_soliditylang_checksums(version: str) -> Tuple[str, Optional[str]]:
     response = session.get(list_url)
     response.raise_for_status()
     builds = response.json()["builds"]
-    matches = list(filter(lambda b: b["version"] == version, builds))
+    matches = list(filter(lambda b: b["version"] == version and "prerelease" not in b, builds))
 
     if not matches or not matches[0]["sha256"]:
         raise argparse.ArgumentTypeError(
