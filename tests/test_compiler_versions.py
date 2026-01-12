@@ -103,8 +103,8 @@ class TestCompilerVersions:
             f"solc080_fail_compile did not fail as expected. Output: {result.stdout}"
         )
 
-    def test_solc_0831_if_contains_prerelease(self, test_contracts_dir, isolated_solc_data):
-        """Test Solidity 0.8.31 compilation behavior."""
+    def test_solc_0831_prerelease(self, isolated_solc_data: Any) -> None:
+        """Test Solidity 0.8.31 compilation behavior (first version with prerelease)."""
         # Switch to 0.8.31
         result = run_command("solc-select use 0.8.31 --always-install", check=False)
         assert result.returncode == 0, f"Failed to switch to 0.8.31: {result.stdout}"
