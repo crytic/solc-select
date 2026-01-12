@@ -33,3 +33,6 @@ jobs:
 
       - name: Run ruff format check
         run: uv run ruff format --check .
+
+      - name: Run mypy type checking
+        run: uv run mypy . --config-file pyproject.toml

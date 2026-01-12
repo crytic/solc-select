@@ -145,7 +145,7 @@ The following commands may resolve the issue; adjust the Python version to the o
 
 ```bash
 pip3 install certifi
-/Applications/Python\ 3.8/Install\ Certificates.command
+/Applications/Python\ 3.10/Install\ Certificates.command
 ```
 
 ### `Connection refused` [investigation ongoing]

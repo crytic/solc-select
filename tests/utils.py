@@ -5,14 +5,16 @@ This module contains helper functions that are not pytest fixtures
 but are used across multiple test files.
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
-from typing import Dict
+from typing import Any
 
 
 def run_in_venv(
-    venv_info: Dict, cmd: str, check: bool = True, **kwargs
-) -> subprocess.CompletedProcess:
+    venv_info: dict[str, Any], cmd: str, check: bool = True, **kwargs: Any
+) -> subprocess.CompletedProcess[str]:
     """
     Run a command in an isolated virtual environment.
 
@@ -42,8 +44,8 @@ def run_in_venv(
 
 
 def run_command(
-    cmd: str, check: bool = True, capture_stderr: bool = True
-) -> subprocess.CompletedProcess:
+    cmd: str, check: bool = True, capture_stderr: bool = True, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     """
     Execute shell commands and return output.
 
@@ -54,19 +56,33 @@ def run_command(
         cmd: Command to run
         check: Whether to raise on non-zero exit code
         capture_stderr: Whether to capture stderr
+        env: Additional environment variables to set
 
     Returns:
         CompletedProcess instance with stdout, stderr, and returncode
     """
     stderr_setting = subprocess.STDOUT if capture_stderr else subprocess.PIPE
 
-    result = subprocess.run(
-        cmd,
-        shell=True,
-        capture_output=False,
-        stdout=subprocess.PIPE,
-        stderr=stderr_setting,
-        text=True,
-        check=check,
-    )
-    return result
+    # Merge environment variables
+    process_env = os.environ.copy()
+    if env:
+        process_env.update(env)
+
+    try:
+        return subprocess.run(
+            cmd,
+            shell=True,
+            capture_output=False,
+            stdout=subprocess.PIPE,
+            stderr=stderr_setting,
+            text=True,
+            check=check,
+            env=process_env,
+        )
+    except subprocess.CalledProcessError as e:
+        print("Command failed with CalledProcessError.")
+        print("Exit code:", e.returncode)
+        print("Command:", e.cmd)
+        print("Stdout:", e.stdout)
+        print("Stderr:", e.stderr)
+        raise

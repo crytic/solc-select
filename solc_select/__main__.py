@@ -1,115 +1,176 @@
 import argparse
-import subprocess
 import sys
+from typing import List
 
 from .constants import (
-    ARTIFACTS_DIR,
-    INSTALL_VERSIONS,
-    SHOW_VERSIONS,
-    UPGRADE,
-    USE_VERSION,
+    INSTALL_COMMAND,
+    UPGRADE_COMMAND,
+    USE_COMMAND,
+    VERSIONS_COMMAND,
 )
-from .solc_select import (
-    current_version,
-    get_emulation_prefix,
-    get_installable_versions,
-    halt_incompatible_system,
-    halt_old_architecture,
-    install_artifacts,
-    installed_versions,
-    switch_global_version,
-    upgrade_architecture,
-    valid_install_arg,
-    valid_version,
+from .exceptions import (
+    ChecksumMismatchError,
+    InstallationError,
+    NetworkError,
+    NoVersionSetError,
+    PlatformNotSupportedError,
+    SolcSelectError,
+    VersionNotFoundError,
+    VersionNotInstalledError,
+    VersionResolutionError,
 )
+from .services.solc_service import SolcService
 from .utils import sort_versions
 
 
-# pylint: disable=too-many-branches
-def solc_select() -> None:
+def solc_select_install(service: SolcService, versions: List[str]) -> None:
+    """Handle the install command."""
+    if not versions:
+        print("Available versions to install:")
+        installable = service.get_installable_versions()
+        for version in installable:
+            print(str(version))
+    else:
+        success = service.install_versions(versions)
+        sys.exit(0 if success else 1)
+
+
+def solc_select_use(service: SolcService, version: str, always_install: bool) -> None:
+    """Handle the use command."""
+    service.switch_global_version(version, always_install, silent=False)
+
+
+def solc_select_versions(service: SolcService) -> None:
+    """Handle the versions command."""
+    installed = service.get_installed_versions()
+    if installed:
+        try:
+            current_version, source = service.get_current_version()
+        except (NoVersionSetError, VersionNotInstalledError):
+            # No version is currently set or not installed, that's ok for the versions command
+            current_version = None
+
+        installed_strs = [str(v) for v in installed]
+        for version_str in sort_versions(installed_strs):
+            if current_version and version_str == str(current_version):
+                print(f"{version_str} (current, set by {source})")
+            else:
+                print(version_str)
+    else:
+        print("No solc version installed. Run `solc-select install --help` for more information")
+
+
+def solc_select_upgrade(service: SolcService) -> None:
+    """Handle the upgrade command."""
+    service.upgrade_architecture()
+
+
+def create_parser() -> argparse.ArgumentParser:
+    """Create and configure the argument parser."""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
         help="Allows users to install and quickly switch between Solidity compiler versions",
         dest="command",
     )
+
+    # Install command
     parser_install = subparsers.add_parser(
-        "install", help="list and install available solc versions"
+        INSTALL_COMMAND, help="list and install available solc versions"
     )
     parser_install.add_argument(
-        INSTALL_VERSIONS,
+        "versions",
         help='specific versions you want to install "0.4.25", "all" or "latest"',
         nargs="*",
         default=[],
-        type=valid_install_arg,
     )
-    parser_use = subparsers.add_parser("use", help="change the version of global solc compiler")
-    parser_use.add_argument(
-        USE_VERSION, help="solc version you want to use (eg: 0.4.25)", type=valid_version, nargs="?"
-    )
-    parser_use.add_argument("--always-install", action="store_true")
-    parser_use = subparsers.add_parser("versions", help="prints out all installed solc versions")
-    parser_use.add_argument(SHOW_VERSIONS, nargs="*", help=argparse.SUPPRESS)
-    parser_use = subparsers.add_parser("upgrade", help="upgrades solc-select")
-    parser_use.add_argument(UPGRADE, nargs="*", help=argparse.SUPPRESS)
 
+    # Use command
+    parser_use = subparsers.add_parser(
+        USE_COMMAND, help="change the version of global solc compiler"
+    )
+    parser_use.add_argument("version", help="solc version you want to use (eg: 0.4.25)", nargs="?")
+    parser_use.add_argument("--always-install", action="store_true")
+
+    # Versions command
+    parser_versions = subparsers.add_parser(
+        VERSIONS_COMMAND, help="prints out all installed solc versions"
+    )
+    parser_versions.add_argument("versions", nargs="*", help=argparse.SUPPRESS)
+
+    # Upgrade command
+    parser_upgrade = subparsers.add_parser(UPGRADE_COMMAND, help="upgrades solc-select")
+    parser_upgrade.add_argument("upgrade", nargs="*", help=argparse.SUPPRESS)
+
+    return parser
+
+
+def solc_select() -> None:
+    parser = create_parser()
     args = parser.parse_args()
 
-    if args.command == "install":
-        versions = args.INSTALL_VERSIONS
-        if not versions:
-            print("Available versions to install:")
-            for version in get_installable_versions():
-                print(version)
-        else:
-            status = install_artifacts(versions)
-            sys.exit(0 if status else 1)
+    # Create service instance
+    service = SolcService()
 
-    elif args.command == "use":
-        switch_global_version(args.USE_VERSION, args.always_install, silent=False)
+    try:
+        if args.command == INSTALL_COMMAND:
+            solc_select_install(service, args.versions)
 
-    elif args.command == "versions":
-        versions_installed = installed_versions()
-        if versions_installed:
-            (current_ver, source) = (None, None)
-            try:
-                res = current_version()
-                if res:
-                    (current_ver, source) = res
-            except argparse.ArgumentTypeError:
-                # No version is currently set, that's ok
-                res = None
-            for version in sort_versions(versions_installed):
-                if res and version == current_ver:
-                    print(f"{version} (current, set by {source})")
-                else:
-                    print(version)
+        elif args.command == USE_COMMAND:
+            if not args.version:
+                parser.error("the following arguments are required: version")
+            solc_select_use(service, args.version, args.always_install)
+
+        elif args.command == VERSIONS_COMMAND:
+            solc_select_versions(service)
+
+        elif args.command == UPGRADE_COMMAND:
+            solc_select_upgrade(service)
+
         else:
-            print(
-                "No solc version installed. Run `solc-select install --help` for more information"
-            )
-    elif args.command == "upgrade":
-        upgrade_architecture()
-    else:
-        parser.parse_args(["--help"])
-        sys.exit(0)
+            parser.parse_args(["--help"])
+            sys.exit(0)
+
+    except VersionNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if e.available_versions:
+            print("Hint: Run 'solc-select install' to see all available versions", file=sys.stderr)
+        sys.exit(1)
+    except ChecksumMismatchError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Try downloading again or report this issue if it persists", file=sys.stderr)
+        sys.exit(1)
+    except (InstallationError, NetworkError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Check your network connection and try again", file=sys.stderr)
+        sys.exit(1)
+    except PlatformNotSupportedError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Use a newer version that supports your platform", file=sys.stderr)
+        sys.exit(1)
+    except VersionResolutionError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        print("Hint: Check your network connection or specify a specific version", file=sys.stderr)
+        sys.exit(1)
+    except SolcSelectError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def solc() -> None:
-    if not installed_versions():
-        switch_global_version(version="latest", always_install=True, silent=True)
-    res = current_version()
-    if res:
-        (version, _) = res
-        path = ARTIFACTS_DIR.joinpath(f"solc-{version}", f"solc-{version}")
-        halt_old_architecture(path)
-        halt_incompatible_system(path)
+    """CLI entry point for solc executable."""
+    service = SolcService()
 
-        # Use emulation if needed for ARM64 systems
-        cmd = get_emulation_prefix() + [str(path)] + sys.argv[1:]
-
-        try:
-            subprocess.run(cmd, check=True)
-        except subprocess.CalledProcessError as e:
-            sys.exit(e.returncode)
-    else:
+    try:
+        service.execute_solc(sys.argv[1:])
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error executing solc: {e}", file=sys.stderr)
         sys.exit(1)

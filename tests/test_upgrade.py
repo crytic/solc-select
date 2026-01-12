@@ -6,6 +6,7 @@ compiler versions.
 """
 
 from pathlib import Path
+from typing import Any
 
 from .utils import run_in_venv
 
@@ -13,7 +14,7 @@ from .utils import run_in_venv
 class TestUpgrade:  # pylint: disable=too-few-public-methods
     """Test solc-select upgrade behavior."""
 
-    def test_upgrade_preserves_versions(self, isolated_python_env):
+    def test_upgrade_preserves_versions(self, isolated_python_env: Any) -> None:
         """
         Test that upgrading solc-select preserves installed versions.
 
@@ -67,7 +68,7 @@ class TestUpgrade:  # pylint: disable=too-few-public-methods
             f"Installed versions changed during upgrade.\nOld: {old_versions}\nNew: {new_versions}"
         )
 
-    def test_cache_already_installed(self, isolated_python_env):
+    def test_cache_already_installed(self, isolated_python_env: Any) -> None:
         venv = isolated_python_env
         project_root = Path(__file__).parent.parent
 
