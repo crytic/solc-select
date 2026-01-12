@@ -95,7 +95,7 @@ class AbstractSolcRepository(ABC):
         builds = list_data["builds"]
 
         version_str = str(version)
-        matches = [b for b in builds if b["version"] == version_str]
+        matches = [b for b in builds if b["version"] == version_str and "prerelease" not in b]
 
         if not matches or not matches[0]["sha256"]:
             raise ValueError(f"Unable to retrieve checksum for {version}")
