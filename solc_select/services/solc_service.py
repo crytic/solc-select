@@ -8,6 +8,8 @@ all the other services and provides the main business logic operations.
 import subprocess
 import sys
 
+import requests
+
 from ..exceptions import (
     ArchitectureUpgradeError,
     InstallationError,
@@ -28,17 +30,81 @@ from .version_manager import VersionManager
 class SolcService:
     """Main service facade for solc-select operations."""
 
-    def __init__(self, platform: Platform | None = None):
+    def __init__(
+        self,
+        filesystem: FilesystemManager | None = None,
+        session: requests.Session | None = None,
+        repository: CompositeRepository | None = None,
+        version_manager: VersionManager | None = None,
+        artifact_manager: ArtifactManager | None = None,
+        platform_service: PlatformService | None = None,
+        platform: Platform | None = None,
+    ):
+        """Initialize SolcService with dependencies.
+
+        Args:
+            filesystem: Filesystem operations manager (default: FilesystemManager())
+            session: HTTP session for network requests (default: create_http_session())
+            repository: Repository for version discovery (default: CompositeRepository)
+            version_manager: Version validation and resolution (default: VersionManager)
+            artifact_manager: Artifact download and installation (default: ArtifactManager)
+            platform_service: Platform-specific operations (default: PlatformService)
+            platform: Target platform (default: Platform.current())
+
+        Note:
+            All dependencies are optional. If not provided, default implementations
+            will be created. This enables dependency injection for testing while
+            maintaining backward compatibility.
+        """
         if platform is None:
             platform = Platform.current()
 
         self.platform = platform
-        self.filesystem = FilesystemManager()
-        self.session = create_http_session()
-        self.repository = CompositeRepository(platform, self.session)
-        self.version_manager = VersionManager(self.repository, platform)
-        self.artifact_manager = ArtifactManager(self.repository, platform, self.session)
-        self.platform_service = PlatformService(platform)
+        self.filesystem = filesystem or FilesystemManager()
+        self.session = session or create_http_session()
+        self.repository = repository or CompositeRepository(platform, self.session)
+        self.version_manager = version_manager or VersionManager(self.repository, platform)
+        self.artifact_manager = artifact_manager or ArtifactManager(
+            self.repository, platform, self.session
+        )
+        self.platform_service = platform_service or PlatformService(platform)
+
+    @classmethod
+    def create_default(cls, platform: Platform | None = None) -> "SolcService":
+        """Create SolcService with default dependencies.
+
+        This factory method explicitly creates all dependencies, making
+        the dependency tree visible for documentation purposes.
+
+        Args:
+            platform: Target platform (default: current platform)
+
+        Returns:
+            SolcService instance with default dependencies
+
+        Example:
+            >>> service = SolcService.create_default()
+            >>> service = SolcService.create_default(Platform.current())
+        """
+        if platform is None:
+            platform = Platform.current()
+
+        filesystem = FilesystemManager()
+        session = create_http_session()
+        repository = CompositeRepository(platform, session)
+        version_manager = VersionManager(repository, platform)
+        artifact_manager = ArtifactManager(repository, platform, session)
+        platform_service = PlatformService(platform)
+
+        return cls(
+            filesystem=filesystem,
+            session=session,
+            repository=repository,
+            version_manager=version_manager,
+            artifact_manager=artifact_manager,
+            platform_service=platform_service,
+            platform=platform,
+        )
 
     def get_current_version(self) -> tuple[SolcVersion | None, str]:
         """Get the current version and its source.
