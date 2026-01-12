@@ -8,7 +8,6 @@ configuration management, and directory operations.
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from ..constants import ARTIFACTS_DIR, SOLC_SELECT_DIR
 from ..models import SolcVersion
@@ -27,7 +26,7 @@ class FilesystemManager:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-    def get_current_version(self) -> Optional[SolcVersion]:
+    def get_current_version(self) -> SolcVersion | None:
         """Get the currently selected version.
 
         Returns:

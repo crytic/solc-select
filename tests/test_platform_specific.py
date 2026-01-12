@@ -4,7 +4,7 @@ Platform-specific tests for solc-select.
 This module contains tests that are specific to Linux, macOS, and Windows.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import requests
@@ -45,7 +45,7 @@ class TestPlatformSpecific:  # pylint: disable=too-few-public-methods
         ],
     )
     def test_version_boundaries(
-        self, platform: str, config: Dict[str, Any], isolated_solc_data: Any
+        self, platform: str, config: dict[str, Any], isolated_solc_data: Any
     ) -> None:
         """Test version boundaries and constraints for all platforms."""
 

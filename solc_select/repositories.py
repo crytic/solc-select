@@ -7,7 +7,7 @@ and artifacts from different sources (soliditylang.org, crytic, alloy, etc.).
 
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import requests
 from packaging.version import Version
@@ -44,7 +44,7 @@ class AbstractSolcRepository(ABC):
         pass
 
     @lru_cache(maxsize=5)  # noqa: B019
-    def _fetch_list_json(self) -> Dict[str, Any]:
+    def _fetch_list_json(self) -> dict[str, Any]:
         """Fetch and cache the list.json data from the repository.
 
         Returns:
@@ -56,7 +56,7 @@ class AbstractSolcRepository(ABC):
 
     @property
     @lru_cache(maxsize=5)  # noqa: B019
-    def available_versions(self) -> Dict[str, str]:
+    def available_versions(self) -> dict[str, str]:
         """Get available versions as a dict of version -> artifact_filename."""
         list_data = self._fetch_list_json()
         all_releases = list_data["releases"]
@@ -77,7 +77,7 @@ class AbstractSolcRepository(ABC):
         version_objs = [SolcVersion.parse(v) for v in versions]
         return max(version_objs)
 
-    def _filter_versions(self, releases: Dict[str, str]) -> Dict[str, str]:
+    def _filter_versions(self, releases: dict[str, str]) -> dict[str, str]:
         """Filter versions based on repository-specific criteria.
 
         Override this method to apply custom filtering logic.
@@ -89,7 +89,7 @@ class AbstractSolcRepository(ABC):
         """Get the download URL for a specific version."""
         return f"{self.base_url}{artifact_filename}"
 
-    def get_checksums(self, version: SolcVersion) -> Tuple[str, Optional[str]]:
+    def get_checksums(self, version: SolcVersion) -> tuple[str, str | None]:
         """Get SHA256 and optional Keccak256 checksums for a version."""
         list_data = self._fetch_list_json()
         builds = list_data["builds"]
@@ -191,7 +191,7 @@ class AlloyRepository(AbstractSolcRepository):
     def list_url(self) -> str:
         return ALLOY_SOLC_JSON
 
-    def _filter_versions(self, releases: Dict[str, str]) -> Dict[str, str]:
+    def _filter_versions(self, releases: dict[str, str]) -> dict[str, str]:
         """Filter to only include versions in the supported ARM64 range."""
         min_version = Version(ALLOY_ARM64_MIN_VERSION)
         max_version = Version(ALLOY_ARM64_MAX_VERSION)
@@ -219,7 +219,7 @@ class CompositeRepository:
 
     def __init__(self, platform: Platform, session: requests.Session):
         self.platform = platform
-        self.repositories: List[AbstractSolcRepository] = []
+        self.repositories: list[AbstractSolcRepository] = []
 
         # Always include the main soliditylang repository
         self.repositories.append(SoliditylangRepository(platform, session))
@@ -233,7 +233,7 @@ class CompositeRepository:
 
     @property
     @lru_cache(maxsize=5)  # noqa: B019
-    def available_versions(self) -> Dict[str, str]:
+    def available_versions(self) -> dict[str, str]:
         """Get all available versions from all repositories."""
         all_versions = {}
 

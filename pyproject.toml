@@ -61,7 +61,7 @@ solc-select = "solc_select.__main__:solc_select"
 solc = "solc_select.__main__:solc"
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py310"
 line-length = 100
 
 [tool.ruff.lint]
