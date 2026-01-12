@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "solc-select"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
   "pycryptodome>=3.4.6",
   "packaging",
