@@ -8,7 +8,6 @@ compatibility checks, and ARM64 warnings.
 import contextlib
 import sys
 from pathlib import Path
-from typing import List
 
 from ..constants import SOLC_SELECT_DIR
 from ..models import Platform, SolcVersion
@@ -20,7 +19,7 @@ class PlatformService:
     def __init__(self, platform: Platform):
         self.platform = platform
 
-    def get_emulation_prefix(self) -> List[str]:
+    def get_emulation_prefix(self) -> list[str]:
         """Get the command prefix for emulation if needed.
 
         Returns:

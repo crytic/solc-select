@@ -7,13 +7,12 @@ the new refactored service architecture to maintain the same API.
 """
 
 from pathlib import Path
-from typing import List
 
 from .constants import ARTIFACTS_DIR
 from .services.solc_service import SolcService
 
 
-def install_artifacts(versions: List[str], silent: bool = False) -> bool:
+def install_artifacts(versions: list[str], silent: bool = False) -> bool:
     """Install solc versions (backward compatibility wrapper).
 
     Args:
@@ -27,7 +26,7 @@ def install_artifacts(versions: List[str], silent: bool = False) -> bool:
     return service.install_versions(versions, silent)
 
 
-def installed_versions() -> List[str]:
+def installed_versions() -> list[str]:
     """Get list of installed version strings (backward compatibility wrapper).
 
     Returns:

@@ -5,8 +5,6 @@ This module provides a structured exception hierarchy for better error handling
 and more informative error messages throughout the application.
 """
 
-from typing import List, Optional
-
 
 class SolcSelectError(Exception):
     """Base exception for all solc-select errors."""
@@ -20,8 +18,8 @@ class VersionNotFoundError(SolcSelectError):
     def __init__(
         self,
         version: str,
-        available_versions: Optional[List[str]] = None,
-        suggestion: Optional[str] = None,
+        available_versions: list[str] | None = None,
+        suggestion: str | None = None,
     ):
         self.version = version
         self.available_versions = available_versions or []
@@ -47,8 +45,8 @@ class VersionNotInstalledError(SolcSelectError):
     def __init__(
         self,
         version: str,
-        installed_versions: Optional[List[str]] = None,
-        source: Optional[str] = None,
+        installed_versions: list[str] | None = None,
+        source: str | None = None,
     ):
         self.version = version
         self.installed_versions = installed_versions or []
@@ -73,7 +71,7 @@ class VersionNotInstalledError(SolcSelectError):
 class PlatformNotSupportedError(SolcSelectError):
     """Raised when platform is not supported for a specific version."""
 
-    def __init__(self, version: str, platform: str, min_version: Optional[str] = None):
+    def __init__(self, version: str, platform: str, min_version: str | None = None):
         self.version = version
         self.platform = platform
         self.min_version = min_version
@@ -115,7 +113,7 @@ class NetworkError(SolcSelectError):
     """Raised when network operations fail."""
 
     def __init__(
-        self, operation: str, url: Optional[str] = None, original_error: Optional[Exception] = None
+        self, operation: str, url: str | None = None, original_error: Exception | None = None
     ):
         self.operation = operation
         self.url = url

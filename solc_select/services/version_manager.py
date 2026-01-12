@@ -4,8 +4,6 @@ Version management service for solc-select.
 This module handles validation, resolution, and management of Solidity compiler versions.
 """
 
-from typing import List
-
 from ..constants import EARLIEST_RELEASE
 from ..exceptions import (
     PlatformNotSupportedError,
@@ -23,7 +21,7 @@ class VersionManager:
         self.repository = repository
         self.platform = platform
 
-    def get_available_versions(self) -> List[SolcVersion]:
+    def get_available_versions(self) -> list[SolcVersion]:
         """Get all available versions that can be installed.
 
         Returns:
@@ -107,7 +105,7 @@ class VersionManager:
 
         return version
 
-    def resolve_version_strings(self, version_strings: List[str]) -> List[SolcVersion]:
+    def resolve_version_strings(self, version_strings: list[str]) -> list[SolcVersion]:
         """Resolve a list of version strings to SolcVersion objects.
 
         Args:
@@ -128,7 +126,7 @@ class VersionManager:
 
         return versions
 
-    def get_installable_versions(self, installed_versions: List[SolcVersion]) -> List[SolcVersion]:
+    def get_installable_versions(self, installed_versions: list[SolcVersion]) -> list[SolcVersion]:
         """Get versions that can be installed (not already installed).
 
         Args:

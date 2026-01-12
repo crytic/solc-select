@@ -7,7 +7,6 @@ all the other services and provides the main business logic operations.
 
 import subprocess
 import sys
-from typing import List, Optional, Tuple
 
 from ..exceptions import (
     ArchitectureUpgradeError,
@@ -29,7 +28,7 @@ from .version_manager import VersionManager
 class SolcService:
     """Main service facade for solc-select operations."""
 
-    def __init__(self, platform: Optional[Platform] = None):
+    def __init__(self, platform: Platform | None = None):
         if platform is None:
             platform = Platform.current()
 
@@ -41,7 +40,7 @@ class SolcService:
         self.artifact_manager = ArtifactManager(self.repository, platform, self.session)
         self.platform_service = PlatformService(platform)
 
-    def get_current_version(self) -> Tuple[Optional[SolcVersion], str]:
+    def get_current_version(self) -> tuple[SolcVersion | None, str]:
         """Get the current version and its source.
 
         Returns:
@@ -65,16 +64,16 @@ class SolcService:
 
         return version, source
 
-    def get_installed_versions(self) -> List[SolcVersion]:
+    def get_installed_versions(self) -> list[SolcVersion]:
         """Get list of installed versions."""
         return self.artifact_manager.get_installed_versions()
 
-    def get_installable_versions(self) -> List[SolcVersion]:
+    def get_installable_versions(self) -> list[SolcVersion]:
         """Get versions that can be installed."""
         installed = self.get_installed_versions()
         return self.version_manager.get_installable_versions(installed)
 
-    def install_versions(self, version_strings: List[str], silent: bool = False) -> bool:
+    def install_versions(self, version_strings: list[str], silent: bool = False) -> bool:
         """Install one or more versions.
 
         Args:
@@ -180,7 +179,7 @@ class SolcService:
         else:
             print("solc-select is already up to date")
 
-    def execute_solc(self, args: List[str]) -> None:
+    def execute_solc(self, args: list[str]) -> None:
         """Execute solc with the current version.
 
         Args:

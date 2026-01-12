@@ -11,7 +11,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from io import BufferedRandom
 from pathlib import Path
-from typing import List
 from zipfile import ZipFile
 
 import requests
@@ -33,7 +32,7 @@ class ArtifactManager:
         self.platform = platform
         self.session = session
 
-    def get_installed_versions(self) -> List[SolcVersion]:
+    def get_installed_versions(self) -> list[SolcVersion]:
         """Get list of installed versions.
 
         Returns:
@@ -260,7 +259,7 @@ class ArtifactManager:
         # Make executable
         artifact.file_path.chmod(0o775)
 
-    def install_versions(self, versions: List[SolcVersion], silent: bool = False) -> bool:
+    def install_versions(self, versions: list[SolcVersion], silent: bool = False) -> bool:
         """Install multiple versions concurrently.
 
         Args:

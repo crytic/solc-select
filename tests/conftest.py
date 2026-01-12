@@ -8,8 +8,9 @@ threading issues when tests run in parallel.
 import os
 import subprocess
 import sys
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict, Generator
+from typing import Any
 
 import pytest
 
@@ -34,7 +35,7 @@ def isolated_solc_data(
 
 
 @pytest.fixture(scope="function")
-def isolated_python_env(tmp_path: Path) -> Generator[Dict[str, Any], None, None]:
+def isolated_python_env(tmp_path: Path) -> Generator[dict[str, Any], None, None]:
     """
     Create completely isolated Python environment for tests that install/uninstall solc-select.
 
