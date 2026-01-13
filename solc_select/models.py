@@ -40,24 +40,6 @@ class PlatformIdentifier:
         """Return string representation like 'linux-arm64'."""
         return f"{self.os_type}-{self.architecture}"
 
-    @classmethod
-    def parse(cls, platform_str: str) -> "PlatformIdentifier":
-        """Parse string like 'linux-arm64' into PlatformIdentifier.
-
-        Args:
-            platform_str: Platform string in format 'os-arch'
-
-        Returns:
-            PlatformIdentifier instance
-
-        Raises:
-            ValueError: If format is invalid
-        """
-        parts = platform_str.split("-")
-        if len(parts) != 2:
-            raise ValueError(f"Invalid platform string: {platform_str}")
-        return cls(os_type=parts[0], architecture=parts[1])
-
 
 @dataclass(frozen=True)
 class EmulationCapability:
@@ -87,19 +69,6 @@ class PlatformCapability:
     host_platform: PlatformIdentifier  # The actual hardware platform
     native_support: PlatformIdentifier  # Always can run native binaries
     emulation_capabilities: list[EmulationCapability] = field(default_factory=list)
-
-    def can_run_platform(self, target: PlatformIdentifier) -> bool:
-        """Check if this device can run binaries for target platform.
-
-        Args:
-            target: Platform to check
-
-        Returns:
-            True if can run (native or emulated), False otherwise
-        """
-        if target == self.native_support:
-            return True
-        return any(ec.target_platform == target for ec in self.emulation_capabilities)
 
     def get_runnable_platforms(self) -> list[PlatformIdentifier]:
         """Get all platforms this device can execute, prioritized.
@@ -199,7 +168,6 @@ class PlatformSupport:
 
     platform: PlatformIdentifier
     version_range: VersionRange
-    binary_format: str  # 'elf', 'macho', 'pe', 'zip', 'universal-macho'
 
     def supports(self, version: "SolcVersion", target_platform: PlatformIdentifier) -> bool:
         """Check if this support matches version + platform.
@@ -217,8 +185,6 @@ class PlatformSupport:
 @dataclass
 class RepositoryManifest:
     """Declarative manifest of what a repository provides.
-
-    Replaces hardcoded supports_version() logic in repository classes.
 
     Example:
         SOLIDITYLANG_MANIFEST = RepositoryManifest(
@@ -245,21 +211,6 @@ class RepositoryManifest:
             True if repository provides this version/platform combo
         """
         return any(ps.supports(version, platform) for ps in self.platform_supports)
-
-    def get_binary_format(self, version: "SolcVersion", platform: PlatformIdentifier) -> str | None:
-        """Get binary format for this version/platform combo.
-
-        Args:
-            version: Version to check
-            platform: Platform to check
-
-        Returns:
-            Binary format string if supported, None otherwise
-        """
-        for ps in self.platform_supports:
-            if ps.supports(version, platform):
-                return ps.binary_format
-        return None
 
 
 # ========================================

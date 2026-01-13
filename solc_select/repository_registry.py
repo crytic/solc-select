@@ -25,37 +25,31 @@ SOLIDITYLANG_MANIFEST = RepositoryManifest(
         PlatformSupport(
             platform=PlatformIdentifier("linux", "amd64"),
             version_range=VersionRange.from_min("0.4.10"),
-            binary_format="elf",
         ),
         # Linux ARM64 - native ARM64 binaries
         PlatformSupport(
             platform=PlatformIdentifier("linux", "arm64"),
             version_range=VersionRange.from_min("0.8.31"),
-            binary_format="elf",
         ),
         # macOS AMD64 - native x86_64 binaries
         PlatformSupport(
             platform=PlatformIdentifier("darwin", "amd64"),
             version_range=VersionRange.from_min("0.3.6"),
-            binary_format="macho",
         ),
         # macOS ARM64 - universal binaries (0.8.24+)
         PlatformSupport(
             platform=PlatformIdentifier("darwin", "arm64"),
             version_range=VersionRange.from_min("0.8.24"),
-            binary_format="universal-macho",
         ),
         # Windows AMD64 - PE binaries (0.7.2+)
         PlatformSupport(
             platform=PlatformIdentifier("windows", "amd64"),
             version_range=VersionRange.from_min("0.7.2"),
-            binary_format="pe",
         ),
         # Windows AMD64 - ZIP archives (older versions)
         PlatformSupport(
             platform=PlatformIdentifier("windows", "amd64"),
             version_range=VersionRange.exact_range("0.4.1", "0.7.1"),
-            binary_format="zip",
         ),
     ],
     priority=100,  # Highest priority - primary source
@@ -76,7 +70,6 @@ ALLOY_MANIFEST = RepositoryManifest(
         PlatformSupport(
             platform=PlatformIdentifier("darwin", "arm64"),
             version_range=VersionRange.exact_range("0.8.5", "0.8.23"),
-            binary_format="macho",
         ),
     ],
     priority=90,  # Lower than Soliditylang - use Soliditylang when both available
@@ -96,13 +89,11 @@ CRYTIC_MANIFEST = RepositoryManifest(
         PlatformSupport(
             platform=PlatformIdentifier("linux", "amd64"),
             version_range=VersionRange.exact_range("0.4.0", "0.4.10"),
-            binary_format="elf",
         ),
         # Special case: 0.8.18 (missing from Soliditylang)
         PlatformSupport(
             platform=PlatformIdentifier("linux", "amd64"),
             version_range=VersionRange.exact_range("0.8.18", "0.8.18"),
-            binary_format="elf",
         ),
     ],
     priority=10,  # Lowest priority - legacy fallback only
