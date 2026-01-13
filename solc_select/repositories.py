@@ -94,8 +94,8 @@ class SolcRepository:
             version_objs = [SolcVersion.parse(v) for v in versions]
             return max(version_objs)
 
-    def get_download_url(self, version: SolcVersion, artifact_filename: str) -> str:
-        """Get the download URL for a specific version."""
+    def get_download_url(self, artifact_filename: str) -> str:
+        """Get the download URL for a specific artifact."""
         return f"{self.base_url}{artifact_filename}"
 
     def get_checksums(self, version: SolcVersion) -> tuple[str, str | None]:

@@ -294,43 +294,46 @@ class Platform:
     @classmethod
     def current(cls) -> "Platform":
         """Get the current system platform."""
-        if sys.platform == "linux":
-            os_type = "linux"
-        elif sys.platform == "darwin":
-            os_type = "darwin"
-        elif sys.platform in ["win32", "cygwin"]:
-            os_type = "windows"
-        else:
+        os_mapping = {
+            "linux": "linux",
+            "darwin": "darwin",
+            "win32": "windows",
+            "cygwin": "windows",
+        }
+        os_type = os_mapping.get(sys.platform)
+        if os_type is None:
             raise ValueError(f"Unsupported platform: {sys.platform}")
 
-        architecture = cls._get_arch()
-        return cls(os_type=os_type, architecture=architecture)
+        return cls(os_type=os_type, architecture=cls._get_arch())
 
     @staticmethod
     def _get_arch() -> str:
         """Get the current system architecture."""
         machine = platform.machine().lower()
-        if machine in ["x86_64", "amd64"]:
-            return "amd64"
-        elif machine in ["aarch64", "arm64"]:
-            return "arm64"
-        return machine
+        arch_mapping = {
+            "x86_64": "amd64",
+            "amd64": "amd64",
+            "aarch64": "arm64",
+            "arm64": "arm64",
+        }
+        return arch_mapping.get(machine, machine)
 
     def get_soliditylang_key(self) -> str:
         """Get the platform key used by binaries.soliditylang.org."""
-        if self.os_type == "linux" and self.architecture == "amd64":
-            return LINUX_AMD64
-        elif self.os_type == "linux" and self.architecture == "arm64":
-            return LINUX_ARM64
-        elif self.os_type == "darwin" and self.architecture in ["amd64", "arm64"]:
-            # soliditylang.org uses macosx-amd64 for both Intel and ARM (with Rosetta and universal binaries)
-            return MACOSX_AMD64
-        elif self.os_type == "windows" and self.architecture == "amd64":
-            return WINDOWS_AMD64
-        else:
+        # soliditylang.org uses macosx-amd64 for both Intel and ARM (with Rosetta and universal binaries)
+        platform_keys = {
+            ("linux", "amd64"): LINUX_AMD64,
+            ("linux", "arm64"): LINUX_ARM64,
+            ("darwin", "amd64"): MACOSX_AMD64,
+            ("darwin", "arm64"): MACOSX_AMD64,
+            ("windows", "amd64"): WINDOWS_AMD64,
+        }
+        key = platform_keys.get((self.os_type, self.architecture))
+        if key is None:
             raise ValueError(
                 f"Unsupported platform combination: {self.os_type}-{self.architecture}"
             )
+        return key
 
 
 @dataclass(kw_only=True)

@@ -106,7 +106,7 @@ class ArtifactManager:
             raise ValueError(f"Version {version} is not available")
 
         artifact_filename = available[version_str]
-        download_url = repo.get_download_url(version, artifact_filename)
+        download_url = repo.get_download_url(artifact_filename)
         sha256_hash, keccak256_hash = repo.get_checksums(version)
 
         return SolcArtifact(

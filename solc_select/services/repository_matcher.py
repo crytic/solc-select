@@ -184,10 +184,13 @@ class RepositoryMatcher:
             platform_obj = Platform(os_type=platform.os_type, architecture=platform.architecture)
             return SoliditylangRepository(platform_obj, self.session)
 
-        if repository_id == "crytic":
-            return CryticRepository(self.session)
-
-        if repository_id == "alloy":
-            return AlloyRepository(self.session)
+        # Factory functions that only require session
+        factories = {
+            "crytic": CryticRepository,
+            "alloy": AlloyRepository,
+        }
+        factory = factories.get(repository_id)
+        if factory is not None:
+            return factory(self.session)
 
         raise ValueError(f"Unknown repository: {repository_id}")
