@@ -1,6 +1,7 @@
 """Tests for network isolation in solc operations."""
 
 import subprocess
+from typing import Any
 from unittest.mock import Mock, patch
 
 import requests
@@ -9,7 +10,9 @@ import requests
 class TestNetworkIsolation:
     """Test that solc operations don't make unnecessary network requests."""
 
-    def test_solc_version_no_network_calls_after_install(self, isolated_solc_data, monkeypatch):
+    def test_solc_version_no_network_calls_after_install(
+        self, isolated_solc_data: Any, monkeypatch: Any
+    ) -> None:
         """
         Verify that executing solc doesn't make network requests
         in the Python code path from service call to subprocess.run().
@@ -30,7 +33,7 @@ class TestNetworkIsolation:
         # Phase 2: Track network calls and mock subprocess
         network_calls = []
 
-        def track_network_get(self, url, *args, **kwargs):
+        def track_network_get(self: Any, url: str, *args: Any, **kwargs: Any) -> None:
             """Track all network calls and fail immediately."""
             network_calls.append(url)
             raise RuntimeError(f"Unexpected network call to: {url}")
