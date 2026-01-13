@@ -8,9 +8,6 @@ all the other services and provides the main business logic operations.
 import subprocess
 import sys
 
-# Import platform_capabilities to ensure capabilities are registered
-import solc_select.platform_capabilities  # noqa: F401
-
 from ..exceptions import (
     ArchitectureUpgradeError,
     InstallationError,

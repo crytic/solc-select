@@ -8,13 +8,8 @@ repository for a requested version based on platform capabilities and repository
 import requests
 
 from ..exceptions import VersionNotFoundError
-from ..models import (
-    Platform,
-    PlatformCapability,
-    PlatformIdentifier,
-    RepositoryManifest,
-    SolcVersion,
-)
+from ..models import Platform, RepositoryManifest, SolcVersion
+from ..platform_capabilities import PlatformCapability, PlatformIdentifier
 from ..repositories import (
     AlloyRepository,
     CryticRepository,

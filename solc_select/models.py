@@ -7,8 +7,7 @@ the domain concepts of Solidity compiler version management.
 
 import platform
 import sys
-from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
@@ -20,84 +19,13 @@ from .constants import (
     MACOSX_AMD64,
     WINDOWS_AMD64,
 )
-
-# ========================================
-# PLATFORM CAPABILITY MODELS
-# ========================================
-
-
-@dataclass(frozen=True)
-class PlatformIdentifier:
-    """Unique identifier for a platform (OS + architecture).
-
-    Examples: 'linux-amd64', 'darwin-arm64', 'windows-amd64'
-    """
-
-    os_type: str  # 'linux', 'darwin', 'windows'
-    architecture: str  # 'amd64', 'arm64', '386'
-
-
-@dataclass(frozen=True)
-class EmulationCapability:
-    """Describes emulation support for running foreign platform binaries.
-
-    Example: Linux ARM64 can run linux-amd64 binaries via QEMU.
-    """
-
-    target_platform: PlatformIdentifier  # Platform that can be emulated
-    emulation_type: str  # 'rosetta', 'qemu'
-    detector: Callable[[], bool]  # Function to check if emulation available
-    command_prefix: list[str]  # Command prefix for emulation (e.g., ["qemu-x86_64"])
-    performance_note: str | None = None  # Warning message for users
-
-
-@dataclass
-class PlatformCapability:
-    """Declares which platforms a device can execute binaries for.
-
-    Supports both native execution and emulated platforms.
-
-    Example for Linux ARM64 with QEMU:
-        - native_support: linux-arm64
-        - emulation_capabilities: [linux-amd64 via QEMU]
-    """
-
-    host_platform: PlatformIdentifier  # The actual hardware platform
-    native_support: PlatformIdentifier  # Always can run native binaries
-    emulation_capabilities: list[EmulationCapability] = field(default_factory=list)
-
-    def get_runnable_platforms(self) -> list[PlatformIdentifier]:
-        """Get all platforms this device can execute, prioritized.
-
-        Returns native first, then emulated platforms (only if emulator available).
-
-        Returns:
-            List of PlatformIdentifier, native first
-        """
-        platforms = [self.native_support]
-
-        # Add emulated platforms with available emulators
-        for ec in self.emulation_capabilities:
-            if ec.detector():
-                platforms.append(ec.target_platform)
-
-        return platforms
-
-    def get_emulation_for_platform(self, target: PlatformIdentifier) -> EmulationCapability | None:
-        """Get emulation info for a target platform.
-
-        Args:
-            target: Platform to check
-
-        Returns:
-            EmulationCapability if target requires emulation, None if native
-        """
-        if target == self.native_support:
-            return None
-        return next(
-            (ec for ec in self.emulation_capabilities if ec.target_platform == target),
-            None,
-        )
+from .platform_capabilities import (
+    DARWIN_ARM64_CAPABILITY,
+    LINUX_ARM64_CAPABILITY,
+    EmulationCapability,
+    PlatformCapability,
+    PlatformIdentifier,
+)
 
 
 @dataclass(frozen=True)
@@ -242,8 +170,11 @@ class Platform:
     os_type: str  # 'linux', 'darwin', 'windows'
     architecture: str  # 'amd64', 'arm64'
 
-    # Class-level capability registry
-    _capability_registry: ClassVar[dict[str, PlatformCapability]] = {}
+    # Class-level capability registry (hardcoded for darwin-arm64 and linux-arm64)
+    _capability_registry: ClassVar[dict[str, PlatformCapability]] = {
+        "darwin-arm64": DARWIN_ARM64_CAPABILITY,
+        "linux-arm64": LINUX_ARM64_CAPABILITY,
+    }
 
     def __post_init__(self) -> None:
         """Validate platform components."""
@@ -254,16 +185,6 @@ class Platform:
             raise ValueError(f"Invalid OS type: {self.os_type}")
         if self.architecture not in valid_arch:
             raise ValueError(f"Invalid architecture: {self.architecture}")
-
-    @classmethod
-    def register_capability(cls, capability: PlatformCapability) -> None:
-        """Register a platform capability configuration.
-
-        Args:
-            capability: PlatformCapability to register
-        """
-        key = f"{capability.host_platform.os_type}-{capability.host_platform.architecture}"
-        cls._capability_registry[key] = capability
 
     def get_capability(self) -> PlatformCapability:
         """Get the capability declaration for this platform.

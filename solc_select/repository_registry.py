@@ -5,12 +5,8 @@ This module contains declarative manifests for all Solidity compiler repositorie
 specifying what platforms and version ranges each repository supports.
 """
 
-from .models import (
-    PlatformIdentifier,
-    PlatformSupport,
-    RepositoryManifest,
-    VersionRange,
-)
+from .models import PlatformSupport, RepositoryManifest, VersionRange
+from .platform_capabilities import PlatformIdentifier
 
 # ========================================
 # SOLIDITYLANG REPOSITORY (Primary Source)

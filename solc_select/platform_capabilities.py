@@ -6,8 +6,86 @@ including both native execution and emulation support (Rosetta, QEMU).
 """
 
 import subprocess
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
-from .models import EmulationCapability, Platform, PlatformCapability, PlatformIdentifier
+# ========================================
+# CAPABILITY DATACLASSES
+# ========================================
+
+
+@dataclass(frozen=True)
+class PlatformIdentifier:
+    """Unique identifier for a platform (OS + architecture).
+
+    Examples: 'linux-amd64', 'darwin-arm64', 'windows-amd64'
+    """
+
+    os_type: str  # 'linux', 'darwin', 'windows'
+    architecture: str  # 'amd64', 'arm64', '386'
+
+
+@dataclass(frozen=True)
+class EmulationCapability:
+    """Describes emulation support for running foreign platform binaries.
+
+    Example: Linux ARM64 can run linux-amd64 binaries via QEMU.
+    """
+
+    target_platform: PlatformIdentifier  # Platform that can be emulated
+    emulation_type: str  # 'rosetta', 'qemu'
+    detector: Callable[[], bool]  # Function to check if emulation available
+    command_prefix: list[str]  # Command prefix for emulation (e.g., ["qemu-x86_64"])
+    performance_note: str | None = None  # Warning message for users
+
+
+@dataclass
+class PlatformCapability:
+    """Declares which platforms a device can execute binaries for.
+
+    Supports both native execution and emulated platforms.
+
+    Example for Linux ARM64 with QEMU:
+        - native_support: linux-arm64
+        - emulation_capabilities: [linux-amd64 via QEMU]
+    """
+
+    host_platform: PlatformIdentifier  # The actual hardware platform
+    native_support: PlatformIdentifier  # Always can run native binaries
+    emulation_capabilities: list[EmulationCapability] = field(default_factory=list)
+
+    def get_runnable_platforms(self) -> list[PlatformIdentifier]:
+        """Get all platforms this device can execute, prioritized.
+
+        Returns native first, then emulated platforms (only if emulator available).
+
+        Returns:
+            List of PlatformIdentifier, native first
+        """
+        platforms = [self.native_support]
+
+        # Add emulated platforms with available emulators
+        for ec in self.emulation_capabilities:
+            if ec.detector():
+                platforms.append(ec.target_platform)
+
+        return platforms
+
+    def get_emulation_for_platform(self, target: PlatformIdentifier) -> EmulationCapability | None:
+        """Get emulation info for a target platform.
+
+        Args:
+            target: Platform to check
+
+        Returns:
+            EmulationCapability if target requires emulation, None if native
+        """
+        if target == self.native_support:
+            return None
+        return next(
+            (ec for ec in self.emulation_capabilities if ec.target_platform == target),
+            None,
+        )
 
 # ========================================
 # EMULATION DETECTORS
@@ -79,22 +157,3 @@ LINUX_ARM64_CAPABILITY = PlatformCapability(
         ),
     ],
 )
-
-
-# ========================================
-# CAPABILITY REGISTRATION
-# ========================================
-
-
-def register_capabilities() -> None:
-    """Register all platform capabilities with the Platform class.
-
-    This function should be called at module import time to ensure
-    capabilities are available when Platform.get_capability() is called.
-    """
-    Platform.register_capability(DARWIN_ARM64_CAPABILITY)
-    Platform.register_capability(LINUX_ARM64_CAPABILITY)
-
-
-# Auto-register capabilities when module is imported
-register_capabilities()
