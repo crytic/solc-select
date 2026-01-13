@@ -18,17 +18,30 @@ from Crypto.Hash import keccak
 
 from ..constants import ARTIFACTS_DIR
 from ..exceptions import ChecksumMismatchError, SolcSelectError
-from ..models import Platform, SolcArtifact, SolcVersion
-from ..repositories import CompositeRepository
+from ..models import Platform, PlatformCapability, SolcArtifact, SolcVersion
+from .repository_matcher import RepositoryMatcher
 
 
 class ArtifactManager:
     """Service for managing Solidity compiler artifacts."""
 
     def __init__(
-        self, repository: CompositeRepository, platform: Platform, session: requests.Session
+        self,
+        repository_matcher: RepositoryMatcher,
+        platform_capability: PlatformCapability,
+        platform: Platform,
+        session: requests.Session,
     ):
-        self.repository = repository
+        """Initialize artifact manager.
+
+        Args:
+            repository_matcher: Repository matcher for finding versions
+            platform_capability: Platform capability for emulation info
+            platform: Current platform
+            session: HTTP session for downloads
+        """
+        self.repository_matcher = repository_matcher
+        self.platform_capability = platform_capability
         self.platform = platform
         self.session = session
 
@@ -101,13 +114,14 @@ class ArtifactManager:
             version: Version to create metadata for
 
         Returns:
-            SolcArtifact with download information
+            SolcArtifact with download information and emulation info
 
         Raises:
             ValueError: If version is not available
+            VersionNotFoundError: If no repository provides this version
         """
-        # Get the appropriate repository for this version
-        repo = self.repository.get_repository_for_version(version)
+        # Get the best repository and target platform for this version
+        repo, target_platform = self.repository_matcher.find_repository_for_version(version)
 
         # Get available versions to find the artifact filename
         available = repo.available_versions
@@ -122,6 +136,9 @@ class ArtifactManager:
 
         binary_path = self.get_binary_path(version)
 
+        # Get emulation info if needed (target_platform differs from host)
+        emulation = self.platform_capability.get_emulation_for_platform(target_platform)
+
         return SolcArtifact(
             version=version,
             platform=self.platform,
@@ -129,6 +146,7 @@ class ArtifactManager:
             checksum_sha256=sha256_hash,
             checksum_keccak256=keccak256_hash,
             file_path=binary_path,
+            emulation=emulation,
         )
 
     def verify_checksum(self, artifact: SolcArtifact, file_handle: BufferedRandom) -> None:

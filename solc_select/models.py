@@ -6,20 +6,274 @@ the domain concepts of Solidity compiler version management.
 """
 
 import platform
-import subprocess
 import sys
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import ClassVar
 
 from packaging.version import Version
 
 from .constants import (
-    EARLIEST_RELEASE_OS,
     LINUX_AMD64,
     LINUX_ARM64,
     MACOSX_AMD64,
     WINDOWS_AMD64,
 )
+
+
+# ========================================
+# PLATFORM CAPABILITY MODELS
+# ========================================
+
+
+@dataclass(frozen=True)
+class PlatformIdentifier:
+    """Unique identifier for a platform (OS + architecture).
+
+    Examples: 'linux-amd64', 'darwin-arm64', 'windows-amd64'
+    """
+
+    os_type: str  # 'linux', 'darwin', 'windows'
+    architecture: str  # 'amd64', 'arm64', '386'
+
+    def __str__(self) -> str:
+        """Return string representation like 'linux-arm64'."""
+        return f"{self.os_type}-{self.architecture}"
+
+    @classmethod
+    def parse(cls, platform_str: str) -> "PlatformIdentifier":
+        """Parse string like 'linux-arm64' into PlatformIdentifier.
+
+        Args:
+            platform_str: Platform string in format 'os-arch'
+
+        Returns:
+            PlatformIdentifier instance
+
+        Raises:
+            ValueError: If format is invalid
+        """
+        parts = platform_str.split("-")
+        if len(parts) != 2:
+            raise ValueError(f"Invalid platform string: {platform_str}")
+        return cls(os_type=parts[0], architecture=parts[1])
+
+
+@dataclass(frozen=True)
+class EmulationCapability:
+    """Describes emulation support for running foreign platform binaries.
+
+    Example: Linux ARM64 can run linux-amd64 binaries via QEMU.
+    """
+
+    target_platform: PlatformIdentifier  # Platform that can be emulated
+    emulation_type: str  # 'rosetta', 'qemu'
+    detector: Callable[[], bool]  # Function to check if emulation available
+    command_prefix: list[str]  # Command prefix for emulation (e.g., ["qemu-x86_64"])
+    performance_note: str | None = None  # Warning message for users
+
+
+@dataclass
+class PlatformCapability:
+    """Declares which platforms a device can execute binaries for.
+
+    Supports both native execution and emulated platforms.
+
+    Example for Linux ARM64 with QEMU:
+        - native_support: linux-arm64
+        - emulation_capabilities: [linux-amd64 via QEMU]
+    """
+
+    host_platform: PlatformIdentifier  # The actual hardware platform
+    native_support: PlatformIdentifier  # Always can run native binaries
+    emulation_capabilities: list[EmulationCapability] = field(default_factory=list)
+
+    def can_run_platform(self, target: PlatformIdentifier) -> bool:
+        """Check if this device can run binaries for target platform.
+
+        Args:
+            target: Platform to check
+
+        Returns:
+            True if can run (native or emulated), False otherwise
+        """
+        if target == self.native_support:
+            return True
+        return any(ec.target_platform == target for ec in self.emulation_capabilities)
+
+    def get_runnable_platforms(self) -> list[PlatformIdentifier]:
+        """Get all platforms this device can execute, prioritized.
+
+        Returns native first, then emulated platforms (only if emulator available).
+
+        Returns:
+            List of PlatformIdentifier, native first
+        """
+        platforms = [self.native_support]
+
+        # Add emulated platforms with available emulators
+        for ec in self.emulation_capabilities:
+            if ec.detector():
+                platforms.append(ec.target_platform)
+
+        return platforms
+
+    def get_emulation_for_platform(
+        self, target: PlatformIdentifier
+    ) -> EmulationCapability | None:
+        """Get emulation info for a target platform.
+
+        Args:
+            target: Platform to check
+
+        Returns:
+            EmulationCapability if target requires emulation, None if native
+        """
+        if target == self.native_support:
+            return None
+        return next(
+            (ec for ec in self.emulation_capabilities if ec.target_platform == target),
+            None,
+        )
+
+
+@dataclass(frozen=True)
+class VersionRange:
+    """Inclusive version range [min, max].
+
+    None means unbounded in that direction.
+    """
+
+    min_version: "SolcVersion | None" = None  # None = no lower bound
+    max_version: "SolcVersion | None" = None  # None = no upper bound
+
+    def contains(self, version: "SolcVersion") -> bool:
+        """Check if version is within range (inclusive).
+
+        Args:
+            version: Version to check
+
+        Returns:
+            True if version is in [min, max], False otherwise
+        """
+        if self.min_version and version < self.min_version:
+            return False
+        if self.max_version and version > self.max_version:
+            return False
+        return True
+
+    @classmethod
+    def from_min(cls, min_ver: str) -> "VersionRange":
+        """Create range with only minimum version.
+
+        Args:
+            min_ver: Minimum version string
+
+        Returns:
+            VersionRange from min_ver to infinity
+        """
+        # Import here to avoid circular import
+        return cls(min_version=SolcVersion.parse(min_ver), max_version=None)
+
+    @classmethod
+    def exact_range(cls, min_ver: str, max_ver: str) -> "VersionRange":
+        """Create exact range [min, max].
+
+        Args:
+            min_ver: Minimum version string
+            max_ver: Maximum version string
+
+        Returns:
+            VersionRange from min_ver to max_ver (inclusive)
+        """
+        return cls(
+            min_version=SolcVersion.parse(min_ver),
+            max_version=SolcVersion.parse(max_ver),
+        )
+
+
+@dataclass(frozen=True)
+class PlatformSupport:
+    """Declares what versions a repository provides for a specific platform.
+
+    Example: Soliditylang provides linux-amd64 binaries from version 0.4.10+
+    """
+
+    platform: PlatformIdentifier
+    version_range: VersionRange
+    binary_format: str  # 'elf', 'macho', 'pe', 'zip', 'universal-macho'
+
+    def supports(
+        self, version: "SolcVersion", target_platform: PlatformIdentifier
+    ) -> bool:
+        """Check if this support matches version + platform.
+
+        Args:
+            version: Version to check
+            target_platform: Platform to check
+
+        Returns:
+            True if this support provides the version for the platform
+        """
+        return self.platform == target_platform and self.version_range.contains(version)
+
+
+@dataclass
+class RepositoryManifest:
+    """Declarative manifest of what a repository provides.
+
+    Replaces hardcoded supports_version() logic in repository classes.
+
+    Example:
+        SOLIDITYLANG_MANIFEST = RepositoryManifest(
+            repository_id="soliditylang",
+            base_url="https://binaries.soliditylang.org",
+            platform_supports=[...],
+            priority=100,
+        )
+    """
+
+    repository_id: str  # 'soliditylang', 'crytic', 'alloy'
+    base_url: str
+    platform_supports: list[PlatformSupport]
+    priority: int = 50  # Higher = checked first (100=primary, 50=fallback, 10=legacy)
+
+    def supports_version(
+        self, version: "SolcVersion", platform: PlatformIdentifier
+    ) -> bool:
+        """Check if this repository can provide version for platform.
+
+        Args:
+            version: Version to check
+            platform: Platform to check
+
+        Returns:
+            True if repository provides this version/platform combo
+        """
+        return any(ps.supports(version, platform) for ps in self.platform_supports)
+
+    def get_binary_format(
+        self, version: "SolcVersion", platform: PlatformIdentifier
+    ) -> str | None:
+        """Get binary format for this version/platform combo.
+
+        Args:
+            version: Version to check
+            platform: Platform to check
+
+        Returns:
+            Binary format string if supported, None otherwise
+        """
+        for ps in self.platform_supports:
+            if ps.supports(version, platform):
+                return ps.binary_format
+        return None
+
+
+# ========================================
+# VERSION MODELS
+# ========================================
 
 
 class SolcVersion(Version):
@@ -44,22 +298,6 @@ class SolcVersion(Version):
         # Let packaging.Version handle the parsing and validation
         return cls(version_str)
 
-    def is_compatible_with_platform(self, platform: "Platform") -> bool:
-        """Check if this version is compatible with the given platform.
-
-        Args:
-            platform: The target platform
-
-        Returns:
-            True if compatible, False otherwise
-        """
-        platform_key = platform.os_type
-        if platform_key not in EARLIEST_RELEASE_OS:
-            return False
-
-        earliest = Version(EARLIEST_RELEASE_OS[platform_key])
-        return self >= earliest
-
 
 @dataclass(frozen=True)
 class Platform:
@@ -67,6 +305,9 @@ class Platform:
 
     os_type: str  # 'linux', 'darwin', 'windows'
     architecture: str  # 'amd64', 'arm64'
+
+    # Class-level capability registry
+    _capability_registry: ClassVar[dict[str, PlatformCapability]] = {}
 
     def __post_init__(self) -> None:
         """Validate platform components."""
@@ -77,6 +318,38 @@ class Platform:
             raise ValueError(f"Invalid OS type: {self.os_type}")
         if self.architecture not in valid_arch:
             raise ValueError(f"Invalid architecture: {self.architecture}")
+
+    @classmethod
+    def register_capability(cls, capability: PlatformCapability) -> None:
+        """Register a platform capability configuration.
+
+        Args:
+            capability: PlatformCapability to register
+        """
+        key = f"{capability.host_platform.os_type}-{capability.host_platform.architecture}"
+        cls._capability_registry[key] = capability
+
+    def get_capability(self) -> PlatformCapability:
+        """Get the capability declaration for this platform.
+
+        Returns:
+            PlatformCapability for this platform (default if not registered)
+        """
+        key = f"{self.os_type}-{self.architecture}"
+        return self._capability_registry.get(key, self._create_default_capability())
+
+    def _create_default_capability(self) -> PlatformCapability:
+        """Create default capability (native-only, no emulation).
+
+        Returns:
+            PlatformCapability with only native support
+        """
+        platform_id = PlatformIdentifier(self.os_type, self.architecture)
+        return PlatformCapability(
+            host_platform=platform_id,
+            native_support=platform_id,
+            emulation_capabilities=[],
+        )
 
     # ========================================
     # CORE PLATFORM DETECTION
@@ -125,145 +398,6 @@ class Platform:
                 f"Unsupported platform combination: {self.os_type}-{self.architecture}"
             )
 
-    # ========================================
-    # EMULATION CAPABILITIES
-    # ========================================
-
-    def has_rosetta(self) -> bool:
-        """Check if Rosetta 2 is available on macOS ARM64."""
-        if self.os_type != "darwin" or self.architecture != "arm64":
-            return False
-
-        # Check if oahd (Rosetta daemon) is running
-        try:
-            result = subprocess.run(["pgrep", "-q", "oahd"], capture_output=True, check=False)
-            return result.returncode == 0
-        except (FileNotFoundError, OSError):
-            return False
-
-    def has_qemu(self) -> bool:
-        """Check if qemu-x86_64 is available on Linux ARM64."""
-        if self.os_type != "linux" or self.architecture != "arm64":
-            return False
-
-        try:
-            result = subprocess.run(
-                ["which", "qemu-x86_64"], capture_output=True, text=True, check=False
-            )
-            return result.returncode == 0
-        except (FileNotFoundError, OSError):
-            return False
-
-    # ========================================
-    # BINARY COMPATIBILITY
-    # ========================================
-
-    def can_run_binary(self, binary_path: Path) -> bool:
-        """Check if we can run a binary on this platform.
-
-        Args:
-            binary_path: Path to the binary
-
-        Returns:
-            True if binary can be executed, False otherwise
-        """
-        if not binary_path.exists():
-            return False
-
-        # Native architecture can always run
-        if self.architecture == "amd64":
-            return True
-
-        # ARM64 platforms need special handling
-        if self.architecture == "arm64":
-            if self.os_type == "darwin":
-                return self._can_run_darwin_binary(binary_path)
-            elif self.os_type == "linux":
-                return self._can_run_linux_binary(binary_path)
-            else:
-                raise Exception("Unexpected arm64 OS")
-
-        return True
-
-    def _can_run_darwin_binary(self, binary_path: Path) -> bool:
-        """Check if we can run a binary on macOS ARM64.
-
-        Handles universal binaries, native ARM64 binaries, and Rosetta emulation.
-        """
-        # If Rosetta is available, we can run anything
-        if self.has_rosetta():
-            return True
-
-        # Check if it's a universal binary (works natively)
-        if self._mac_binary_is_universal(binary_path):
-            return True
-
-        # Check if it's native ARM64
-        return self._mac_binary_is_native(binary_path)
-
-    def _can_run_linux_binary(self, binary_path: Path) -> bool:
-        """Check if we can run a binary on Linux ARM64.
-
-        Handles native ARM64 binaries, and QEMU emulation.
-        """
-        # If QEMU is available, we can run anything
-        if self.has_qemu():
-            return True
-
-        # Check if it's native ARM64
-        return self._linux_binary_is_native(binary_path)
-
-    # ========================================
-    # PRIVATE HELPERS
-    # ========================================
-
-    def _mac_binary_is_universal(self, path: Path) -> bool:
-        """Check if the Mac binary is Universal or not."""
-        if self.os_type != "darwin":
-            return False
-
-        try:
-            result = subprocess.run(["/usr/bin/file", str(path)], capture_output=True, check=False)
-            if result.returncode != 0:
-                return False
-
-            output = result.stdout.decode()
-            return all(text in output for text in ("Mach-O universal binary", "x86_64", "arm64"))
-        except (FileNotFoundError, OSError):
-            return False
-
-    def _mac_binary_is_native(self, path: Path) -> bool:
-        """Check if the Mac binary matches the current system architecture."""
-        if self.os_type != "darwin":
-            return False
-
-        try:
-            result = subprocess.run(["/usr/bin/file", str(path)], capture_output=True, check=False)
-            if result.returncode != 0:
-                return False
-
-            output = result.stdout.decode()
-            arch_in_file = "arm64" if self.architecture == "arm64" else "x86_64"
-            return "Mach-O" in output and arch_in_file in output
-        except (FileNotFoundError, OSError):
-            return False
-
-    def _linux_binary_is_native(self, path: Path) -> bool:
-        """Check if the Linux binary matches the current system architecture."""
-        if self.os_type != "linux":
-            return False
-
-        try:
-            result = subprocess.run(["/usr/bin/file", str(path)], capture_output=True, check=False)
-            if result.returncode != 0:
-                return False
-
-            output = result.stdout.decode()
-            arch_in_file = "aarch64" if self.architecture == "arm64" else "x86-64"
-            return "ELF" in output and arch_in_file in output
-        except (FileNotFoundError, OSError):
-            return False
-
 
 @dataclass
 class SolcArtifact:
@@ -275,6 +409,7 @@ class SolcArtifact:
     checksum_sha256: str
     checksum_keccak256: str | None
     file_path: Path
+    emulation: EmulationCapability | None = None  # Emulation info if not native
 
     def __post_init__(self) -> None:
         """Validate artifact properties."""

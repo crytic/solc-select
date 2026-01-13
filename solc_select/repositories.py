@@ -7,23 +7,20 @@ and artifacts from different sources (soliditylang.org, crytic, alloy, etc.).
 
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import requests
-from packaging.version import Version
 
 from .constants import (
-    ALLOY_ARM64_MAX_VERSION,
-    ALLOY_ARM64_MIN_VERSION,
     ALLOY_SOLC_ARTIFACTS,
     ALLOY_SOLC_JSON,
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
-    EARLIEST_RELEASE,
-    EARLIEST_RELEASE_OS,
-    LINUX_AMD64,
 )
-from .models import Platform, SolcVersion
+from .models import SolcVersion
+
+if TYPE_CHECKING:
+    from .models import Platform
 
 
 class AbstractSolcRepository(ABC):
@@ -112,21 +109,33 @@ class AbstractSolcRepository(ABC):
 
         return sha256_hash, keccak256_hash
 
-    @abstractmethod
-    def supports_version(self, version: SolcVersion, platform: Platform) -> bool:
-        """Check if this repository supports the given version on the platform."""
-        pass
 
+class GenericRepository(AbstractSolcRepository):
+    """Generic repository implementation that works with any URL configuration.
 
-class SoliditylangRepository(AbstractSolcRepository):
-    """Repository for binaries.soliditylang.org - the main Solidity releases."""
+    This replaces the specific repository classes (Soliditylang, Crytic, Alloy)
+    with a single implementation driven by manifest configuration.
+    """
 
-    def __init__(self, platform: Platform, session: requests.Session) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        list_url: str,
+        session: requests.Session,
+        has_latest_release: bool = False,
+    ):
+        """Initialize generic repository.
+
+        Args:
+            base_url: Base URL for downloading artifacts
+            list_url: URL for the list.json file
+            session: HTTP session for requests
+            has_latest_release: Whether list.json has a "latestRelease" field
+        """
         super().__init__(session)
-        self.platform = platform
-        platform_key = platform.get_soliditylang_key()
-        self._base_url = f"https://binaries.soliditylang.org/{platform_key}/"
-        self._list_url = f"https://binaries.soliditylang.org/{platform_key}/list.json"
+        self._base_url = base_url
+        self._list_url = list_url
+        self._has_latest_release = has_latest_release
 
     @property
     def base_url(self) -> str:
@@ -136,150 +145,59 @@ class SoliditylangRepository(AbstractSolcRepository):
     def list_url(self) -> str:
         return self._list_url
 
-    def supports_version(self, version: SolcVersion, platform: Platform) -> bool:
-        """Check if this repository supports the version on the platform."""
-        platform_key = platform.get_soliditylang_key()
-        if platform_key not in EARLIEST_RELEASE:
-            return False
-
-        earliest = Version(EARLIEST_RELEASE[platform_key])
-        return version >= earliest
-
     @property
     @lru_cache(maxsize=5)  # noqa: B019
     def latest_version(self) -> SolcVersion:
         """Get the latest available version."""
-        list_data = self._fetch_list_json()
-        latest_str = list_data["latestRelease"]
-        return SolcVersion.parse(latest_str)
+        if self._has_latest_release:
+            # Soliditylang repositories have a latestRelease field
+            list_data = self._fetch_list_json()
+            latest_str = list_data["latestRelease"]
+            return SolcVersion.parse(latest_str)
+        else:
+            # For other repositories, compute from available versions
+            return super().latest_version
 
 
-class CryticRepository(AbstractSolcRepository):
-    """Repository for crytic/solc - provides additional Linux versions."""
-
-    def __init__(self, session: requests.Session) -> None:
-        super().__init__(session)
-
-    @property
-    def base_url(self) -> str:
-        return CRYTIC_SOLC_ARTIFACTS
-
-    @property
-    def list_url(self) -> str:
-        return CRYTIC_SOLC_JSON
-
-    def supports_version(self, version: SolcVersion, platform: Platform) -> bool:
-        """Check if this repository supports the version."""
-        # Special case: version 0.8.18 is supported
-        if version == Version("0.8.18"):
-            return True
-
-        # General case: versions <= 0.4.10 for Linux
-        earliest = Version(EARLIEST_RELEASE_OS["linux"])
-        return version <= Version("0.4.10") and version >= earliest
+# Legacy repository class names kept for backward compatibility
+# but they now just create GenericRepository instances
 
 
-class AlloyRepository(AbstractSolcRepository):
-    """Repository for alloy-rs/solc-builds - provides native ARM64 Darwin binaries."""
+def SoliditylangRepository(platform: "Platform", session: requests.Session) -> GenericRepository:
+    """Create a Soliditylang repository for the given platform.
 
-    def __init__(self, session: requests.Session) -> None:
-        super().__init__(session)
-
-    @property
-    def base_url(self) -> str:
-        return ALLOY_SOLC_ARTIFACTS
-
-    @property
-    def list_url(self) -> str:
-        return ALLOY_SOLC_JSON
-
-    def _filter_versions(self, releases: dict[str, str]) -> dict[str, str]:
-        """Filter to only include versions in the supported ARM64 range."""
-        min_version = Version(ALLOY_ARM64_MIN_VERSION)
-        max_version = Version(ALLOY_ARM64_MAX_VERSION)
-
-        return {
-            version: release
-            for version, release in releases.items()
-            if min_version <= Version(version) <= max_version
-        }
-
-    def supports_version(self, version: SolcVersion, platform: Platform) -> bool:
-        """Check if this repository supports the version."""
-        # Only for Darwin ARM64
-        if not (platform.os_type == "darwin" and platform.architecture == "arm64"):
-            return False
-
-        min_version = Version(ALLOY_ARM64_MIN_VERSION)
-        max_version = Version(ALLOY_ARM64_MAX_VERSION)
-
-        return min_version <= version <= max_version
+    Note: This is now a factory function, not a class.
+    """
+    platform_key = platform.get_soliditylang_key()
+    return GenericRepository(
+        base_url=f"https://binaries.soliditylang.org/{platform_key}/",
+        list_url=f"https://binaries.soliditylang.org/{platform_key}/list.json",
+        session=session,
+        has_latest_release=True,
+    )
 
 
-class CompositeRepository:
-    """Composite repository that manages multiple underlying repositories."""
+def CryticRepository(session: requests.Session) -> GenericRepository:
+    """Create a Crytic repository.
 
-    def __init__(self, platform: Platform, session: requests.Session):
-        self.platform = platform
-        self.repositories: list[AbstractSolcRepository] = []
+    Note: This is now a factory function, not a class.
+    """
+    return GenericRepository(
+        base_url=CRYTIC_SOLC_ARTIFACTS,
+        list_url=CRYTIC_SOLC_JSON,
+        session=session,
+        has_latest_release=False,
+    )
 
-        # Linux ARM64: Add x86_64 fallback first
-        if platform.os_type == "linux" and platform.architecture == "arm64":
-            # The main soliditylang repository (line 226) already handles native ARM64
-            # Just add x86_64 fallback for older versions (via QEMU emulation)
-            x86_platform = Platform(os_type="linux", architecture="amd64")
-            self.repositories.append(SoliditylangRepository(x86_platform, session))
 
-        # Always include the main soliditylang repository
-        self.repositories.append(SoliditylangRepository(platform, session))
+def AlloyRepository(session: requests.Session) -> GenericRepository:
+    """Create an Alloy repository.
 
-        # Add platform-specific repositories
-        if platform.os_type == "linux":
-            self.repositories.append(CryticRepository(session))
-
-        if platform.os_type == "darwin" and platform.architecture == "arm64":
-            self.repositories.append(AlloyRepository(session))
-
-    @property
-    @lru_cache(maxsize=5)  # noqa: B019
-    def available_versions(self) -> dict[str, str]:
-        """Get all available versions from all repositories."""
-        all_versions = {}
-
-        for repo in self.repositories:
-            try:
-                versions = repo.available_versions
-                all_versions.update(versions)
-            except requests.RequestException:
-                # Continue if one repository fails
-                continue
-
-        return all_versions
-
-    @property
-    @lru_cache(maxsize=5)  # noqa: B019
-    def latest_version(self) -> SolcVersion:
-        """Get the latest version across all repositories."""
-        latest_versions = []
-
-        for repo in self.repositories:
-            try:
-                latest_versions.append(repo.latest_version)
-            except (ValueError, requests.RequestException):
-                # Continue if one repository fails
-                continue
-
-        if not latest_versions:
-            raise ValueError("No versions available from any repository")
-
-        return max(latest_versions)
-
-    def get_repository_for_version(self, version: SolcVersion) -> AbstractSolcRepository:
-        """Get the appropriate repository for a specific version."""
-        # Check for platform-specific repositories
-        for repo in reversed(self.repositories):  # Check specialized repos first
-            if repo.supports_version(version, self.platform):
-                return repo
-
-        # Fallback to main soliditylang repository
-        return self.repositories[0]
+    Note: This is now a factory function, not a class.
+    """
+    return GenericRepository(
+        base_url=ALLOY_SOLC_ARTIFACTS,
+        list_url=ALLOY_SOLC_JSON,
+        session=session,
+        has_latest_release=False,
+    )

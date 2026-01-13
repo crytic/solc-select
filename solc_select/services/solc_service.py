@@ -8,6 +8,9 @@ all the other services and provides the main business logic operations.
 import subprocess
 import sys
 
+# Import platform_capabilities to ensure capabilities are registered
+import solc_select.platform_capabilities  # noqa: F401
+
 from ..exceptions import (
     ArchitectureUpgradeError,
     InstallationError,
@@ -19,9 +22,10 @@ from ..exceptions import (
 from ..infrastructure.filesystem import FilesystemManager
 from ..infrastructure.http_client import create_http_session
 from ..models import Platform, SolcVersion
-from ..repositories import CompositeRepository
+from ..repository_registry import REPOSITORY_REGISTRY
 from .artifact_manager import ArtifactManager
 from .platform_service import PlatformService
+from .repository_matcher import RepositoryMatcher
 from .version_manager import VersionManager
 
 
@@ -29,15 +33,29 @@ class SolcService:
     """Main service facade for solc-select operations."""
 
     def __init__(self, platform: Platform | None = None):
+        """Initialize SolcService.
+
+        Args:
+            platform: Platform to use (defaults to current platform)
+        """
         if platform is None:
             platform = Platform.current()
 
         self.platform = platform
         self.filesystem = FilesystemManager()
         self.session = create_http_session()
-        self.repository = CompositeRepository(platform, self.session)
-        self.version_manager = VersionManager(self.repository, platform)
-        self.artifact_manager = ArtifactManager(self.repository, platform, self.session)
+
+        # Get platform capability and create repository matcher
+        self.platform_capability = platform.get_capability()
+        self.repository_matcher = RepositoryMatcher(
+            self.platform_capability, REPOSITORY_REGISTRY, self.session
+        )
+
+        # Initialize service dependencies
+        self.version_manager = VersionManager(self.repository_matcher, platform)
+        self.artifact_manager = ArtifactManager(
+            self.repository_matcher, self.platform_capability, platform, self.session
+        )
         self.platform_service = PlatformService(platform)
 
     def get_current_version(self) -> tuple[SolcVersion | None, str]:
@@ -203,15 +221,18 @@ class SolcService:
 
         binary_path = self.filesystem.get_binary_path(version)
 
+        # Get artifact metadata for emulation info
+        artifact = self.artifact_manager.create_artifact_metadata(version)
+
         # Validate binary compatibility
         try:
-            self.platform_service.validate_binary_compatibility(binary_path, version)
+            self.platform_service.validate_binary_compatibility(binary_path, artifact)
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
 
-        # Get emulation prefix if needed
-        emulation_prefix = self.platform_service.get_emulation_prefix()
+        # Get emulation prefix from artifact
+        emulation_prefix = self.platform_service.get_emulation_prefix(artifact)
 
         # Execute solc
         cmd = emulation_prefix + [str(binary_path)] + args

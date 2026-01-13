@@ -1,0 +1,192 @@
+"""
+Repository matching service for solc-select.
+
+This module implements the declarative matching algorithm that finds the best
+repository for a requested version based on platform capabilities and repository manifests.
+"""
+
+import requests
+
+from ..exceptions import VersionNotFoundError
+from ..models import (
+    PlatformCapability,
+    PlatformIdentifier,
+    RepositoryManifest,
+    SolcVersion,
+)
+from ..repositories import (
+    AbstractSolcRepository,
+    AlloyRepository,
+    CryticRepository,
+    SoliditylangRepository,
+)
+
+
+class RepositoryMatcher:
+    """
+    Matches version requests to appropriate repositories based on platform capabilities.
+
+    Replaces the conditional logic in CompositeRepository with declarative matching
+    using repository manifests and platform capabilities.
+
+    Example:
+        capability = platform.get_capability()
+        matcher = RepositoryMatcher(capability, REPOSITORY_REGISTRY, session)
+        repo, target_platform = matcher.find_repository_for_version(version)
+    """
+
+    def __init__(
+        self,
+        platform_capability: PlatformCapability,
+        manifests: list[RepositoryManifest],
+        session: requests.Session,
+    ):
+        """Initialize the repository matcher.
+
+        Args:
+            platform_capability: Platform capability declaration
+            manifests: List of repository manifests to search
+            session: HTTP session for repository requests
+        """
+        self.platform_capability = platform_capability
+        # Sort manifests by priority (highest first)
+        self.manifests = sorted(manifests, key=lambda m: m.priority, reverse=True)
+        self.session = session
+        self._repository_cache: dict[str, AbstractSolcRepository] = {}
+
+    def find_repository_for_version(
+        self,
+        version: SolcVersion,
+    ) -> tuple[AbstractSolcRepository, PlatformIdentifier]:
+        """Find the best repository for a version.
+
+        Uses declarative matching algorithm:
+        1. Get runnable platforms from capability (native first, then emulated)
+        2. For each runnable platform:
+           3. For each manifest (sorted by priority):
+              4. If manifest supports (version, platform):
+                 5. Return (repository, target_platform)
+
+        Args:
+            version: Version to find
+
+        Returns:
+            Tuple of (repository, target_platform) where target_platform indicates
+            which platform binary will be used (may differ from host if emulated)
+
+        Raises:
+            VersionNotFoundError: If no repository provides this version
+        """
+        runnable_platforms = self.platform_capability.get_runnable_platforms()
+
+        # Try each runnable platform in priority order (native first)
+        for target_platform in runnable_platforms:
+            # Try each manifest for this platform (sorted by priority)
+            for manifest in self.manifests:
+                if manifest.supports_version(version, target_platform):
+                    repo = self._get_or_create_repository(manifest, target_platform)
+                    return repo, target_platform
+
+        # No repository found
+        platform_list = ", ".join(str(p) for p in runnable_platforms)
+        raise VersionNotFoundError(
+            str(version),
+            available_versions=[],
+            suggestion=f"No repository provides {version} for platforms: {platform_list}",
+        )
+
+    def get_all_available_versions(
+        self,
+    ) -> dict[SolcVersion, tuple[RepositoryManifest, PlatformIdentifier]]:
+        """Get all versions available across all repositories and runnable platforms.
+
+        Returns:
+            Dict mapping version to (manifest, platform) tuple.
+            If multiple repos provide a version, higher priority manifest wins.
+        """
+        available: dict[SolcVersion, tuple[RepositoryManifest, PlatformIdentifier]] = {}
+        runnable_platforms = self.platform_capability.get_runnable_platforms()
+
+        # Iterate through platforms and manifests in priority order
+        for target_platform in runnable_platforms:
+            for manifest in self.manifests:
+                repo = self._get_or_create_repository(manifest, target_platform)
+
+                # Fetch versions from repository
+                try:
+                    versions = repo.available_versions
+                    for version_str in versions:
+                        try:
+                            version = SolcVersion.parse(version_str)
+                            # Only add if manifest supports this combination
+                            if manifest.supports_version(version, target_platform):
+                                # Prefer higher priority manifests (already sorted)
+                                if version not in available:
+                                    available[version] = (manifest, target_platform)
+                        except ValueError:
+                            # Skip invalid version strings
+                            continue
+                except requests.RequestException:
+                    # Continue if one repository fails
+                    continue
+
+        return available
+
+    def _get_or_create_repository(
+        self,
+        manifest: RepositoryManifest,
+        platform: PlatformIdentifier,
+    ) -> AbstractSolcRepository:
+        """Get or create repository instance for manifest + platform.
+
+        Args:
+            manifest: Repository manifest
+            platform: Target platform
+
+        Returns:
+            Repository instance
+
+        Raises:
+            ValueError: If repository_id is unknown
+        """
+        cache_key = f"{manifest.repository_id}:{platform}"
+
+        if cache_key not in self._repository_cache:
+            repo = self._create_repository_from_manifest(manifest, platform)
+            self._repository_cache[cache_key] = repo
+
+        return self._repository_cache[cache_key]
+
+    def _create_repository_from_manifest(
+        self,
+        manifest: RepositoryManifest,
+        platform: PlatformIdentifier,
+    ) -> AbstractSolcRepository:
+        """Create repository instance from manifest.
+
+        Factory method that instantiates the appropriate repository class
+        based on the manifest's repository_id.
+
+        Args:
+            manifest: Repository manifest
+            platform: Target platform
+
+        Returns:
+            Repository instance
+
+        Raises:
+            ValueError: If repository_id is unknown
+        """
+        # Import Platform here to avoid circular import
+        from ..models import Platform
+
+        if manifest.repository_id == "soliditylang":
+            # SoliditylangRepository needs a Platform object
+            platform_obj = Platform(os_type=platform.os_type, architecture=platform.architecture)
+            return SoliditylangRepository(platform_obj, self.session)
+        elif manifest.repository_id == "crytic":
+            return CryticRepository(self.session)
+        elif manifest.repository_id == "alloy":
+            return AlloyRepository(self.session)
+        else:
+            raise ValueError(f"Unknown repository: {manifest.repository_id}")

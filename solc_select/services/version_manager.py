@@ -4,43 +4,36 @@ Version management service for solc-select.
 This module handles validation, resolution, and management of Solidity compiler versions.
 """
 
-from ..constants import EARLIEST_RELEASE
 from ..exceptions import (
-    PlatformNotSupportedError,
     VersionNotFoundError,
     VersionResolutionError,
 )
 from ..models import Platform, SolcVersion
-from ..repositories import CompositeRepository
+from .repository_matcher import RepositoryMatcher
 
 
 class VersionManager:
     """Service for managing Solidity compiler versions."""
 
-    def __init__(self, repository: CompositeRepository, platform: Platform):
-        self.repository = repository
+    def __init__(self, repository_matcher: RepositoryMatcher, platform: Platform):
+        """Initialize version manager.
+
+        Args:
+            repository_matcher: Repository matcher for finding versions
+            platform: Current platform
+        """
+        self.repository_matcher = repository_matcher
         self.platform = platform
 
     def get_available_versions(self) -> list[SolcVersion]:
         """Get all available versions that can be installed.
 
         Returns:
-            List of available versions sorted by version number
+            List of available versions sorted by version number (ascending)
         """
-        releases = self.repository.available_versions
-        versions = []
-
-        for version_str in releases:
-            try:
-                version = SolcVersion.parse(version_str)
-                if version.is_compatible_with_platform(self.platform):
-                    versions.append(version)
-            except ValueError:
-                # Skip invalid version strings
-                continue
-
-        # Sort versions
-        versions.sort()
+        # Get all versions from matcher (already filtered by platform capability)
+        available = self.repository_matcher.get_all_available_versions()
+        versions = sorted(available.keys())
         return versions
 
     def get_latest_version(self) -> SolcVersion:
@@ -52,7 +45,10 @@ class VersionManager:
         Raises:
             ValueError: If no versions are available
         """
-        return self.repository.latest_version
+        versions = self.get_available_versions()
+        if not versions:
+            raise ValueError("No versions available")
+        return max(versions)
 
     def validate_version(self, version_str: str) -> SolcVersion:
         """Validate and parse a version string.
@@ -66,7 +62,6 @@ class VersionManager:
         Raises:
             VersionResolutionError: If 'latest' version cannot be resolved
             VersionNotFoundError: If version is invalid or not available
-            PlatformNotSupportedError: If version is not supported on current platform
         """
         if version_str == "latest":
             try:
@@ -83,19 +78,15 @@ class VersionManager:
                 version_str, available_strs, "Check the version format (e.g., '0.8.19')"
             ) from e
 
-        # Check minimum version for platform
-        if not version.is_compatible_with_platform(self.platform):
-            platform_key = self.platform.get_soliditylang_key()
-            earliest = EARLIEST_RELEASE.get(platform_key, "0.0.0")
-            raise PlatformNotSupportedError(
-                str(version), self.platform.get_soliditylang_key(), earliest
-            )
+        # Check if version can be found in any repository
+        try:
+            self.repository_matcher.find_repository_for_version(version)
+        except VersionNotFoundError:
+            # Provide helpful error message
+            available_versions = self.get_available_versions()
+            latest = max(available_versions) if available_versions else None
 
-        # Check if version exists in available releases
-        available_versions = self.get_available_versions()
-        if version not in available_versions:
-            latest = self.get_latest_version()
-            if version > latest:
+            if latest and version > latest:
                 raise VersionNotFoundError(
                     str(version), [str(latest)], f"'{latest}' is the latest available version"
                 )
