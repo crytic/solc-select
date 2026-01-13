@@ -226,17 +226,14 @@ class SolcService:
         binary_path = self.filesystem.get_binary_path(version)
 
         # Get artifact metadata for emulation info
-        artifact = self.artifact_manager.create_artifact_metadata(version)
+        artifact = self.artifact_manager.create_local_artifact_metadata(version)
 
         # Validate binary compatibility
         try:
-            self.platform_service.validate_binary_compatibility(binary_path, artifact)
+            emulation_prefix = self.platform_service.get_emulation_prefix(artifact)
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
-
-        # Get emulation prefix from artifact
-        emulation_prefix = self.platform_service.get_emulation_prefix(artifact)
 
         # Execute solc
         cmd = emulation_prefix + [str(binary_path)] + args

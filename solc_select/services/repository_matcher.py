@@ -69,6 +69,7 @@ class RepositoryMatcher:
     def find_repository_for_version(
         self,
         version: SolcVersion,
+        exact: bool = True,
     ) -> tuple[SolcRepository, PlatformIdentifier]:
         """Find the best repository for a version.
 
@@ -100,7 +101,7 @@ class RepositoryMatcher:
                     repo = self.repositories[key]
 
                     # Check if version actually exists in repository
-                    if str(version) in repo.available_versions:
+                    if not exact or str(version) in repo.available_versions:
                         return repo, target_platform
 
         # No repository found

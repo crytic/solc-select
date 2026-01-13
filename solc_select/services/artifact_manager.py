@@ -17,7 +17,7 @@ from Crypto.Hash import keccak
 
 from ..exceptions import ChecksumMismatchError, SolcSelectError
 from ..infrastructure.filesystem import FilesystemManager
-from ..models import Platform, PlatformCapability, SolcArtifact, SolcVersion
+from ..models import Platform, PlatformCapability, SolcArtifact, SolcArtifactOnDisk, SolcVersion
 from .repository_matcher import RepositoryMatcher
 
 
@@ -47,6 +47,36 @@ class ArtifactManager:
         self.session = session
         self.filesystem = filesystem or FilesystemManager()
 
+    def create_local_artifact_metadata(self, version: SolcVersion) -> SolcArtifactOnDisk:
+        """Create artifact metadata for a locally available version.
+
+        Args:
+            version: Version to create metadata for
+
+        Returns:
+            SolcArtifactOnDisk with download information and emulation info
+
+        Raises:
+            ValueError: If version is not available
+            VersionNotFoundError: If no repository provides this version
+        """
+        # Get the best repository and target platform for this version
+        _, target_platform = self.repository_matcher.find_repository_for_version(
+            version, exact=False
+        )
+
+        binary_path = self.filesystem.get_binary_path(version)
+
+        # Get emulation info if needed (target_platform differs from host)
+        emulation = self.platform_capability.get_emulation_for_platform(target_platform)
+
+        return SolcArtifactOnDisk(
+            version=version,
+            platform=self.platform,
+            file_path=binary_path,
+            emulation=emulation,
+        )
+
     def create_artifact_metadata(self, version: SolcVersion) -> SolcArtifact:
         """Create artifact metadata for a version.
 
@@ -63,6 +93,11 @@ class ArtifactManager:
         # Get the best repository and target platform for this version
         repo, target_platform = self.repository_matcher.find_repository_for_version(version)
 
+        binary_path = self.filesystem.get_binary_path(version)
+
+        # Get emulation info if needed (target_platform differs from host)
+        emulation = self.platform_capability.get_emulation_for_platform(target_platform)
+
         # Get available versions to find the artifact filename
         available = repo.available_versions
         version_str = str(version)
@@ -73,11 +108,6 @@ class ArtifactManager:
         artifact_filename = available[version_str]
         download_url = repo.get_download_url(version, artifact_filename)
         sha256_hash, keccak256_hash = repo.get_checksums(version)
-
-        binary_path = self.filesystem.get_binary_path(version)
-
-        # Get emulation info if needed (target_platform differs from host)
-        emulation = self.platform_capability.get_emulation_for_platform(target_platform)
 
         return SolcArtifact(
             version=version,

@@ -333,17 +333,23 @@ class Platform:
             )
 
 
-@dataclass
-class SolcArtifact:
-    """Represents a downloadable Solidity compiler artifact."""
+@dataclass(kw_only=True)
+class SolcArtifactOnDisk:
+    """Represents a Solidity compiler artifact on disk."""
 
     version: SolcVersion
     platform: Platform
+    file_path: Path
+    emulation: EmulationCapability | None = None  # Emulation info if not native
+
+
+@dataclass(kw_only=True)
+class SolcArtifact(SolcArtifactOnDisk):
+    """Represents a downloadable Solidity compiler artifact."""
+
     download_url: str
     checksum_sha256: str
     checksum_keccak256: str | None
-    file_path: Path
-    emulation: EmulationCapability | None = None  # Emulation info if not native
 
     def __post_init__(self) -> None:
         """Validate artifact properties."""

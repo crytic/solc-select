@@ -7,10 +7,9 @@ compatibility checks, and ARM64 warnings.
 
 import contextlib
 import sys
-from pathlib import Path
 
 from ..constants import SOLC_SELECT_DIR
-from ..models import Platform, SolcArtifact
+from ..models import Platform, SolcArtifactOnDisk
 from ..platform_capabilities import detect_qemu, detect_rosetta
 
 
@@ -20,7 +19,7 @@ class PlatformService:
     def __init__(self, platform: Platform):
         self.platform = platform
 
-    def get_emulation_prefix(self, artifact: SolcArtifact) -> list[str]:
+    def get_emulation_prefix(self, artifact: SolcArtifactOnDisk) -> list[str]:
         """Get the command prefix for emulation based on artifact's emulation info.
 
         Args:
@@ -40,45 +39,11 @@ class PlatformService:
         if not artifact.emulation.detector():
             raise RuntimeError(
                 f"Emulation via {artifact.emulation.emulation_type} is required but not available. "
-                f"Please install {artifact.emulation.emulation_type} to run this version."
+                f"Please install {artifact.emulation.emulation_type} to run this version. "
+                "Refer to the solc-select README for instructions."
             )
 
         return artifact.emulation.command_prefix
-
-    def validate_binary_compatibility(self, binary_path: Path, artifact: SolcArtifact) -> None:
-        """Validate that a binary can be executed on this platform.
-
-        Args:
-            binary_path: Path to the binary to validate
-            artifact: Artifact with emulation information
-
-        Raises:
-            RuntimeError: If binary cannot be executed
-        """
-        if not binary_path.exists():
-            raise RuntimeError("solc-select is out of date. Please run `solc-select upgrade`")
-
-        # If emulation is required, check if it's available
-        if artifact.emulation is not None:
-            if not artifact.emulation.detector():
-                if self.platform.os_type == "darwin" and self.platform.architecture == "arm64":
-                    raise RuntimeError(
-                        "solc binaries previous to 0.8.5 for macOS are Intel-only. "
-                        "Please install Rosetta on your Mac to continue. "
-                        "Refer to the solc-select README for instructions."
-                    )
-                elif self.platform.os_type == "linux" and self.platform.architecture == "arm64":
-                    raise RuntimeError(
-                        "solc binaries previous to 0.8.31 for Linux are Intel-only. "
-                        "Please install QEMU on your computer to continue. "
-                        "Refer to the solc-select README for instructions."
-                    )
-                else:
-                    raise RuntimeError(
-                        f"Cannot execute solc binary for version {artifact.version} "
-                        f"on {self.platform.os_type}-{self.platform.architecture}. "
-                        f"Emulation via {artifact.emulation.emulation_type} is required but not available."
-                    )
 
     def warn_about_arm64_compatibility(self, force: bool = False) -> None:
         """Warn ARM64 users about compatibility and suggest solutions.
