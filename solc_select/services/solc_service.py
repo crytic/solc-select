@@ -54,7 +54,11 @@ class SolcService:
         # Initialize service dependencies
         self.version_manager = VersionManager(self.repository_matcher, platform)
         self.artifact_manager = ArtifactManager(
-            self.repository_matcher, self.platform_capability, platform, self.session
+            self.repository_matcher,
+            self.platform_capability,
+            platform,
+            self.session,
+            self.filesystem,
         )
         self.platform_service = PlatformService(platform)
 
@@ -75,8 +79,8 @@ class SolcService:
             raise NoVersionSetError()
 
         # Check if version is actually installed
-        installed_versions = self.artifact_manager.get_installed_versions()
-        if version not in installed_versions:
+        if not self.filesystem.is_installed(version):
+            installed_versions = self.filesystem.get_installed_versions()
             installed_strs = [str(v) for v in installed_versions]
             raise VersionNotInstalledError(str(version), installed_strs, source)
 
@@ -84,7 +88,7 @@ class SolcService:
 
     def get_installed_versions(self) -> list[SolcVersion]:
         """Get list of installed versions."""
-        return self.artifact_manager.get_installed_versions()
+        return self.filesystem.get_installed_versions()
 
     def get_installable_versions(self) -> list[SolcVersion]:
         """Get versions that can be installed."""
@@ -151,7 +155,7 @@ class SolcService:
             version = self.version_manager.validate_version(version_str)
 
         # Check if version is installed
-        if self.artifact_manager.is_installed(version):
+        if self.filesystem.is_installed(version):
             self.filesystem.set_global_version(version)
             if not silent:
                 print(f"Switched global version to {version}")

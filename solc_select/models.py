@@ -36,10 +36,6 @@ class PlatformIdentifier:
     os_type: str  # 'linux', 'darwin', 'windows'
     architecture: str  # 'amd64', 'arm64', '386'
 
-    def __str__(self) -> str:
-        """Return string representation like 'linux-arm64'."""
-        return f"{self.os_type}-{self.architecture}"
-
 
 @dataclass(frozen=True)
 class EmulationCapability:

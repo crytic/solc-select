@@ -115,3 +115,52 @@ class FilesystemManager:
         # Legacy format: artifacts/solc-{version} (file instead of directory)
         legacy_path = self.artifacts_dir / f"solc-{version}"
         return legacy_path.exists() and legacy_path.is_file()
+
+    def get_installed_versions(self) -> list[SolcVersion]:
+        """Get list of installed versions by scanning artifacts directory.
+
+        Returns:
+            List of installed SolcVersion objects sorted by version
+        """
+        if not self.artifacts_dir.exists():
+            return []
+
+        installed = []
+        for item in self.artifacts_dir.iterdir():
+            if item.is_dir() and item.name.startswith("solc-"):
+                version_str = item.name.replace("solc-", "")
+                try:
+                    version = SolcVersion.parse(version_str)
+                    if self.is_installed(version):
+                        installed.append(version)
+                except ValueError:
+                    # Skip invalid version directories
+                    continue
+
+        installed.sort()
+        return installed
+
+    def is_installed(self, version: SolcVersion) -> bool:
+        """Check if a version is installed.
+
+        Args:
+            version: Version to check
+
+        Returns:
+            True if installed and binary exists, False otherwise
+        """
+        binary_path = self.get_binary_path(version)
+        return binary_path.exists()
+
+    def ensure_artifact_directory(self, version: SolcVersion) -> Path:
+        """Ensure artifact directory exists for a version.
+
+        Args:
+            version: Version to create directory for
+
+        Returns:
+            Path to the artifact directory
+        """
+        artifact_dir = self.get_artifact_directory(version)
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        return artifact_dir

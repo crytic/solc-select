@@ -10,14 +10,13 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from io import BufferedRandom
-from pathlib import Path
 from zipfile import ZipFile
 
 import requests
 from Crypto.Hash import keccak
 
-from ..constants import ARTIFACTS_DIR
 from ..exceptions import ChecksumMismatchError, SolcSelectError
+from ..infrastructure.filesystem import FilesystemManager
 from ..models import Platform, PlatformCapability, SolcArtifact, SolcVersion
 from .repository_matcher import RepositoryMatcher
 
@@ -31,6 +30,7 @@ class ArtifactManager:
         platform_capability: PlatformCapability,
         platform: Platform,
         session: requests.Session,
+        filesystem: FilesystemManager | None = None,
     ):
         """Initialize artifact manager.
 
@@ -39,73 +39,13 @@ class ArtifactManager:
             platform_capability: Platform capability for emulation info
             platform: Current platform
             session: HTTP session for downloads
+            filesystem: Filesystem manager for path operations (optional)
         """
         self.repository_matcher = repository_matcher
         self.platform_capability = platform_capability
         self.platform = platform
         self.session = session
-
-    def get_installed_versions(self) -> list[SolcVersion]:
-        """Get list of installed versions.
-
-        Returns:
-            List of installed SolcVersion objects
-        """
-        if not ARTIFACTS_DIR.exists():
-            return []
-
-        installed = []
-        for item in ARTIFACTS_DIR.iterdir():
-            if item.is_dir() and item.name.startswith("solc-"):
-                version_str = item.name.replace("solc-", "")
-                try:
-                    version = SolcVersion.parse(version_str)
-                    # Verify the binary exists
-                    binary_path = item / f"solc-{version_str}"
-                    if binary_path.exists():
-                        installed.append(version)
-                except ValueError:
-                    # Skip invalid version directories
-                    continue
-
-        installed.sort()
-        return installed
-
-    def is_installed(self, version: SolcVersion) -> bool:
-        """Check if a version is installed.
-
-        Args:
-            version: Version to check
-
-        Returns:
-            True if installed, False otherwise
-        """
-        artifact_dir = self.get_artifact_directory(version)
-        binary_path = artifact_dir / f"solc-{version}"
-        return binary_path.exists()
-
-    def get_artifact_directory(self, version: SolcVersion) -> Path:
-        """Get the directory where a version's artifacts are stored.
-
-        Args:
-            version: Version to get directory for
-
-        Returns:
-            Path to the artifact directory
-        """
-        return ARTIFACTS_DIR / f"solc-{version}"
-
-    def get_binary_path(self, version: SolcVersion) -> Path:
-        """Get the path to a version's binary.
-
-        Args:
-            version: Version to get binary path for
-
-        Returns:
-            Path to the binary
-        """
-        artifact_dir = self.get_artifact_directory(version)
-        return artifact_dir / f"solc-{version}"
+        self.filesystem = filesystem or FilesystemManager()
 
     def create_artifact_metadata(self, version: SolcVersion) -> SolcArtifact:
         """Create artifact metadata for a version.
@@ -134,7 +74,7 @@ class ArtifactManager:
         download_url = repo.get_download_url(version, artifact_filename)
         sha256_hash, keccak256_hash = repo.get_checksums(version)
 
-        binary_path = self.get_binary_path(version)
+        binary_path = self.filesystem.get_binary_path(version)
 
         # Get emulation info if needed (target_platform differs from host)
         emulation = self.platform_capability.get_emulation_for_platform(target_platform)
@@ -193,7 +133,7 @@ class ArtifactManager:
             InstallationError: If installation fails
             ChecksumMismatchError: If checksum verification fails
         """
-        if self.is_installed(version):
+        if self.filesystem.is_installed(version):
             if not silent:
                 print(f"Version '{version}' is already installed, skipping...")
             return True
@@ -209,8 +149,7 @@ class ArtifactManager:
             return False
 
         # Create artifact directory
-        artifact_dir = self.get_artifact_directory(version)
-        artifact_dir.mkdir(parents=True, exist_ok=True)
+        self.filesystem.ensure_artifact_directory(version)
 
         try:
             # Download the file
