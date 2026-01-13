@@ -9,7 +9,8 @@ from ..exceptions import (
     VersionNotFoundError,
     VersionResolutionError,
 )
-from ..models import Platform, SolcVersion
+from ..models.platforms import Platform
+from ..models.versions import SolcVersion
 from .repository_matcher import RepositoryMatcher
 
 

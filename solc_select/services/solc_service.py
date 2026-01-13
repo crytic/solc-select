@@ -18,7 +18,8 @@ from ..exceptions import (
 )
 from ..infrastructure.filesystem import FilesystemManager
 from ..infrastructure.http_client import create_http_session
-from ..models import Platform, SolcVersion
+from ..models.platforms import Platform
+from ..models.versions import SolcVersion
 from ..repository_registry import REPOSITORY_REGISTRY
 from .artifact_manager import ArtifactManager
 from .platform_service import PlatformService

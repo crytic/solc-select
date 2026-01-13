@@ -158,3 +158,14 @@ LINUX_ARM64_CAPABILITY = PlatformCapability(
         ),
     ],
 )
+
+
+# ========================================
+# CAPABILITY REGISTRY
+# ========================================
+
+
+CAPABILITY_REGISTRY: dict[str, PlatformCapability] = {
+    "darwin-arm64": DARWIN_ARM64_CAPABILITY,
+    "linux-arm64": LINUX_ARM64_CAPABILITY,
+}

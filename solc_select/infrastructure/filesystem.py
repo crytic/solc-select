@@ -10,7 +10,7 @@ import shutil
 from pathlib import Path
 
 from ..constants import ARTIFACTS_DIR, SOLC_SELECT_DIR
-from ..models import SolcVersion
+from ..models.versions import SolcVersion
 
 
 class FilesystemManager:

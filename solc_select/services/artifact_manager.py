@@ -17,7 +17,9 @@ from Crypto.Hash import keccak
 
 from ..exceptions import ChecksumMismatchError, SolcSelectError
 from ..infrastructure.filesystem import FilesystemManager
-from ..models import Platform, SolcArtifact, SolcArtifactOnDisk, SolcVersion
+from ..models.artifacts import SolcArtifact, SolcArtifactOnDisk
+from ..models.platforms import Platform
+from ..models.versions import SolcVersion
 from ..platform_capabilities import PlatformCapability
 from .repository_matcher import RepositoryMatcher
 

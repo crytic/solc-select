@@ -16,10 +16,10 @@ from .constants import (
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
 )
-from .models import SolcVersion
+from .models.versions import SolcVersion
 
 if TYPE_CHECKING:
-    from .models import Platform
+    from .models.platforms import Platform
 
 
 class SolcRepository:

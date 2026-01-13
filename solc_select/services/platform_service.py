@@ -9,7 +9,8 @@ import contextlib
 import sys
 
 from ..constants import SOLC_SELECT_DIR
-from ..models import Platform, SolcArtifactOnDisk
+from ..models.artifacts import SolcArtifactOnDisk
+from ..models.platforms import Platform
 from ..platform_capabilities import detect_qemu, detect_rosetta
 
 
