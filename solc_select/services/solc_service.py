@@ -148,11 +148,8 @@ class SolcService:
             VersionNotInstalledError: If version is not installed
             InstallationError: If installation fails
         """
-        # Resolve "latest" to actual version
-        if version_str == "latest":
-            version = self.version_manager.get_latest_version()
-        else:
-            version = self.version_manager.validate_version(version_str)
+        # Resolve version string (handles "latest" keyword)
+        version = self.version_manager.validate_version(version_str)
 
         # Check if version is installed
         if self.filesystem.is_installed(version):

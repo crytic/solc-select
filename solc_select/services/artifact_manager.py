@@ -213,17 +213,19 @@ class ArtifactManager:
 
             return True
 
+        except ChecksumMismatchError:
+            # Clean up on failure and re-raise checksum errors
+            if artifact.file_path.exists():
+                artifact.file_path.unlink()
+            raise
+
         except Exception as e:
             # Clean up on failure
             if artifact.file_path.exists():
                 artifact.file_path.unlink()
-
-            if isinstance(e, ChecksumMismatchError):
-                raise e
-            else:
-                if not silent:
-                    print(f"Error installing {version}: {e}")
-                return False
+            if not silent:
+                print(f"Error installing {version}: {e}")
+            return False
 
     def _extract_zip_archive(self, artifact: SolcArtifact) -> None:
         """Extract a ZIP archive and rename the binary.

@@ -178,13 +178,16 @@ class RepositoryMatcher:
         Raises:
             ValueError: If repository_id is unknown
         """
-        if manifest.repository_id == "soliditylang":
-            # SoliditylangRepository needs a Platform object
+        repository_id = manifest.repository_id
+
+        if repository_id == "soliditylang":
             platform_obj = Platform(os_type=platform.os_type, architecture=platform.architecture)
             return SoliditylangRepository(platform_obj, self.session)
-        elif manifest.repository_id == "crytic":
+
+        if repository_id == "crytic":
             return CryticRepository(self.session)
-        elif manifest.repository_id == "alloy":
+
+        if repository_id == "alloy":
             return AlloyRepository(self.session)
-        else:
-            raise ValueError(f"Unknown repository: {manifest.repository_id}")
+
+        raise ValueError(f"Unknown repository: {repository_id}")

@@ -119,9 +119,9 @@ class VersionRange:
         Returns:
             True if version is in [min, max], False otherwise
         """
-        if self.min_version and version < self.min_version:
-            return False
-        return not (self.max_version and version > self.max_version)
+        above_minimum = self.min_version is None or version >= self.min_version
+        below_maximum = self.max_version is None or version <= self.max_version
+        return above_minimum and below_maximum
 
     @classmethod
     def from_min(cls, min_ver: str) -> "VersionRange":

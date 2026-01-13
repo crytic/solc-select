@@ -82,29 +82,30 @@ class VersionManager:
         # Check if version can be found in any repository
         try:
             self.repository_matcher.find_repository_for_version(version)
+            return version
         except VersionNotFoundError:
-            # Provide helpful error message
-            available_versions = self.get_available_versions()
+            pass
 
-            if not available_versions:
-                raise VersionNotFoundError(str(version), []) from None
+        # Provide helpful error message
+        available_versions = self.get_available_versions()
 
-            latest = max(available_versions)
-            minimum = min(available_versions)
+        if not available_versions:
+            raise VersionNotFoundError(str(version), [])
 
-            if version > latest:
-                raise VersionNotFoundError(
-                    str(version), [str(latest)], f"'{latest}' is the latest available version"
-                ) from None
-            elif version < minimum:
-                # Version is below minimum supported version for this platform
-                platform_str = f"{self.platform.os_type}-{self.platform.architecture}"
-                raise PlatformNotSupportedError(str(version), platform_str, str(minimum)) from None
-            else:
-                available_strs = [str(v) for v in available_versions[:5]]  # Show first 5
-                raise VersionNotFoundError(str(version), available_strs) from None
+        latest = max(available_versions)
+        minimum = min(available_versions)
 
-        return version
+        if version > latest:
+            raise VersionNotFoundError(
+                str(version), [str(latest)], f"'{latest}' is the latest available version"
+            )
+
+        if version < minimum:
+            platform_str = f"{self.platform.os_type}-{self.platform.architecture}"
+            raise PlatformNotSupportedError(str(version), platform_str, str(minimum))
+
+        available_strs = [str(v) for v in available_versions[:5]]
+        raise VersionNotFoundError(str(version), available_strs)
 
     def resolve_version_strings(self, version_strings: list[str]) -> list[SolcVersion]:
         """Resolve a list of version strings to SolcVersion objects.
