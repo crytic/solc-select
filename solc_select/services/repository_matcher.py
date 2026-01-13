@@ -75,7 +75,7 @@ class RepositoryMatcher:
         1. Get runnable platforms from capability (native first, then emulated)
         2. For each runnable platform:
            3. For each manifest (sorted by priority):
-              4. If manifest supports (version, platform):
+              4. If manifest supports (version, platform) AND version exists in repository:
                  5. Return (repository, target_platform)
 
         Args:
@@ -97,7 +97,10 @@ class RepositoryMatcher:
                 if manifest.supports_version(version, target_platform):
                     key = (manifest.repository_id, str(target_platform))
                     repo = self.repositories[key]
-                    return repo, target_platform
+
+                    # Check if version actually exists in repository
+                    if str(version) in repo.available_versions:
+                        return repo, target_platform
 
         # No repository found
         platform_list = ", ".join(str(p) for p in runnable_platforms)

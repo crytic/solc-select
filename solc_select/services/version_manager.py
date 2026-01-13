@@ -5,6 +5,7 @@ This module handles validation, resolution, and management of Solidity compiler 
 """
 
 from ..exceptions import (
+    PlatformNotSupportedError,
     VersionNotFoundError,
     VersionResolutionError,
 )
@@ -84,15 +85,24 @@ class VersionManager:
         except VersionNotFoundError:
             # Provide helpful error message
             available_versions = self.get_available_versions()
-            latest = max(available_versions) if available_versions else None
 
-            if latest and version > latest:
+            if not available_versions:
+                raise VersionNotFoundError(str(version), []) from None
+
+            latest = max(available_versions)
+            minimum = min(available_versions)
+
+            if version > latest:
                 raise VersionNotFoundError(
                     str(version), [str(latest)], f"'{latest}' is the latest available version"
-                )
+                ) from None
+            elif version < minimum:
+                # Version is below minimum supported version for this platform
+                platform_str = f"{self.platform.os_type}-{self.platform.architecture}"
+                raise PlatformNotSupportedError(str(version), platform_str, str(minimum)) from None
             else:
                 available_strs = [str(v) for v in available_versions[:5]]  # Show first 5
-                raise VersionNotFoundError(str(version), available_strs)
+                raise VersionNotFoundError(str(version), available_strs) from None
 
         return version
 
