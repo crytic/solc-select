@@ -11,6 +11,7 @@ from pathlib import Path
 
 from ..constants import SOLC_SELECT_DIR
 from ..models import Platform, SolcArtifact
+from ..platform_capabilities import detect_qemu, detect_rosetta
 
 
 class PlatformService:
@@ -92,9 +93,6 @@ class PlatformService:
         warning_file = SOLC_SELECT_DIR.joinpath(".arm64_warning_shown")
         if not force and warning_file.exists():
             return
-
-        # Import here to avoid circular import
-        from ..platform_capabilities import detect_qemu, detect_rosetta
 
         print("\n⚠️  WARNING: ARM64 Architecture Detected", file=sys.stderr)
         print("=" * 50, file=sys.stderr)

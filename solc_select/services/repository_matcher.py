@@ -9,6 +9,7 @@ import requests
 
 from ..exceptions import VersionNotFoundError
 from ..models import (
+    Platform,
     PlatformCapability,
     PlatformIdentifier,
     RepositoryManifest,
@@ -173,9 +174,6 @@ class RepositoryMatcher:
         Raises:
             ValueError: If repository_id is unknown
         """
-        # Import Platform here to avoid circular import
-        from ..models import Platform
-
         if manifest.repository_id == "soliditylang":
             # SoliditylangRepository needs a Platform object
             platform_obj = Platform(os_type=platform.os_type, architecture=platform.architecture)
