@@ -24,7 +24,7 @@ PLATFORM_CONFIGS = {
         "marker": pytest.mark.macos,
     },
     "windows": {
-        "min_version": "0.4.5",
+        "min_version": "0.4.1",
         "api_url": "https://binaries.soliditylang.org/windows-amd64/list.json",
         "marker": pytest.mark.windows,
     },
