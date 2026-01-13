@@ -17,11 +17,24 @@ UPGRADE_COMMAND = "upgrade"
 
 # soliditylang.org platform strings
 LINUX_AMD64 = "linux-amd64"
+LINUX_ARM64 = "linux-arm64"
 MACOSX_AMD64 = "macosx-amd64"
 WINDOWS_AMD64 = "windows-amd64"
 
 # earliest releases supported in each platform
-EARLIEST_RELEASE = {"macosx-amd64": "0.3.6", "linux-amd64": "0.4.0", "windows-amd64": "0.4.5"}
+EARLIEST_RELEASE = {
+    "macosx-amd64": "0.3.6",
+    "linux-amd64": "0.4.10",
+    "linux-arm64": "0.8.31",
+    "windows-amd64": "0.4.1",
+}
+
+# earliest releases supported in each platform (with emulation when required)
+EARLIEST_RELEASE_OS = {
+    "macosx": "0.3.6",
+    "linux": "0.4.0",
+    "windows": "0.4.1",
+}
 
 # crytic/solc repo URLs
 CRYTIC_SOLC_ARTIFACTS = "https://raw.githubusercontent.com/crytic/solc/master/linux/amd64/"

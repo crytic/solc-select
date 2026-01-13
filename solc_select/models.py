@@ -14,8 +14,9 @@ from pathlib import Path
 from packaging.version import Version
 
 from .constants import (
-    EARLIEST_RELEASE,
+    EARLIEST_RELEASE_OS,
     LINUX_AMD64,
+    LINUX_ARM64,
     MACOSX_AMD64,
     WINDOWS_AMD64,
 )
@@ -52,11 +53,11 @@ class SolcVersion(Version):
         Returns:
             True if compatible, False otherwise
         """
-        platform_key = platform.get_soliditylang_key()
-        if platform_key not in EARLIEST_RELEASE:
+        platform_key = platform.os_type
+        if platform_key not in EARLIEST_RELEASE_OS:
             return False
 
-        earliest = Version(EARLIEST_RELEASE[platform_key])
+        earliest = Version(EARLIEST_RELEASE_OS[platform_key])
         return self >= earliest
 
 
@@ -112,6 +113,8 @@ class Platform:
         """Get the platform key used by binaries.soliditylang.org."""
         if self.os_type == "linux" and self.architecture == "amd64":
             return LINUX_AMD64
+        elif self.os_type == "linux" and self.architecture == "arm64":
+            return LINUX_ARM64
         elif self.os_type == "darwin" and self.architecture in ["amd64", "arm64"]:
             # soliditylang.org uses macosx-amd64 for both Intel and ARM (with Rosetta)
             return MACOSX_AMD64
@@ -151,21 +154,6 @@ class Platform:
         except (FileNotFoundError, OSError):
             return False
 
-    def can_run_x86_binaries(self) -> bool:
-        """Check if this platform can run x86_64 binaries (natively or via emulation)."""
-        # Native x86_64 platforms can always run x86 binaries
-        if self.architecture == "amd64":
-            return True
-
-        # ARM64 platforms need emulation
-        if self.architecture == "arm64":
-            if self.os_type == "darwin":
-                return self.has_rosetta()
-            elif self.os_type == "linux":
-                return self.has_qemu()
-
-        return False
-
     # ========================================
     # BINARY COMPATIBILITY
     # ========================================
@@ -190,9 +178,10 @@ class Platform:
         if self.architecture == "arm64":
             if self.os_type == "darwin":
                 return self._can_run_darwin_binary(binary_path)
+            elif self.os_type == "linux":
+                return self._can_run_linux_binary(binary_path)
             else:
-                # Other ARM64 platforms need x86 emulation
-                return self.can_run_x86_binaries()
+                raise Exception("Unexpected arm64 OS")
 
         return True
 
@@ -211,6 +200,18 @@ class Platform:
 
         # Check if it's native ARM64
         return self._mac_binary_is_native(binary_path)
+
+    def _can_run_linux_binary(self, binary_path: Path) -> bool:
+        """Check if we can run a binary on Linux ARM64.
+
+        Handles native ARM64 binaries, and QEMU emulation.
+        """
+        # If QEMU is available, we can run anything
+        if self.has_qemu():
+            return True
+
+        # Check if it's native ARM64
+        return self._linux_binary_is_native(binary_path)
 
     # ========================================
     # PRIVATE HELPERS
@@ -244,6 +245,22 @@ class Platform:
             output = result.stdout.decode()
             arch_in_file = "arm64" if self.architecture == "arm64" else "x86_64"
             return "Mach-O" in output and arch_in_file in output
+        except (FileNotFoundError, OSError):
+            return False
+
+    def _linux_binary_is_native(self, path: Path) -> bool:
+        """Check if the Linux binary matches the current system architecture."""
+        if self.os_type != "linux":
+            return False
+
+        try:
+            result = subprocess.run(["/usr/bin/file", str(path)], capture_output=True, check=False)
+            if result.returncode != 0:
+                return False
+
+            output = result.stdout.decode()
+            arch_in_file = "aarch64" if self.architecture == "arm64" else "x86-64"
+            return "ELF" in output and arch_in_file in output
         except (FileNotFoundError, OSError):
             return False
 

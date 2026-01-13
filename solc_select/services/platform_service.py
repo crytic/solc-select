@@ -71,6 +71,12 @@ class PlatformService:
                     "Please install Rosetta on your Mac to continue. "
                     "Refer to the solc-select README for instructions."
                 )
+            elif self.platform.os_type == "linux" and self.platform.architecture == "arm64":
+                raise RuntimeError(
+                    "solc binaries previous to 0.8.31 for Linux are Intel-only. "
+                    "Please install QEMU on your computer to continue. "
+                    "Refer to the solc-select README for instructions."
+                )
             else:
                 raise RuntimeError(
                     f"Cannot execute solc binary for version {version} on {self.platform.os_type}-{self.platform.architecture}"
@@ -112,13 +118,19 @@ class PlatformService:
                 show_remediation = True
 
         elif self.platform.os_type == "linux":
+            print("✓ Native ARM64 binaries available for versions 0.8.31+", file=sys.stderr)
+
             if self.platform.has_qemu():
                 print(
-                    "✓ qemu-x86_64 detected - will use emulation for x86 binaries", file=sys.stderr
+                    "✓ qemu-x86_64 detected - will use emulation for versions < 0.8.31",
+                    file=sys.stderr,
                 )
-                print("  Note: Performance will be slower than native execution", file=sys.stderr)
+                print("  Note: Performance will be slower for emulated versions", file=sys.stderr)
             else:
-                print("✗ solc binaries are x86_64 only, and qemu is not installed", file=sys.stderr)
+                print(
+                    "⚠ Versions < 0.8.31 require x86_64 emulation, but qemu is not installed",
+                    file=sys.stderr,
+                )
                 show_remediation = True
         else:
             show_remediation = True

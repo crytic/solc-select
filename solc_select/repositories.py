@@ -20,6 +20,7 @@ from .constants import (
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
     EARLIEST_RELEASE,
+    EARLIEST_RELEASE_OS,
     LINUX_AMD64,
 )
 from .models import Platform, SolcVersion
@@ -137,7 +138,12 @@ class SoliditylangRepository(AbstractSolcRepository):
 
     def supports_version(self, version: SolcVersion, platform: Platform) -> bool:
         """Check if this repository supports the version on the platform."""
-        return version.is_compatible_with_platform(platform)
+        platform_key = platform.get_soliditylang_key()
+        if platform_key not in EARLIEST_RELEASE:
+            return False
+
+        earliest = Version(EARLIEST_RELEASE[platform_key])
+        return version >= earliest
 
     @property
     @lru_cache(maxsize=5)  # noqa: B019
@@ -164,16 +170,12 @@ class CryticRepository(AbstractSolcRepository):
 
     def supports_version(self, version: SolcVersion, platform: Platform) -> bool:
         """Check if this repository supports the version."""
-        # Crytic repo is for Linux AMD64 only
-        if platform.get_soliditylang_key() != LINUX_AMD64:
-            return False
-
         # Special case: version 0.8.18 is supported
         if version == Version("0.8.18"):
             return True
 
         # General case: versions <= 0.4.10 for Linux
-        earliest = Version(EARLIEST_RELEASE[LINUX_AMD64])
+        earliest = Version(EARLIEST_RELEASE_OS["linux"])
         return version <= Version("0.4.10") and version >= earliest
 
 
@@ -221,11 +223,18 @@ class CompositeRepository:
         self.platform = platform
         self.repositories: list[AbstractSolcRepository] = []
 
+        # Linux ARM64: Add x86_64 fallback first
+        if platform.os_type == "linux" and platform.architecture == "arm64":
+            # The main soliditylang repository (line 226) already handles native ARM64
+            # Just add x86_64 fallback for older versions (via QEMU emulation)
+            x86_platform = Platform(os_type="linux", architecture="amd64")
+            self.repositories.append(SoliditylangRepository(x86_platform, session))
+
         # Always include the main soliditylang repository
         self.repositories.append(SoliditylangRepository(platform, session))
 
         # Add platform-specific repositories
-        if platform.get_soliditylang_key() == LINUX_AMD64:
+        if platform.os_type == "linux":
             self.repositories.append(CryticRepository(session))
 
         if platform.os_type == "darwin" and platform.architecture == "arm64":
