@@ -21,7 +21,6 @@ from .constants import (
     WINDOWS_AMD64,
 )
 
-
 # ========================================
 # PLATFORM CAPABILITY MODELS
 # ========================================
@@ -119,9 +118,7 @@ class PlatformCapability:
 
         return platforms
 
-    def get_emulation_for_platform(
-        self, target: PlatformIdentifier
-    ) -> EmulationCapability | None:
+    def get_emulation_for_platform(self, target: PlatformIdentifier) -> EmulationCapability | None:
         """Get emulation info for a target platform.
 
         Args:
@@ -204,9 +201,7 @@ class PlatformSupport:
     version_range: VersionRange
     binary_format: str  # 'elf', 'macho', 'pe', 'zip', 'universal-macho'
 
-    def supports(
-        self, version: "SolcVersion", target_platform: PlatformIdentifier
-    ) -> bool:
+    def supports(self, version: "SolcVersion", target_platform: PlatformIdentifier) -> bool:
         """Check if this support matches version + platform.
 
         Args:
@@ -239,9 +234,7 @@ class RepositoryManifest:
     platform_supports: list[PlatformSupport]
     priority: int = 50  # Higher = checked first (100=primary, 50=fallback, 10=legacy)
 
-    def supports_version(
-        self, version: "SolcVersion", platform: PlatformIdentifier
-    ) -> bool:
+    def supports_version(self, version: "SolcVersion", platform: PlatformIdentifier) -> bool:
         """Check if this repository can provide version for platform.
 
         Args:
@@ -253,9 +246,7 @@ class RepositoryManifest:
         """
         return any(ps.supports(version, platform) for ps in self.platform_supports)
 
-    def get_binary_format(
-        self, version: "SolcVersion", platform: PlatformIdentifier
-    ) -> str | None:
+    def get_binary_format(self, version: "SolcVersion", platform: PlatformIdentifier) -> str | None:
         """Get binary format for this version/platform combo.
 
         Args:
@@ -312,7 +303,7 @@ class Platform:
     def __post_init__(self) -> None:
         """Validate platform components."""
         valid_os = {"linux", "darwin", "windows"}
-        valid_arch = {"amd64", "arm64", "386"}
+        valid_arch = {"amd64", "arm64"}
 
         if self.os_type not in valid_os:
             raise ValueError(f"Invalid OS type: {self.os_type}")
@@ -378,8 +369,6 @@ class Platform:
             return "amd64"
         elif machine in ["aarch64", "arm64"]:
             return "arm64"
-        elif machine in ["i386", "i686"]:
-            return "386"
         return machine
 
     def get_soliditylang_key(self) -> str:
@@ -389,7 +378,7 @@ class Platform:
         elif self.os_type == "linux" and self.architecture == "arm64":
             return LINUX_ARM64
         elif self.os_type == "darwin" and self.architecture in ["amd64", "arm64"]:
-            # soliditylang.org uses macosx-amd64 for both Intel and ARM (with Rosetta)
+            # soliditylang.org uses macosx-amd64 for both Intel and ARM (with Rosetta and universal binaries)
             return MACOSX_AMD64
         elif self.os_type == "windows" and self.architecture == "amd64":
             return WINDOWS_AMD64

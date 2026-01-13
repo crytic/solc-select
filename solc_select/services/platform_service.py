@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from ..constants import SOLC_SELECT_DIR
-from ..models import Platform, SolcArtifact, SolcVersion
+from ..models import Platform, SolcArtifact
 
 
 class PlatformService:
@@ -44,9 +44,7 @@ class PlatformService:
 
         return artifact.emulation.command_prefix
 
-    def validate_binary_compatibility(
-        self, binary_path: Path, artifact: SolcArtifact
-    ) -> None:
+    def validate_binary_compatibility(self, binary_path: Path, artifact: SolcArtifact) -> None:
         """Validate that a binary can be executed on this platform.
 
         Args:

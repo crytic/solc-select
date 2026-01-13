@@ -9,7 +9,6 @@ import subprocess
 
 from .models import EmulationCapability, Platform, PlatformCapability, PlatformIdentifier
 
-
 # ========================================
 # EMULATION DETECTORS
 # ========================================

@@ -12,7 +12,6 @@ from .models import (
     VersionRange,
 )
 
-
 # ========================================
 # SOLIDITYLANG REPOSITORY (Primary Source)
 # ========================================
