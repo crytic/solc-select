@@ -82,6 +82,9 @@ class RepositoryMatcher:
 
         Args:
             version: Version to find
+            exact: Whether to provide an exact match. If false, it will return a repository
+                that claims to be compatible but it won't verify that the version is
+                indeed available on said repository.
 
         Returns:
             Tuple of (repository, target_platform) where target_platform indicates
