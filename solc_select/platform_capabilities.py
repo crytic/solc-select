@@ -87,6 +87,7 @@ class PlatformCapability:
             None,
         )
 
+
 # ========================================
 # EMULATION DETECTORS
 # ========================================

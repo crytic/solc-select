@@ -34,7 +34,8 @@ jobs:
     - if: matrix.os == 'ubuntu-24.04-arm'
       run: |
         sudo apt-get update
-        sudo apt-get -y install qemu-user-static
+        sudo apt-get -y install qemu-user libc6-amd64-cross
+        echo QEMU_LD_PREFIX=/usr/x86_64-linux-gnu >> "$GITHUB_ENV"
     - name: Install solc-select and test dependencies
       run: |
         uv sync --extra dev

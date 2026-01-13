@@ -120,9 +120,9 @@ class PlatformService:
         print("  1. Install software for x86_64 emulation:", file=sys.stderr)
 
         if self.platform.os_type == "linux":
-            print("     sudo apt-get install qemu-user-static  # Debian/Ubuntu", file=sys.stderr)
-            print("     sudo dnf install qemu-user-static      # Fedora", file=sys.stderr)
-            print("     sudo pacman -S qemu-user-static        # Arch", file=sys.stderr)
+            print("     sudo apt-get install qemu-user  # Debian/Ubuntu", file=sys.stderr)
+            print("     sudo dnf install qemu-user      # Fedora", file=sys.stderr)
+            print("     sudo pacman -S qemu-user        # Arch", file=sys.stderr)
         elif self.platform.os_type == "darwin":
             print("     Use Rosetta 2 (installed automatically on Apple Silicon)", file=sys.stderr)
 
