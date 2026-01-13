@@ -246,53 +246,41 @@ class ArtifactManager:
         total_count = len(versions)
 
         # Use ThreadPoolExecutor with max 5 concurrent downloads
-        executor = ThreadPoolExecutor(max_workers=5)
-        future_to_version = {}
-
-        try:
+        with ThreadPoolExecutor(max_workers=5) as executor:
             # Submit all download jobs
             future_to_version = {
                 executor.submit(self.download_and_install, version, True): version
                 for version in versions
             }
 
-            # Process completed downloads
-            for future in as_completed(future_to_version):
-                version = future_to_version[future]
-                try:
-                    result = future.result()
-                    if result:
-                        success_count += 1
+            try:
+                # Process completed downloads
+                for future in as_completed(future_to_version):
+                    version = future_to_version[future]
+                    try:
+                        result = future.result()
+                        if result:
+                            success_count += 1
+                            if not silent:
+                                print(
+                                    f"[OK] Version '{version}' installed ({success_count}/{total_count})"
+                                )
+                        elif not silent:
+                            print(
+                                f"[FAIL] Version '{version}' failed to install ({success_count}/{total_count})"
+                            )
+                    except SolcSelectError as e:
                         if not silent:
                             print(
-                                f"[OK] Version '{version}' installed ({success_count}/{total_count})"
+                                f"[FAIL] Version '{version}' failed: {e} ({success_count}/{total_count})"
                             )
-                    elif not silent:
-                        print(
-                            f"[FAIL] Version '{version}' failed to install ({success_count}/{total_count})"
-                        )
-                except SolcSelectError as e:
-                    if not silent:
-                        print(
-                            f"[FAIL] Version '{version}' failed: {e} ({success_count}/{total_count})"
-                        )
-
-        except KeyboardInterrupt:
-            if not silent:
-                print(f"\nCancelling installation... ({success_count}/{total_count} completed)")
-
-            # Cancel all pending futures
-            for future in future_to_version:
-                future.cancel()
-
-            # Shutdown executor immediately without waiting for running tasks
-            executor.shutdown(wait=False)
-            raise
-
-        finally:
-            # Clean shutdown for normal completion
-            if not executor._shutdown:
-                executor.shutdown(wait=True)
+            except KeyboardInterrupt:
+                if not silent:
+                    print("\nCancelling installation...")
+                # Cancel all pending futures before exiting
+                for future in future_to_version:
+                    future.cancel()
+                raise
 
         if not silent:
             if success_count == total_count:
