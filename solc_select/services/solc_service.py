@@ -48,7 +48,7 @@ class SolcService:
         )
         self.platform_service = PlatformService(platform)
 
-    def get_current_version(self) -> tuple[SolcVersion | None, str]:
+    def get_current_version(self) -> tuple[SolcVersion, str]:
         """Get the current version and its source."""
         version = self.filesystem.get_current_version()
         source = self.filesystem.get_version_source()
@@ -57,8 +57,7 @@ class SolcService:
             raise NoVersionSetError()
 
         if not self.filesystem.is_installed(version):
-            installed_versions = self.filesystem.get_installed_versions()
-            installed_strs = [str(v) for v in installed_versions]
+            installed_strs = [str(v) for v in self.filesystem.get_installed_versions()]
             raise VersionNotInstalledError(str(version), installed_strs, source)
 
         return version, source
@@ -151,9 +150,6 @@ class SolcService:
             version, _ = self.get_current_version()
         except SolcSelectError as e:
             print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
-
-        if version is None:
             sys.exit(1)
 
         binary_path = self.filesystem.get_binary_path(version)

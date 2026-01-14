@@ -95,6 +95,23 @@ class ArtifactManager:
         if artifact.checksum_keccak256 and artifact.checksum_keccak256 != local_keccak256:
             raise ChecksumMismatchError(artifact.checksum_keccak256, local_keccak256, "Keccak256")
 
+    def _download_artifact(self, artifact: SolcArtifact) -> None:
+        """Download artifact and verify checksums."""
+        response = self.session.get(artifact.download_url, stream=True)
+        response.raise_for_status()
+
+        with open(artifact.file_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
+            try:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            except KeyboardInterrupt:
+                if artifact.file_path.exists():
+                    artifact.file_path.unlink(missing_ok=True)
+                raise
+
+            self.verify_checksum(artifact, f)
+
     def download_and_install(self, version: SolcVersion, silent: bool = False) -> bool:
         """Download and install a Solidity compiler version."""
         if self.filesystem.is_installed(version):
@@ -115,21 +132,7 @@ class ArtifactManager:
         self.filesystem.ensure_artifact_directory(version)
 
         try:
-            response = self.session.get(artifact.download_url, stream=True)
-            response.raise_for_status()
-
-            with open(artifact.file_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
-                try:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                except KeyboardInterrupt:
-                    # Clean up partially downloaded file on interrupt
-                    if artifact.file_path.exists():
-                        artifact.file_path.unlink(missing_ok=True)
-                    raise
-
-                self.verify_checksum(artifact, f)
+            self._download_artifact(artifact)
 
             if artifact.is_zip_archive:
                 self._extract_zip_archive(artifact)

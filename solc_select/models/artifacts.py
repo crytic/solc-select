@@ -33,11 +33,9 @@ class SolcArtifact(SolcArtifactOnDisk):
             raise ValueError("Download URL cannot be empty")
         if not self.checksum_sha256:
             raise ValueError("SHA256 checksum cannot be empty")
-        # Normalize by removing 0x prefix
-        if self.checksum_sha256.startswith("0x"):
-            object.__setattr__(self, "checksum_sha256", self.checksum_sha256[2:])
-        if self.checksum_keccak256 and self.checksum_keccak256.startswith("0x"):
-            object.__setattr__(self, "checksum_keccak256", self.checksum_keccak256[2:])
+        self.checksum_sha256 = self.checksum_sha256.removeprefix("0x")
+        if self.checksum_keccak256:
+            self.checksum_keccak256 = self.checksum_keccak256.removeprefix("0x")
 
     @property
     def is_zip_archive(self) -> bool:

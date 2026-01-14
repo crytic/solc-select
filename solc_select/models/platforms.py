@@ -25,17 +25,21 @@ class Platform:
 
     def get_capability(self) -> PlatformCapability:
         """Get the capability declaration for this platform."""
-        key = f"{self.os_type}-{self.architecture}"
-        return CAPABILITY_REGISTRY.get(key, self._create_default_capability())
+        identifier = self.to_identifier()
+        return CAPABILITY_REGISTRY.get(str(identifier), self._create_default_capability())
 
     def _create_default_capability(self) -> PlatformCapability:
         """Create default capability (native-only, no emulation)."""
-        platform_id = PlatformIdentifier(self.os_type, self.architecture)
+        platform_id = self.to_identifier()
         return PlatformCapability(
             host_platform=platform_id,
             native_support=platform_id,
             emulation_capabilities=[],
         )
+
+    def to_identifier(self) -> PlatformIdentifier:
+        """Convert to a PlatformIdentifier."""
+        return PlatformIdentifier(self.os_type, self.architecture)
 
     @classmethod
     def current(cls) -> "Platform":

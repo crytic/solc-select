@@ -76,14 +76,10 @@ class VersionManager:
         if "all" in version_strings:
             return self.get_available_versions()
 
-        versions = []
-        for version_str in version_strings:
-            if version_str == "latest":
-                versions.append(self.get_latest_version())
-            else:
-                versions.append(self.validate_version(version_str))
-
-        return versions
+        return [
+            self.get_latest_version() if v == "latest" else self.validate_version(v)
+            for v in version_strings
+        ]
 
     def get_installable_versions(self, installed_versions: list[SolcVersion]) -> list[SolcVersion]:
         """Get versions that can be installed (not already installed)."""

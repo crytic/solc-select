@@ -30,20 +30,19 @@ class FilesystemManager:
                 return None
 
         global_version_file = self.config_dir / "global-version"
-        if global_version_file.exists():
-            try:
-                with open(global_version_file, encoding="utf-8") as f:
-                    return SolcVersion.parse(f.read().strip())
-            except (OSError, ValueError):
-                return None
+        if not global_version_file.exists():
+            return None
 
-        return None
+        try:
+            version_text = global_version_file.read_text(encoding="utf-8").strip()
+            return SolcVersion.parse(version_text)
+        except (OSError, ValueError):
+            return None
 
     def set_global_version(self, version: SolcVersion) -> None:
         """Set the global version."""
         global_version_file = self.config_dir / "global-version"
-        with open(global_version_file, "w", encoding="utf-8") as f:
-            f.write(str(version))
+        global_version_file.write_text(str(version), encoding="utf-8")
 
     def get_version_source(self) -> str:
         """Get the source of the current version setting."""
@@ -77,17 +76,17 @@ class FilesystemManager:
 
         installed = []
         for item in self.artifacts_dir.iterdir():
-            if item.is_dir() and item.name.startswith("solc-"):
-                version_str = item.name.replace("solc-", "")
-                try:
-                    version = SolcVersion.parse(version_str)
-                    if self.is_installed(version):
-                        installed.append(version)
-                except ValueError:
-                    continue
+            if not (item.is_dir() and item.name.startswith("solc-")):
+                continue
+            version_str = item.name.removeprefix("solc-")
+            try:
+                version = SolcVersion.parse(version_str)
+                if self.is_installed(version):
+                    installed.append(version)
+            except ValueError:
+                pass
 
-        installed.sort()
-        return installed
+        return sorted(installed)
 
     def is_installed(self, version: SolcVersion) -> bool:
         """Check if a version is installed."""
