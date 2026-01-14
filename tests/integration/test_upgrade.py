@@ -23,7 +23,7 @@ class TestUpgrade:  # pylint: disable=too-few-public-methods
         and verifies everything is preserved.
         """
         venv = isolated_python_env
-        project_root = Path(__file__).parent.parent
+        project_root = Path(__file__).parent.parent.parent
 
         # Install release version from PyPI
         run_in_venv(venv, 'pip install "solc-select>=1.0"', check=True)
@@ -70,7 +70,7 @@ class TestUpgrade:  # pylint: disable=too-few-public-methods
 
     def test_cache_already_installed(self, isolated_python_env: Any) -> None:
         venv = isolated_python_env
-        project_root = Path(__file__).parent.parent
+        project_root = Path(__file__).parent.parent.parent
 
         # Install development version
         run_in_venv(venv, f"pip install -e {project_root}", check=True)

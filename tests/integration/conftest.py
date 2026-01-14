@@ -74,7 +74,7 @@ def isolated_python_env(tmp_path: Path) -> Generator[dict[str, Any], None, None]
 @pytest.fixture(scope="session")
 def test_contracts_dir() -> Path:
     """Path to test Solidity contracts."""
-    return Path(__file__).parent / "solidity_tests"
+    return Path(__file__).parent.parent / "solidity_tests"
 
 
 # Platform markers for conditional test execution
