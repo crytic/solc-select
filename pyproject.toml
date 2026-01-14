@@ -136,5 +136,11 @@ extra_checks = true
 # Error on missing imports (don't allow implicit Any)
 disallow_any_unimported = true
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+
 [tool.uv]
 python-preference = "only-managed"
