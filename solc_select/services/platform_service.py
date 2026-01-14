@@ -1,9 +1,4 @@
-"""
-Platform service for solc-select.
-
-This module handles platform-specific operations including emulation support,
-compatibility checks, and ARM64 warnings.
-"""
+"""Platform service for solc-select."""
 
 import contextlib
 import sys
@@ -21,22 +16,10 @@ class PlatformService:
         self.platform = platform
 
     def get_emulation_prefix(self, artifact: SolcArtifactOnDisk) -> list[str]:
-        """Get the command prefix for emulation based on artifact's emulation info.
-
-        Args:
-            artifact: Artifact with emulation information
-
-        Returns:
-            List of command components to prepend for emulation
-
-        Raises:
-            RuntimeError: If emulation required but not available
-        """
-        # If no emulation needed (native binary), return empty list
+        """Get the command prefix for emulation based on artifact's emulation info."""
         if artifact.emulation is None:
             return []
 
-        # Check if emulation is available
         if not artifact.emulation.detector():
             raise RuntimeError(
                 f"Emulation via {artifact.emulation.emulation_type} is required but not available. "
@@ -47,15 +30,10 @@ class PlatformService:
         return artifact.emulation.command_prefix
 
     def warn_about_arm64_compatibility(self, force: bool = False) -> None:
-        """Warn ARM64 users about compatibility and suggest solutions.
-
-        Args:
-            force: Whether to show warning even if already shown before
-        """
+        """Warn ARM64 users about compatibility and suggest solutions."""
         if self.platform.architecture != "arm64":
             return
 
-        # Check if we've already warned
         warning_file = SOLC_SELECT_DIR.joinpath(".arm64_warning_shown")
         if not force and warning_file.exists():
             return

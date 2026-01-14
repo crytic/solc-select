@@ -17,7 +17,7 @@ class SolcArtifactOnDisk:
     version: SolcVersion
     platform: Platform
     file_path: Path
-    emulation: EmulationCapability | None = None  # Emulation info if not native
+    emulation: EmulationCapability | None = None
 
 
 @dataclass(kw_only=True)
@@ -29,16 +29,14 @@ class SolcArtifact(SolcArtifactOnDisk):
     checksum_keccak256: str | None
 
     def __post_init__(self) -> None:
-        """Validate artifact properties."""
         if not self.download_url:
             raise ValueError("Download URL cannot be empty")
         if not self.checksum_sha256:
             raise ValueError("SHA256 checksum cannot be empty")
+        # Normalize by removing 0x prefix
         if self.checksum_sha256.startswith("0x"):
-            # Normalize by removing 0x prefix
             object.__setattr__(self, "checksum_sha256", self.checksum_sha256[2:])
         if self.checksum_keccak256 and self.checksum_keccak256.startswith("0x"):
-            # Normalize by removing 0x prefix
             object.__setattr__(self, "checksum_keccak256", self.checksum_keccak256[2:])
 
     @property

@@ -1,9 +1,4 @@
-"""
-Artifact management service for solc-select.
-
-This module handles downloading, verification, installation, and management
-of Solidity compiler artifacts.
-"""
+"""Artifact management service for solc-select."""
 
 import hashlib
 import os
@@ -35,15 +30,6 @@ class ArtifactManager:
         session: requests.Session,
         filesystem: FilesystemManager | None = None,
     ):
-        """Initialize artifact manager.
-
-        Args:
-            repository_matcher: Repository matcher for finding versions
-            platform_capability: Platform capability for emulation info
-            platform: Current platform
-            session: HTTP session for downloads
-            filesystem: Filesystem manager for path operations (optional)
-        """
         self.repository_matcher = repository_matcher
         self.platform_capability = platform_capability
         self.platform = platform
@@ -51,26 +37,11 @@ class ArtifactManager:
         self.filesystem = filesystem or FilesystemManager()
 
     def create_local_artifact_metadata(self, version: SolcVersion) -> SolcArtifactOnDisk:
-        """Create artifact metadata for a locally available version.
-
-        Args:
-            version: Version to create metadata for
-
-        Returns:
-            SolcArtifactOnDisk with download information and emulation info
-
-        Raises:
-            ValueError: If version is not available
-            VersionNotFoundError: If no repository provides this version
-        """
-        # Get the best repository and target platform for this version
+        """Create artifact metadata for a locally available version."""
         _, target_platform = self.repository_matcher.find_repository_for_version(
             version, exact=False
         )
-
         binary_path = self.filesystem.get_binary_path(version)
-
-        # Get emulation info if needed (target_platform differs from host)
         emulation = self.platform_capability.get_emulation_for_platform(target_platform)
 
         return SolcArtifactOnDisk(
@@ -81,30 +52,13 @@ class ArtifactManager:
         )
 
     def create_artifact_metadata(self, version: SolcVersion) -> SolcArtifact:
-        """Create artifact metadata for a version.
-
-        Args:
-            version: Version to create metadata for
-
-        Returns:
-            SolcArtifact with download information and emulation info
-
-        Raises:
-            ValueError: If version is not available
-            VersionNotFoundError: If no repository provides this version
-        """
-        # Get the best repository and target platform for this version
+        """Create artifact metadata for a version."""
         repo, target_platform = self.repository_matcher.find_repository_for_version(version)
-
         binary_path = self.filesystem.get_binary_path(version)
-
-        # Get emulation info if needed (target_platform differs from host)
         emulation = self.platform_capability.get_emulation_for_platform(target_platform)
 
-        # Get available versions to find the artifact filename
         available = repo.available_versions
         version_str = str(version)
-
         if version_str not in available:
             raise ValueError(f"Version {version} is not available")
 
@@ -123,19 +77,10 @@ class ArtifactManager:
         )
 
     def verify_checksum(self, artifact: SolcArtifact, file_handle: BufferedRandom) -> None:
-        """Verify the checksums of a downloaded artifact.
-
-        Args:
-            artifact: Artifact metadata with expected checksums
-            file_handle: Open file handle to verify
-
-        Raises:
-            ChecksumMismatchError: If checksums don't match
-        """
+        """Verify the checksums of a downloaded artifact."""
         sha256_factory = hashlib.sha256()
         keccak_factory = keccak.new(digest_bits=256)
 
-        # Calculate checksums
         file_handle.seek(0)
         for chunk in iter(lambda: file_handle.read(1024000), b""):  # 1MB chunks
             sha256_factory.update(chunk)
@@ -144,28 +89,14 @@ class ArtifactManager:
         local_sha256 = sha256_factory.hexdigest()
         local_keccak256 = keccak_factory.hexdigest()
 
-        # Verify SHA256
         if artifact.checksum_sha256 != local_sha256:
             raise ChecksumMismatchError(artifact.checksum_sha256, local_sha256, "SHA256")
 
-        # Verify Keccak256 if available
         if artifact.checksum_keccak256 and artifact.checksum_keccak256 != local_keccak256:
             raise ChecksumMismatchError(artifact.checksum_keccak256, local_keccak256, "Keccak256")
 
     def download_and_install(self, version: SolcVersion, silent: bool = False) -> bool:
-        """Download and install a Solidity compiler version.
-
-        Args:
-            version: Version to install
-            silent: Whether to suppress output messages
-
-        Returns:
-            True if successful, False otherwise
-
-        Raises:
-            InstallationError: If installation fails
-            ChecksumMismatchError: If checksum verification fails
-        """
+        """Download and install a Solidity compiler version."""
         if self.filesystem.is_installed(version):
             if not silent:
                 print(f"Version '{version}' is already installed, skipping...")
@@ -181,19 +112,16 @@ class ArtifactManager:
                 print(f"Error: {e}")
             return False
 
-        # Create artifact directory
         self.filesystem.ensure_artifact_directory(version)
 
         try:
-            # Download the file
             response = self.session.get(artifact.download_url, stream=True)
             response.raise_for_status()
 
-            # Write and verify the file
             with open(artifact.file_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
                 try:
                     for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:  # Filter out keep-alive chunks
+                        if chunk:
                             f.write(chunk)
                 except KeyboardInterrupt:
                     # Clean up partially downloaded file on interrupt
@@ -201,14 +129,11 @@ class ArtifactManager:
                         artifact.file_path.unlink(missing_ok=True)
                     raise
 
-                # Verify checksums
                 self.verify_checksum(artifact, f)
 
-            # Handle ZIP archives (older Windows versions)
             if artifact.is_zip_archive:
                 self._extract_zip_archive(artifact)
             else:
-                # Make binary executable
                 artifact.file_path.chmod(0o775)
 
             if not silent:
@@ -217,13 +142,11 @@ class ArtifactManager:
             return True
 
         except ChecksumMismatchError:
-            # Clean up on failure and re-raise checksum errors
             if artifact.file_path.exists():
                 artifact.file_path.unlink()
             raise
 
         except Exception as e:
-            # Clean up on failure
             if artifact.file_path.exists():
                 artifact.file_path.unlink()
             if not silent:
@@ -231,36 +154,19 @@ class ArtifactManager:
             return False
 
     def _extract_zip_archive(self, artifact: SolcArtifact) -> None:
-        """Extract a ZIP archive and rename the binary.
-
-        Args:
-            artifact: Artifact metadata for the ZIP file
-        """
+        """Extract a ZIP archive and rename the binary."""
         artifact_dir = artifact.file_path.parent
 
         with ZipFile(artifact.file_path, "r") as zip_ref:
             zip_ref.extractall(path=artifact_dir)
 
-        # Remove the ZIP file
         artifact.file_path.unlink()
-
-        # Rename the extracted binary
         extracted_binary = artifact_dir / artifact.get_binary_name_in_zip()
         extracted_binary.rename(artifact.file_path)
-
-        # Make executable
         artifact.file_path.chmod(0o775)
 
     def install_versions(self, versions: list[SolcVersion], silent: bool = False) -> bool:
-        """Install multiple versions concurrently.
-
-        Args:
-            versions: List of versions to install
-            silent: Whether to suppress output messages
-
-        Returns:
-            True if all installations succeeded, False otherwise
-        """
+        """Install multiple versions concurrently."""
         if not versions:
             return True
 
@@ -273,23 +179,19 @@ class ArtifactManager:
                     print(f"Error: {e}")
                 return False
 
-        # For multiple versions, use parallel approach
         if not silent:
             print(f"Installing {len(versions)} versions concurrently...")
 
         success_count = 0
         total_count = len(versions)
 
-        # Use ThreadPoolExecutor with max 5 concurrent downloads
         with ThreadPoolExecutor(max_workers=5) as executor:
-            # Submit all download jobs
             future_to_version = {
                 executor.submit(self.download_and_install, version, True): version
                 for version in versions
             }
 
             try:
-                # Process completed downloads
                 for future in as_completed(future_to_version):
                     version = future_to_version[future]
                     try:

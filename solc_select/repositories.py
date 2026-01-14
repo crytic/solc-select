@@ -1,9 +1,4 @@
-"""
-Repository pattern implementations for solc-select.
-
-This module provides abstractions for fetching Solidity compiler version information
-and artifacts from different sources (soliditylang.org, crytic, alloy, etc.).
-"""
+"""Repository implementations for fetching Solidity compiler versions."""
 
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
@@ -23,11 +18,7 @@ if TYPE_CHECKING:
 
 
 class SolcRepository:
-    """Repository for fetching Solidity compiler version information and artifacts.
-
-    Replaces the former AbstractSolcRepository/GenericRepository hierarchy with a single
-    concrete implementation. All behavior differences are handled through constructor parameters.
-    """
+    """Repository for fetching Solidity compiler version information and artifacts."""
 
     def __init__(
         self,
@@ -36,14 +27,6 @@ class SolcRepository:
         session: requests.Session,
         has_latest_release: bool = False,
     ):
-        """Initialize repository.
-
-        Args:
-            base_url: Base URL for downloading artifacts
-            list_url: URL for the list.json file
-            session: HTTP session for requests
-            has_latest_release: Whether list.json has a "latestRelease" field
-        """
         self.session = session
         self._base_url = base_url
         self._list_url = list_url
@@ -51,21 +34,14 @@ class SolcRepository:
 
     @property
     def base_url(self) -> str:
-        """Get the base URL for downloading artifacts."""
         return self._base_url
 
     @property
     def list_url(self) -> str:
-        """Get the URL for the list.json file containing version information."""
         return self._list_url
 
     @lru_cache(maxsize=5)  # noqa: B019
     def _fetch_list_json(self) -> dict[str, Any]:
-        """Fetch and cache the list.json data from the repository.
-
-        Returns:
-            The parsed JSON data from the list.json endpoint
-        """
         response = self.session.get(self.list_url)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
@@ -82,30 +58,24 @@ class SolcRepository:
     def latest_version(self) -> SolcVersion:
         """Get the latest available version."""
         if self._has_latest_release:
-            # Soliditylang repositories have a latestRelease field
             list_data = self._fetch_list_json()
-            latest_str = list_data["latestRelease"]
-            return SolcVersion.parse(latest_str)
-        else:
-            # For other repositories, compute from available versions
-            versions = self.available_versions
-            if not versions:
-                raise ValueError("No versions available")
-            version_objs = [SolcVersion.parse(v) for v in versions]
-            return max(version_objs)
+            return SolcVersion.parse(list_data["latestRelease"])
+
+        versions = self.available_versions
+        if not versions:
+            raise ValueError("No versions available")
+        return max(SolcVersion.parse(v) for v in versions)
 
     def get_download_url(self, artifact_filename: str) -> str:
-        """Get the download URL for a specific artifact."""
         return f"{self.base_url}{artifact_filename}"
 
     def get_checksums(self, version: SolcVersion) -> tuple[str, str | None]:
         """Get SHA256 and optional Keccak256 checksums for a version."""
         list_data = self._fetch_list_json()
         builds = list_data["builds"]
-
         version_str = str(version)
-        matches = [b for b in builds if b["version"] == version_str and "prerelease" not in b]
 
+        matches = [b for b in builds if b["version"] == version_str and "prerelease" not in b]
         if not matches or not matches[0]["sha256"]:
             raise ValueError(f"Unable to retrieve checksum for {version}")
 
@@ -121,20 +91,8 @@ class SolcRepository:
         return sha256_hash, keccak256_hash
 
 
-# Factory functions for creating repository instances
-# These provide convenience for constructing repositories with appropriate URLs
-
-
 def SoliditylangRepository(platform: "Platform", session: requests.Session) -> SolcRepository:
-    """Create a Soliditylang repository for the given platform.
-
-    Args:
-        platform: Platform to construct URLs for
-        session: HTTP session for requests
-
-    Returns:
-        SolcRepository instance configured for soliditylang.org
-    """
+    """Create a Soliditylang repository for the given platform."""
     platform_key = platform.get_soliditylang_key()
     return SolcRepository(
         base_url=f"https://binaries.soliditylang.org/{platform_key}/",
@@ -145,14 +103,7 @@ def SoliditylangRepository(platform: "Platform", session: requests.Session) -> S
 
 
 def CryticRepository(session: requests.Session) -> SolcRepository:
-    """Create a Crytic repository.
-
-    Args:
-        session: HTTP session for requests
-
-    Returns:
-        SolcRepository instance configured for crytic/solc
-    """
+    """Create a Crytic repository."""
     return SolcRepository(
         base_url=CRYTIC_SOLC_ARTIFACTS,
         list_url=CRYTIC_SOLC_JSON,
@@ -162,14 +113,7 @@ def CryticRepository(session: requests.Session) -> SolcRepository:
 
 
 def AlloyRepository(session: requests.Session) -> SolcRepository:
-    """Create an Alloy repository.
-
-    Args:
-        session: HTTP session for requests
-
-    Returns:
-        SolcRepository instance configured for alloy-rs/solc-builds
-    """
+    """Create an Alloy repository."""
     return SolcRepository(
         base_url=ALLOY_SOLC_ARTIFACTS,
         list_url=ALLOY_SOLC_JSON,

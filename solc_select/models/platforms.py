@@ -16,43 +16,28 @@ class Platform:
     architecture: str  # 'amd64', 'arm64'
 
     def __post_init__(self) -> None:
-        """Validate platform components."""
         valid_os = {"linux", "darwin", "windows"}
         valid_arch = {"amd64", "arm64"}
-
         if self.os_type not in valid_os:
             raise ValueError(f"Invalid OS type: {self.os_type}")
         if self.architecture not in valid_arch:
             raise ValueError(f"Invalid architecture: {self.architecture}")
 
     def get_capability(self) -> PlatformCapability:
-        """Get the capability declaration for this platform.
-
-        Returns:
-            PlatformCapability for this platform (default if not registered)
-        """
-        # Import at runtime to avoid circular dependency
+        """Get the capability declaration for this platform."""
         from ..platform_capabilities import CAPABILITY_REGISTRY
 
         key = f"{self.os_type}-{self.architecture}"
         return CAPABILITY_REGISTRY.get(key, self._create_default_capability())
 
     def _create_default_capability(self) -> PlatformCapability:
-        """Create default capability (native-only, no emulation).
-
-        Returns:
-            PlatformCapability with only native support
-        """
+        """Create default capability (native-only, no emulation)."""
         platform_id = PlatformIdentifier(self.os_type, self.architecture)
         return PlatformCapability(
             host_platform=platform_id,
             native_support=platform_id,
             emulation_capabilities=[],
         )
-
-    # ========================================
-    # CORE PLATFORM DETECTION
-    # ========================================
 
     @classmethod
     def current(cls) -> "Platform":
@@ -66,7 +51,6 @@ class Platform:
         os_type = os_mapping.get(sys.platform)
         if os_type is None:
             raise ValueError(f"Unsupported platform: {sys.platform}")
-
         return cls(os_type=os_type, architecture=cls._get_arch())
 
     @staticmethod
@@ -83,7 +67,6 @@ class Platform:
 
     def get_soliditylang_key(self) -> str:
         """Get the platform key used by binaries.soliditylang.org."""
-        # soliditylang.org uses macosx-amd64 for both Intel and ARM (with Rosetta and universal binaries)
         platform_keys = {
             ("linux", "amd64"): LINUX_AMD64,
             ("linux", "arm64"): LINUX_ARM64,
