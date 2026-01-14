@@ -26,17 +26,9 @@ class SolcRepository:
         has_latest_release: bool = False,
     ):
         self.session = session
-        self._base_url = base_url
-        self._list_url = list_url
+        self.base_url = base_url
+        self.list_url = list_url
         self._has_latest_release = has_latest_release
-
-    @property
-    def base_url(self) -> str:
-        return self._base_url
-
-    @property
-    def list_url(self) -> str:
-        return self._list_url
 
     @lru_cache(maxsize=5)  # noqa: B019
     def _fetch_list_json(self) -> dict[str, Any]:
@@ -77,14 +69,10 @@ class SolcRepository:
         if not matches or not matches[0]["sha256"]:
             raise ValueError(f"Unable to retrieve checksum for {version}")
 
-        sha256_hash = matches[0]["sha256"]
+        sha256_hash = matches[0]["sha256"].removeprefix("0x")
         keccak256_hash = matches[0].get("keccak256")
-
-        # Normalize checksums by removing 0x prefix if present
-        if sha256_hash and sha256_hash.startswith("0x"):
-            sha256_hash = sha256_hash[2:]
-        if keccak256_hash and keccak256_hash.startswith("0x"):
-            keccak256_hash = keccak256_hash[2:]
+        if keccak256_hash:
+            keccak256_hash = keccak256_hash.removeprefix("0x")
 
         return sha256_hash, keccak256_hash
 

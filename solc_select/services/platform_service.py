@@ -34,7 +34,7 @@ class PlatformService:
         if self.platform.architecture != "arm64":
             return
 
-        warning_file = SOLC_SELECT_DIR.joinpath(".arm64_warning_shown")
+        warning_file = SOLC_SELECT_DIR / ".arm64_warning_shown"
         if not force and warning_file.exists():
             return
 

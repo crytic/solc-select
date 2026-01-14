@@ -77,7 +77,7 @@ class RepositoryMatcher:
                     if not exact or str(version) in repo.available_versions:
                         return repo, target_platform
 
-        platform_list = ", ".join(str(p) for p in runnable_platforms)
+        platform_list = ", ".join(map(str, runnable_platforms))
         raise VersionNotFoundError(
             str(version),
             available_versions=[],
@@ -124,15 +124,13 @@ class RepositoryMatcher:
         repository_id = manifest.repository_id
 
         if repository_id == "soliditylang":
-            platform_obj = Platform(os_type=platform.os_type, architecture=platform.architecture)
+            platform_obj = Platform(platform.os_type, platform.architecture)
             return SoliditylangRepository(platform_obj, self.session)
 
-        factories = {
-            "crytic": CryticRepository,
-            "alloy": AlloyRepository,
-        }
-        factory = factories.get(repository_id)
-        if factory is not None:
-            return factory(self.session)
+        if repository_id == "crytic":
+            return CryticRepository(self.session)
+
+        if repository_id == "alloy":
+            return AlloyRepository(self.session)
 
         raise ValueError(f"Unknown repository: {repository_id}")
