@@ -16,6 +16,17 @@ The test suite is organized into two main categories:
 - `test_network_isolation.py` - Verifies offline execution after installation
 - `test_version_verification.py` - Version and checksum verification
 
+### Unit Tests (`unit/`)
+- Fast, isolated tests with mocked dependencies
+- Service layer business logic
+- Repository matching algorithms
+- Checksum verification and parallel downloads
+- Platform detection and emulation handling
+- Organized by layer:
+  - `services/` - Service layer tests (VersionManager, ArtifactManager, etc.)
+  - `infrastructure/` - Infrastructure layer tests (FilesystemManager, HTTP client)
+  - `models/` - Domain model tests (VersionRange, SolcArtifact, etc.)
+
 ## Running Tests
 
 ### Install test dependencies
@@ -94,6 +105,14 @@ The test suite uses different fixtures depending on the test type:
 - Helper functions:
   - `run_command` - Executes shell commands for tests using `isolated_solc_data`
   - `run_in_venv` - Executes commands in isolated virtual environments
+
+### Unit Test Fixtures (`unit/conftest.py`)
+- `mock_session` - Mock requests.Session for HTTP calls
+- `mock_filesystem` - Mock FilesystemManager
+- `mock_platform` - Mock Platform (linux-amd64 by default)
+- `mock_repository` - Mock SolcRepository with common version set
+- `temp_artifacts_dir` - Temporary artifacts directory for testing
+- `temp_solc_select_dir` - Temporary solc-select directory with isolated paths
 
 ## Test Organization
 
