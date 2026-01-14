@@ -1,7 +1,7 @@
 """Repository implementations for fetching Solidity compiler versions."""
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import requests
 
@@ -11,10 +11,8 @@ from .constants import (
     CRYTIC_SOLC_ARTIFACTS,
     CRYTIC_SOLC_JSON,
 )
+from .models.platforms import Platform
 from .models.versions import SolcVersion
-
-if TYPE_CHECKING:
-    from .models.platforms import Platform
 
 
 class SolcRepository:
@@ -91,7 +89,7 @@ class SolcRepository:
         return sha256_hash, keccak256_hash
 
 
-def SoliditylangRepository(platform: "Platform", session: requests.Session) -> SolcRepository:
+def SoliditylangRepository(platform: Platform, session: requests.Session) -> SolcRepository:
     """Create a Soliditylang repository for the given platform."""
     platform_key = platform.get_soliditylang_key()
     return SolcRepository(

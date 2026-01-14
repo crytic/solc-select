@@ -14,23 +14,27 @@ The versioned binaries are stored in `~/.solc-select/artifacts/`.
 
 ## Installation
 
+### Using uv
+
+```bash
+uv tool install solc-select
+```
+
 ### Using pip
 
 ```bash
 pip3 install solc-select
 ```
 
-### Using uv (recommended for development)
-
-```bash
-uv tool install solc-select
-```
-
 To automatically install and use a version, run `solc-select use <version> --always-install`.
 
-### Running on ARM (Mac M1/M2)
+### Running on macOS ARM (Mac M1 and newer)
 
 `solc-select` provides native ARM64 support for versions 0.8.5-0.8.23, and universal binary support for 0.8.24+. For versions older than 0.8.5, Rosetta is required. See the FAQ on [how to install Rosetta](#oserror-errno-86-bad-cpu-type-in-executable).
+
+### Running on Linux ARM
+
+`solc-select` provides native ARM64 support for versions 0.8.31+. For versions older than 0.8.31, QEMU (`qemu-x86_64`) is required. Additionally, a libc binary (e.g., from package `libc6-amd64-cross`) and adequate `QEMU_LD_PREFIX` environment variable (e.g., `QEMU_LD_PREFIX=/usr/x86_64-linux-gnu`) might be necessary to execute certain solc binaries that are not built statically.
 
 ## Usage
 
@@ -160,7 +164,7 @@ pip3 install solc-select==0.2.0
 solc-select install
 ```
 
-### `solc-select` version changes, but `solc --version does not match`
+### `solc-select` version changes, but `solc --version` does not match
 
 Users seem to be experiencing situations in which the following command is successful:
 

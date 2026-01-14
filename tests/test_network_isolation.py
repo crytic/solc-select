@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch
 
 import requests
 
+from solc_select.services.solc_service import SolcService
+
 
 class TestNetworkIsolation:
     """Test that solc operations don't make unnecessary network requests."""
@@ -23,7 +25,6 @@ class TestNetworkIsolation:
         The isolated_solc_data fixture ensures the binary path resolution works
         correctly by redirecting VIRTUAL_ENV to point to the isolated test directory.
         """
-        from solc_select.services.solc_service import SolcService
 
         # Phase 1: Install version (network calls expected/allowed)
         service = SolcService()

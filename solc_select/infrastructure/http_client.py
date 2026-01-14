@@ -1,9 +1,4 @@
-"""
-HTTP client configuration for solc-select.
-
-This module provides centralized HTTP client configuration with
-retry logic and proper timeout handling.
-"""
+"""HTTP client configuration for solc-select."""
 
 from collections.abc import Mapping
 from typing import Any
@@ -38,7 +33,6 @@ def create_http_session() -> requests.Session:
     """Create a new HTTP session with retry logic for rate limits and server errors."""
     session = requests.Session()
 
-    # Configure retry strategy for 429s and server errors
     retry_strategy = Retry(
         total=5,
         backoff_factor=1,

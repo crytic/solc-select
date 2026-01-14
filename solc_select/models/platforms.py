@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass
 
 from ..constants import LINUX_AMD64, LINUX_ARM64, MACOSX_AMD64, WINDOWS_AMD64
-from ..platform_capabilities import PlatformCapability, PlatformIdentifier
+from ..platform_capabilities import CAPABILITY_REGISTRY, PlatformCapability, PlatformIdentifier
 
 
 @dataclass(frozen=True)
@@ -25,8 +25,6 @@ class Platform:
 
     def get_capability(self) -> PlatformCapability:
         """Get the capability declaration for this platform."""
-        from ..platform_capabilities import CAPABILITY_REGISTRY
-
         key = f"{self.os_type}-{self.architecture}"
         return CAPABILITY_REGISTRY.get(key, self._create_default_capability())
 
