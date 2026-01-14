@@ -26,8 +26,7 @@ def solc_select_install(service: SolcService, versions: list[str]) -> None:
     """Handle the install command."""
     if not versions:
         print("Available versions to install:")
-        installable = service.get_installable_versions()
-        for version in installable:
+        for version in service.get_installable_versions():
             print(str(version))
     else:
         success = service.install_versions(versions)
@@ -42,21 +41,20 @@ def solc_select_use(service: SolcService, version: str, always_install: bool) ->
 def solc_select_versions(service: SolcService) -> None:
     """Handle the versions command."""
     installed = service.get_installed_versions()
-    if installed:
-        try:
-            current_version, source = service.get_current_version()
-        except (NoVersionSetError, VersionNotInstalledError):
-            # No version is currently set or not installed, that's ok for the versions command
-            current_version = None
-
-        installed_strs = [str(v) for v in installed]
-        for version_str in sort_versions(installed_strs):
-            if current_version and version_str == str(current_version):
-                print(f"{version_str} (current, set by {source})")
-            else:
-                print(version_str)
-    else:
+    if not installed:
         print("No solc version installed. Run `solc-select install --help` for more information")
+        return
+
+    try:
+        current_version, source = service.get_current_version()
+    except (NoVersionSetError, VersionNotInstalledError):
+        current_version = None
+
+    for version_str in sort_versions([str(v) for v in installed]):
+        if current_version and version_str == str(current_version):
+            print(f"{version_str} (current, set by {source})")
+        else:
+            print(version_str)
 
 
 def solc_select_upgrade(service: SolcService) -> None:
@@ -72,7 +70,6 @@ def create_parser() -> argparse.ArgumentParser:
         dest="command",
     )
 
-    # Install command
     parser_install = subparsers.add_parser(
         INSTALL_COMMAND, help="list and install available solc versions"
     )
@@ -83,20 +80,17 @@ def create_parser() -> argparse.ArgumentParser:
         default=[],
     )
 
-    # Use command
     parser_use = subparsers.add_parser(
         USE_COMMAND, help="change the version of global solc compiler"
     )
     parser_use.add_argument("version", help="solc version you want to use (eg: 0.4.25)", nargs="?")
     parser_use.add_argument("--always-install", action="store_true")
 
-    # Versions command
     parser_versions = subparsers.add_parser(
         VERSIONS_COMMAND, help="prints out all installed solc versions"
     )
     parser_versions.add_argument("versions", nargs="*", help=argparse.SUPPRESS)
 
-    # Upgrade command
     parser_upgrade = subparsers.add_parser(UPGRADE_COMMAND, help="upgrades solc-select")
     parser_upgrade.add_argument("upgrade", nargs="*", help=argparse.SUPPRESS)
 
@@ -106,25 +100,19 @@ def create_parser() -> argparse.ArgumentParser:
 def solc_select() -> None:
     parser = create_parser()
     args = parser.parse_args()
-
-    # Create service instance
     service = SolcService()
 
     try:
         if args.command == INSTALL_COMMAND:
             solc_select_install(service, args.versions)
-
         elif args.command == USE_COMMAND:
             if not args.version:
                 parser.error("the following arguments are required: version")
             solc_select_use(service, args.version, args.always_install)
-
         elif args.command == VERSIONS_COMMAND:
             solc_select_versions(service)
-
         elif args.command == UPGRADE_COMMAND:
             solc_select_upgrade(service)
-
         else:
             parser.parse_args(["--help"])
             sys.exit(0)
@@ -154,7 +142,7 @@ def solc_select() -> None:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user", file=sys.stderr)
+        print("\nOperation cancelled", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}", file=sys.stderr)
@@ -168,7 +156,7 @@ def solc() -> None:
     try:
         service.execute_solc(sys.argv[1:])
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user", file=sys.stderr)
+        print("\nOperation cancelled", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"Error executing solc: {e}", file=sys.stderr)

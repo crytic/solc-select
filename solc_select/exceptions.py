@@ -1,15 +1,8 @@
-"""
-Custom exception classes for solc-select.
-
-This module provides a structured exception hierarchy for better error handling
-and more informative error messages throughout the application.
-"""
+"""Custom exception classes for solc-select."""
 
 
 class SolcSelectError(Exception):
     """Base exception for all solc-select errors."""
-
-    pass
 
 
 class VersionNotFoundError(SolcSelectError):
@@ -26,7 +19,6 @@ class VersionNotFoundError(SolcSelectError):
         self.suggestion = suggestion
 
         message = f"Version '{version}' not found"
-
         if available_versions:
             if len(available_versions) <= 5:
                 message += f". Available versions: {', '.join(available_versions)}"
@@ -77,7 +69,6 @@ class PlatformNotSupportedError(SolcSelectError):
         self.min_version = min_version
 
         message = f"Version '{version}' is not supported on {platform}"
-
         if min_version:
             message += f". Minimum supported version is '{min_version}'"
 
@@ -105,7 +96,6 @@ class InstallationError(SolcSelectError):
     def __init__(self, version: str, reason: str):
         self.version = version
         self.reason = reason
-
         super().__init__(f"Failed to install version '{version}': {reason}")
 
 
@@ -120,10 +110,8 @@ class NetworkError(SolcSelectError):
         self.original_error = original_error
 
         message = f"Network error during {operation}"
-
         if url:
             message += f" from {url}"
-
         if original_error:
             message += f": {original_error!s}"
 
@@ -136,7 +124,6 @@ class VersionResolutionError(SolcSelectError):
     def __init__(self, requested: str, reason: str):
         self.requested = requested
         self.reason = reason
-
         super().__init__(f"Could not resolve version '{requested}': {reason}")
 
 
