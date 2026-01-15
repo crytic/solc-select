@@ -100,17 +100,16 @@ class ArtifactManager:
         response = self.session.get(artifact.download_url, stream=True)
         response.raise_for_status()
 
-        with open(artifact.file_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
-            try:
+        try:
+            with open(artifact.file_path, "w+b", opener=partial(os.open, mode=0o664)) as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         f.write(chunk)
-            except KeyboardInterrupt:
-                if artifact.file_path.exists():
-                    artifact.file_path.unlink(missing_ok=True)
-                raise
-
-            self.verify_checksum(artifact, f)
+                self.verify_checksum(artifact, f)
+        except KeyboardInterrupt:
+            if artifact.file_path.exists():
+                artifact.file_path.unlink(missing_ok=True)
+            raise
 
     def download_and_install(self, version: SolcVersion, silent: bool = False) -> bool:
         """Download and install a Solidity compiler version."""

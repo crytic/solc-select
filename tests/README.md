@@ -4,10 +4,28 @@ This directory contains the pytest-based test suite for solc-select.
 
 ## Test Structure
 
-- `conftest.py` - Pytest configuration and fixtures for test isolation
+The test suite is organized into two main categories:
+
+### Integration Tests (`integration/`)
+- End-to-end tests that verify actual CLI behavior
+- Real HTTP requests, filesystem operations, and binary execution
+- Platform-specific validation
 - `test_compiler_versions.py` - Tests for different Solidity compiler versions
 - `test_platform_specific.py` - Platform-specific boundary tests
 - `test_upgrade.py` - Tests for upgrade functionality
+- `test_network_isolation.py` - Verifies offline execution after installation
+- `test_version_verification.py` - Version and checksum verification
+
+### Unit Tests (`unit/`)
+- Fast, isolated tests with mocked dependencies
+- Service layer business logic
+- Repository matching algorithms
+- Checksum verification and parallel downloads
+- Platform detection and emulation handling
+- Organized by layer:
+  - `services/` - Service layer tests (VersionManager, ArtifactManager, etc.)
+  - `infrastructure/` - Infrastructure layer tests (FilesystemManager, HTTP client)
+  - `models/` - Domain model tests (VersionRange, SolcArtifact, etc.)
 
 ## Running Tests
 
@@ -15,21 +33,43 @@ This directory contains the pytest-based test suite for solc-select.
 
 ```bash
 # Install with all development dependencies (testing + linting)
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
 ```
 
 ### Run all tests
 
 ```bash
-pytest
+# Run all tests (both unit and integration)
+uv run pytest tests/
+
+# Run only unit tests (fast)
+uv run pytest tests/unit/ -v
+
+# Run only integration tests (slower, requires network)
+uv run pytest tests/integration/ -v
 ```
 
 ### Run specific test files
 
 ```bash
-pytest tests/test_compiler_versions.py
-pytest tests/test_platform_specific.py
-pytest tests/test_upgrade.py
+# Unit tests
+uv run pytest tests/unit/services/test_version_manager.py
+uv run pytest tests/unit/services/test_artifact_manager.py
+
+# Integration tests
+uv run pytest tests/integration/test_compiler_versions.py
+uv run pytest tests/integration/test_platform_specific.py
+uv run pytest tests/integration/test_upgrade.py
+```
+
+### Check test coverage
+
+```bash
+# Coverage for unit tests
+uv run pytest tests/unit/ --cov=solc_select --cov-report=term-missing
+
+# Coverage for all tests
+uv run pytest tests/ --cov=solc_select --cov-report=html
 ```
 
 ### Run platform-specific tests
@@ -56,16 +96,23 @@ pytest -n auto
 
 ## Test Fixtures
 
-The test suite uses several fixtures to ensure proper isolation:
+The test suite uses different fixtures depending on the test type:
 
+### Integration Test Fixtures (`integration/conftest.py`)
 - `isolated_solc_data` - Creates isolated solc-select data environment using VIRTUAL_ENV
 - `isolated_python_env` - Creates completely isolated Python environment for install/uninstall tests
 - `test_contracts_dir` - Path to test Solidity contracts in `tests/solidity_tests/`
+- Helper functions:
+  - `run_command` - Executes shell commands for tests using `isolated_solc_data`
+  - `run_in_venv` - Executes commands in isolated virtual environments
 
-### Helper Functions
-
-- `run_command` - Executes shell commands for tests using `isolated_solc_data`
-- `run_in_venv` - Executes commands in isolated virtual environments
+### Unit Test Fixtures (`unit/conftest.py`)
+- `mock_session` - Mock requests.Session for HTTP calls
+- `mock_filesystem` - Mock FilesystemManager
+- `mock_platform` - Mock Platform (linux-amd64 by default)
+- `mock_repository` - Mock SolcRepository with common version set
+- `temp_artifacts_dir` - Temporary artifacts directory for testing
+- `temp_solc_select_dir` - Temporary solc-select directory with isolated paths
 
 ## Test Organization
 
