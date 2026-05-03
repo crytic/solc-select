@@ -33,9 +33,9 @@ def solc_select_install(service: SolcService, versions: list[str]) -> None:
         sys.exit(0 if success else 1)
 
 
-def solc_select_use(service: SolcService, version: str, always_install: bool) -> None:
+def solc_select_use(service: SolcService, version: str, offline: bool) -> None:
     """Handle the use command."""
-    service.switch_global_version(version, always_install, silent=False)
+    service.switch_global_version(version, auto_install=not offline, silent=False)
 
 
 def solc_select_versions(service: SolcService) -> None:
@@ -84,7 +84,16 @@ def create_parser() -> argparse.ArgumentParser:
         USE_COMMAND, help="change the version of global solc compiler"
     )
     parser_use.add_argument("version", help="solc version you want to use (eg: 0.4.25)", nargs="?")
-    parser_use.add_argument("--always-install", action="store_true")
+    parser_use.add_argument(
+        "--offline",
+        action="store_true",
+        help="do not download missing versions; fail if the requested version is not installed",
+    )
+    # Deprecated: kept as a no-op so existing scripts/CI pipelines do not break.
+    # Auto-install is now the default behavior of `use`.
+    parser_use.add_argument(
+        "--always-install", action="store_true", dest="always_install", help=argparse.SUPPRESS
+    )
 
     parser_versions = subparsers.add_parser(
         VERSIONS_COMMAND, help="prints out all installed solc versions"
@@ -108,7 +117,13 @@ def solc_select() -> None:
         elif args.command == USE_COMMAND:
             if not args.version:
                 parser.error("the following arguments are required: version")
-            solc_select_use(service, args.version, args.always_install)
+            if args.always_install:
+                print(
+                    "Warning: --always-install is deprecated and now a no-op; "
+                    "auto-install is the default. Pass --offline to disable.",
+                    file=sys.stderr,
+                )
+            solc_select_use(service, args.version, args.offline)
         elif args.command == VERSIONS_COMMAND:
             solc_select_versions(service)
         elif args.command == UPGRADE_COMMAND:
