@@ -26,7 +26,9 @@ uv tool install solc-select
 pip3 install solc-select
 ```
 
-To automatically install and use a version, run `solc-select use <version> --always-install`.
+To install and use a version in one step, run `solc-select use <version>`. By default,
+`use` will download the requested version if it is not already installed. Pass `--offline`
+to disable this and require the version to be present locally.
 
 ### Running on macOS ARM (Mac M1 and newer)
 
@@ -41,8 +43,8 @@ To automatically install and use a version, run `solc-select use <version> --alw
 ### Quick Start
 
 ```bash
-# Install and set a specific Solidity version
-solc-select use 0.8.19 --always-install
+# Install and set a specific Solidity version (auto-installs if missing)
+solc-select use 0.8.19
 
 # Check the current version
 solc --version
@@ -74,13 +76,26 @@ solc, the solidity compiler commandline interface
 Version: 0.5.2+commit.1df8f40c.Linux.g++
 ```
 
-By default, solc-select will halt if you try to use a version that you do not have installed already. Use the `--always-install` flags to bypass this.
+By default, `solc-select use` will download the requested version if it is not already
+installed:
 
 ```shell
-$ solc-select use 0.8.1 --always-install
+$ solc-select use 0.8.1
 Installing '0.8.1'...
 Version '0.8.1' installed.
+Switched global version to 0.8.1
 ```
+
+To disable downloading and require the version to already be installed locally, pass
+`--offline`:
+
+```shell
+$ solc-select use 0.8.1 --offline
+Error: Version '0.8.1' is not installed.
+```
+
+The legacy `--always-install` flag is accepted for backward compatibility but is now a
+no-op (auto-install is the default).
 
 ### Available Commands
 
@@ -97,8 +112,11 @@ solc-select use 0.8.19
 # List installed versions
 solc-select versions
 
-# Install and switch to a version in one command
-solc-select use 0.8.19 --always-install
+# Install and switch to a version in one command (default behavior)
+solc-select use 0.8.19
+
+# Switch only if the version is already installed (no download)
+solc-select use 0.8.19 --offline
 ```
 
 ## Getting Help

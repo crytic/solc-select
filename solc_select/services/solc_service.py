@@ -97,18 +97,24 @@ class SolcService:
             return False
 
     def switch_global_version(
-        self, version_str: str, always_install: bool = False, silent: bool = False
+        self, version_str: str, auto_install: bool = True, silent: bool = False
     ) -> None:
-        """Switch to a different global version."""
+        """Switch to a different global version.
+
+        When ``auto_install`` is True (the default), missing versions are
+        downloaded and installed before switching. Pass ``auto_install=False``
+        (e.g. via the ``--offline`` CLI flag) to require that the version is
+        already installed.
+        """
         version = self.version_manager.validate_version(version_str)
 
         if self.filesystem.is_installed(version):
             self.filesystem.set_global_version(version)
             if not silent:
                 print(f"Switched global version to {version}")
-        elif always_install:
+        elif auto_install:
             if self.install_versions([str(version)], silent):
-                self.switch_global_version(str(version), always_install=False, silent=silent)
+                self.switch_global_version(str(version), auto_install=False, silent=silent)
             else:
                 raise InstallationError(str(version), "Installation failed")
         else:
@@ -144,7 +150,7 @@ class SolcService:
     def execute_solc(self, args: list[str]) -> None:
         """Execute solc with the current version."""
         if not self.get_installed_versions():
-            self.switch_global_version("latest", always_install=True, silent=True)
+            self.switch_global_version("latest", auto_install=True, silent=True)
 
         try:
             version, _ = self.get_current_version()

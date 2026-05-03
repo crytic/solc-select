@@ -138,7 +138,7 @@ class TestSolcServiceSwitch:
         else:
             assert captured.out == ""
 
-    def test_switch_not_installed_no_auto_install(self, solc_service, mock_dependencies):
+    def test_switch_not_installed_offline(self, solc_service, mock_dependencies):
         """Raises VersionNotInstalledError when version not installed and auto_install=False."""
         version = SolcVersion("0.8.19")
         available = [SolcVersion("0.8.19"), SolcVersion("0.8.20")]
@@ -147,13 +147,15 @@ class TestSolcServiceSwitch:
         mock_dependencies["version_manager"].get_available_versions.return_value = available
 
         with pytest.raises(VersionNotInstalledError) as exc_info:
-            solc_service.switch_global_version("0.8.19")
+            solc_service.switch_global_version("0.8.19", auto_install=False)
 
         assert "0.8.19" in str(exc_info.value)
         assert "is not installed" in str(exc_info.value)
 
-    def test_switch_not_installed_with_auto_install(self, solc_service, mock_dependencies, capsys):
-        """Installs then switches when always_install=True."""
+    def test_switch_not_installed_auto_install_default(
+        self, solc_service, mock_dependencies, capsys
+    ):
+        """Auto-install is the default: installs then switches without an explicit flag."""
         version = SolcVersion("0.8.19")
         mock_dependencies["version_manager"].validate_version.return_value = version
         # First call: not installed, second call: installed
@@ -162,7 +164,7 @@ class TestSolcServiceSwitch:
         mock_dependencies["version_manager"].get_available_versions.return_value = [version]
         mock_dependencies["artifact_manager"].install_versions.return_value = True
 
-        solc_service.switch_global_version("0.8.19", always_install=True)
+        solc_service.switch_global_version("0.8.19")
 
         # Should call install_versions with the version (silent=False for internal call)
         mock_dependencies["version_manager"].resolve_version_strings.assert_called_once_with(
@@ -195,7 +197,7 @@ class TestSolcServiceSwitch:
         assert "0.8.99" in str(exc_info.value)
 
     def test_switch_installation_fails(self, solc_service, mock_dependencies):
-        """Raises InstallationError when installation fails with always_install=True."""
+        """Raises InstallationError when auto-install is enabled and installation fails."""
         version = SolcVersion("0.8.19")
         mock_dependencies["version_manager"].validate_version.return_value = version
         mock_dependencies["filesystem"].is_installed.return_value = False
@@ -204,7 +206,7 @@ class TestSolcServiceSwitch:
         mock_dependencies["artifact_manager"].install_versions.return_value = False
 
         with pytest.raises(InstallationError) as exc_info:
-            solc_service.switch_global_version("0.8.19", always_install=True)
+            solc_service.switch_global_version("0.8.19")
 
         assert "0.8.19" in str(exc_info.value)
         assert "Installation failed" in str(exc_info.value)
@@ -224,7 +226,7 @@ class TestSolcServiceSwitch:
         mock_dependencies["version_manager"].get_available_versions.return_value = available
 
         with pytest.raises(VersionNotFoundError) as exc_info:
-            solc_service.switch_global_version("0.4.3")
+            solc_service.switch_global_version("0.4.3", auto_install=False)
 
         assert "0.4.3" in str(exc_info.value)
         # Should show first 5 available versions
@@ -387,7 +389,7 @@ class TestSolcServiceExecute:
 
         solc_service.execute_solc(["--version"])
 
-        # Should have called switch_global_version with "latest" and always_install=True
+        # Should have called switch_global_version with "latest" and auto_install=True
         mock_dependencies["version_manager"].validate_version.assert_called_with("latest")
         mock_subprocess.assert_called_once_with([str(binary_path), "--version"], check=True)
 
