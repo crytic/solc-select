@@ -8,7 +8,7 @@ The tool is split into two CLI utilities:
 - `solc`: wrapper around `solc` which picks the right version according to what was set via `solc-select`
 
 The `solc` binaries are downloaded from https://binaries.soliditylang.org/ which contains
-official artifacts for many historial and modern `solc` versions for Linux and macOS.
+official artifacts for many historical and modern `solc` versions for Linux and macOS.
 
 The versioned binaries are stored in `~/.solc-select/artifacts/`.
 
