@@ -86,13 +86,11 @@ def create_parser() -> argparse.ArgumentParser:
     parser_use.add_argument("version", help="solc version you want to use (eg: 0.4.25)", nargs="?")
     parser_use.add_argument("--always-install", action="store_true")
 
-    parser_versions = subparsers.add_parser(
+    subparsers.add_parser(
         VERSIONS_COMMAND, help="prints out all installed solc versions"
     )
-    parser_versions.add_argument("versions", nargs="*", help=argparse.SUPPRESS)
 
-    parser_upgrade = subparsers.add_parser(UPGRADE_COMMAND, help="upgrades solc-select")
-    parser_upgrade.add_argument("upgrade", nargs="*", help=argparse.SUPPRESS)
+    subparsers.add_parser(UPGRADE_COMMAND, help="upgrades solc-select")
 
     return parser
 
